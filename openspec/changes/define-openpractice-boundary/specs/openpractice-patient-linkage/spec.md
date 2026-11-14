@@ -172,3 +172,22 @@ openChart SHALL operate fully with no openPractice deployment. Patients without 
 #### Scenario: Standalone installation
 - **WHEN** openChart is installed on a clean supported site with no openPractice
 - **THEN** migrations complete and the golden-patient intake tests pass
+
+### Requirement: PL-16 openChart honors confidential-communication instructions in every communication it originates
+For a patient with an `active` `openpractice` link, openChart SHALL apply the confidential-communication instructions of the latest applied demographic version to every patient communication it originates. This includes communications from any system it drives, such as HealthLinc intake (ruling 27). It MUST NOT send to an address or channel that the instructions restrict, and it SHALL use the alternate address or channel they name. While updates are held (PL-08), openChart SHALL honor every restriction in the applied version and in every held version. A communication that cannot satisfy the instructions SHALL be withheld, and the withholding SHALL be recorded with a coded reason and no PHI in logs (PL-13).
+
+#### Scenario: A no-voicemail patient gets an automated reminder
+- **WHEN** a HealthLinc flow driven by openChart would leave a voicemail for a linked patient whose instructions carry `no_voicemail`
+- **THEN** no voicemail is left, and the communication is sent only through a permitted channel or withheld
+
+#### Scenario: Mail goes to the alternate address
+- **WHEN** openChart sends a letter to a linked patient whose instructions carry `no_home_mail` and an alternate address
+- **THEN** the letter goes only to the alternate address
+
+#### Scenario: A new restriction arrives in a held update
+- **WHEN** a held update adds `no_text_messages` while a date-of-birth review is open
+- **THEN** openChart stops sending text messages to that patient at once, even though the held version is not yet applied
+
+#### Scenario: No permitted channel remains
+- **WHEN** a communication can reach the patient only through restricted channels
+- **THEN** openChart withholds it and records a coded reason, with no demographic value in the log

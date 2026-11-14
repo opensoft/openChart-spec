@@ -14,12 +14,12 @@
 
 - [ ] 2.1 Open Question 1: adopt openChart's constitution through separate governance (it is the unfilled template today). Then perform a meaningful Constitution Check before the plan phase. This gate blocks the plan phase.
 - [ ] 2.2 Open Question 2: record which separately governed change introduces clinician-authored encounters, diagnoses and procedures. Until it lands, CF-06 applies: the capability result is false and reads return `no_billable_facts`. This gate blocks billable publication only.
-- [ ] 2.3 Open Question 3: confirm that appointment authority (R-7) is still undecided. This change must carry no appointment operations. No openChart work in this change is blocked by it.
+- [ ] 2.3 Open Question 3: closed by ruling 31 (openPractice owns the administrative appointment; openChart owns the encounter). Verify that this change still carries no appointment operations, which wait for a later MINOR version.
 
 ## 3. Spec Kit Handoff
 
 - [ ] 3.1 Create the single openChart Spec Kit feature for `define-openpractice-boundary` from the assembly root. It covers both capabilities. Record immutable two-way links between the feature and this change.
-- [ ] 3.2 Verify that the feature maps every requirement (PL-01 to PL-15 and CF-01 to CF-06) and every scenario to executable tasks, without copying them here. The plan names and scopes the dedicated integration role (ruling 18), and chooses the durable outbound mechanism (PL-14).
+- [ ] 3.2 Verify that the feature maps every requirement (PL-01 to PL-16 and CF-01 to CF-06) and every scenario to executable tasks, without copying them here. The plan names and scopes the dedicated integration role (ruling 18), and chooses the durable outbound mechanism (PL-14).
 
 ## 4. openChart Realization
 

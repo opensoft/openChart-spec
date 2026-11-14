@@ -12,7 +12,7 @@ This change touches these pieces of what is already built:
 
 The openPractice side is `opensoft/openPractice-spec` change `define-mvp-practice-foundation`, capability `ehr-boundary` (EB-01 to EB-20). That change owns the canonical schemas this change references by digest (PL-04).
 
-Brett Heap ruled on 26 questions on 2026-11-14; they are tabulated below. **Rulings are not ratification.** This change stays `Status: draft` until he stamps `Ratified by` in `proposal.md`.
+Brett Heap ruled on 31 questions on 2026-11-14; they are tabulated below. **Rulings are not ratification.** This change stays `Status: draft` until he stamps `Ratified by` in `proposal.md`.
 
 **Constitution status.** openChart's `.specify/memory/constitution.md`, in the assembly root `opensoft/openChart`, is the unfilled Spec Kit template on `main`. There is nothing ratified to check against. This design therefore checks against openChart's `AGENTS.md` and the ratified `expanded-patient-intake` requirements. The plan phase waits on adopting a constitution.
 
@@ -31,7 +31,7 @@ Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** Ro
 | 7 | Posting mode is fixed before the first released batch | openPractice only |
 | 8 | ERPNext is reached through its REST API only | openPractice only |
 | 9 | Hard delete for records created in error | openPractice only |
-| 10 | Confidential-communication instructions are in the registry and carried in the link snapshot | PL-09 (stored in the applied-version record) |
+| 10 | Confidential-communication instructions are in the MVP registry and carried in the link snapshot. | PL-09 (stored in the applied-version record) |
 | 11 | Preferred language added; sex assigned at birth and sexual orientation stay out, being clinical facts owned by openChart | PL-09; CF-05 (openChart keeps the clinical attributes) |
 | 12 | Tier 4 only for hard delete and `customer-detail` enablement; `link_existing` and review resolution at tier 2 | openPractice only (openChart has no governance tiers) |
 | 13 | Coverage is not in link contract 1.0 | CF-05 |
@@ -48,8 +48,13 @@ Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** Ro
 | 24 | Membership, subscription and retail invoicing are out of the MVP accounting contract's scope | openPractice only |
 | 25 | Medical-billing customers may carry name and billing contact in the accounting destination after its BAA gate, in `customer-detail` mode only (supersedes ruling 3) | openPractice only |
 | 26 | Posting mechanics belong to `define-mvp-practice-foundation`; customer roles, offering routes and obligation ownership belong to openPractice change `define-customer-financial-data-boundaries` | openPractice only |
+| 27 | Confidential-communication instructions stay in the link snapshot. openChart, and anything it drives (for example HealthLinc), must honor them for every patient communication it originates. This settles re-review finding N6. | PL-16 |
+| 28 | The accounting default is `summary-journal`; `customer-detail` is a per-destination opt-in behind the BAA gate | openPractice only |
+| 29 | openPractice is the source for administrative demographics and publishes them to a linked EHR; each system owns its own record | Boundary: PL-07, PL-09 (unchanged) |
+| 30 | Net revenue is the constrained expected entitlement, estimated at the date of service and re-estimated at each close (supersedes ruling 22) | openPractice only |
+| 31 | openPractice is the system of record for the administrative appointment; the EHR owns the encounter and keeps an appointment reference if needed. The 1.0 contracts carry no appointment operations; appointment events are a future MINOR version. This closes R-7. | Boundary: Non-goals, Open Question 3 |
 
-The accounting posting modes are named `summary-journal` and `customer-detail` in all three changes. None of rulings 24 to 26 alters either EHR contract or its schema digest.
+The accounting posting modes are named `summary-journal` and `customer-detail` in all three changes. None of rulings 24 to 31 alters either EHR contract or its schema digest; the PL-04 pins are unchanged. Ruling 27 adds PL-16, and ruling 31 settles appointment authority without adding any operation.
 
 ## Goals / Non-Goals
 
@@ -67,7 +72,7 @@ The accounting posting modes are named `summary-journal` and `customer-detail` i
 **Non-Goals:**
 
 - Building clinician encounters.
-- Synchronizing appointments (R-7).
+- Appointment operations under the 1.0 contracts. Ruling 31 makes openPractice the appointment's system of record; openChart owns the encounter and may keep an appointment reference.
 - Sending demographic updates to openPractice.
 - Changing any ratified text.
 - Adopting the constitution inside this change.
@@ -189,4 +194,4 @@ Each question is routed in `tasks.md` §2 to the gate it blocks.
 
 1. **Constitution adoption.** openChart's constitution is the unfilled template. This blocks the plan phase.
 2. **Clinical-encounter capability.** Which governed change introduces clinician-authored encounters, diagnoses and procedures? This blocks billable publication (CF-06) and openPractice Feature 4's live interoperation.
-3. **Appointment authority (R-7).** Still open in openPractice. No openChart requirement depends on it, because the 1.0 contracts carry no appointment operations.
+3. **Appointment authority (R-7).** Closed by ruling 31: openPractice owns the administrative appointment, and openChart owns the encounter and may keep an appointment reference. The 1.0 contracts carry no appointment operations; appointment events wait for a later MINOR version.
