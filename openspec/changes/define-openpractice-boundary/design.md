@@ -12,7 +12,7 @@ This change touches these pieces of what is already built:
 
 The openPractice side is `opensoft/openPractice-spec` change `define-mvp-practice-foundation`, capability `ehr-boundary` (EB-01 to EB-20). That change owns the canonical schemas this change references by digest (PL-04).
 
-Brett Heap ruled on 23 questions on 2026-11-14; they are tabulated below. **Rulings are not ratification.** This change stays `Status: draft` until he stamps `Ratified by` in `proposal.md`.
+Brett Heap ruled on 26 questions on 2026-11-14; they are tabulated below. **Rulings are not ratification.** This change stays `Status: draft` until he stamps `Ratified by` in `proposal.md`.
 
 **Constitution status.** openChart's `.specify/memory/constitution.md`, in the assembly root `opensoft/openChart`, is the unfilled Spec Kit template on `main`. There is nothing ratified to check against. This design therefore checks against openChart's `AGENTS.md` and the ratified `expanded-patient-intake` requirements. The plan phase waits on adopting a constitution.
 
@@ -24,7 +24,7 @@ Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** Ro
 |---|---|---|
 | 1 | Handoff shape A (ordered multi-feature exception) | openPractice only |
 | 2 | Accounting customers are the guarantor account and each payer | openPractice only |
-| 3 | Customers are identified by account number only, never by name | openPractice only |
+| 3 | Customers are identified by account number only, never by name. **Superseded by ruling 25.** | openPractice only |
 | 4 | Accounting dates (date of service, finalization date, statement terms, late charges) | openPractice only |
 | 5 | Bank register, payer deposit links, deposit-only reconciliation | openPractice only |
 | 6 | BAA attestation for a practice-operated destination | openPractice only |
@@ -33,7 +33,7 @@ Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** Ro
 | 9 | Hard delete for records created in error | openPractice only |
 | 10 | Confidential-communication instructions are in the registry and carried in the link snapshot | PL-09 (stored in the applied-version record) |
 | 11 | Preferred language added; sex assigned at birth and sexual orientation stay out, being clinical facts owned by openChart | PL-09; CF-05 (openChart keeps the clinical attributes) |
-| 12 | Tier 4 only for hard delete and patient-level enablement; `link_existing` and review resolution at tier 2 | openPractice only (openChart has no governance tiers) |
+| 12 | Tier 4 only for hard delete and `customer-detail` enablement; `link_existing` and review resolution at tier 2 | openPractice only (openChart has no governance tiers) |
 | 13 | Coverage is not in link contract 1.0 | CF-05 |
 | 14 | The date-of-birth hold is accepted, as a link-level suspension | PL-08 |
 | 15 | The "agree" check is made deterministic against the built DocType | PL-05 |
@@ -45,6 +45,11 @@ Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** Ro
 | 21 | Manual charge entry is allowed for a linked patient while the EHR reports no billable-facts capability | CF-06 |
 | 22 | Accrual valuation with an expected contractual adjustment | openPractice only |
 | 23 | Full bank numbers are encrypted and role-restricted | openPractice only |
+| 24 | Membership, subscription and retail invoicing are out of the MVP accounting contract's scope | openPractice only |
+| 25 | Medical-billing customers may carry name and billing contact in the accounting destination after its BAA gate, in `customer-detail` mode only (supersedes ruling 3) | openPractice only |
+| 26 | Posting mechanics belong to `define-mvp-practice-foundation`; customer roles, offering routes and obligation ownership belong to openPractice change `define-customer-financial-data-boundaries` | openPractice only |
+
+The accounting posting modes are named `summary-journal` and `customer-detail` in all three changes. None of rulings 24 to 26 alters either EHR contract or its schema digest.
 
 ## Goals / Non-Goals
 
