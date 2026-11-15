@@ -137,15 +137,19 @@ A selected consult that is not reviewed within the review policy's window SHALL 
 ### Requirement: AC-09 openChart records consults after delivery and is never a prior sign-off
 AI answers reach the patient without a prior clinician sign-off (rulings 57 and 66). openChart SHALL NOT sit in the delivery path of an AI answer and SHALL NOT approve, hold or release delivery. Each consult record SHALL say that the answer was delivered without a prior clinician sign-off.
 
-openChart SHALL check a consult write against the grant version that was in force when the consult ended (design call AD-5). A consult that ended while the grant was active SHALL be recorded even if the grant was paused, narrowed or expired before the write arrived. A consult that ended while no grant was active SHALL be refused, with reason `no_current_grant`, `grant_paused`, `grant_expired` or `grant_revoked`, shown to the medical director as an integration exception under AC-06, and kept as quarantined AI communication under AC-11.
+openChart SHALL check a consult write against the grant version that was in force when the consult ended, and that version's state then (design call AD-5). It SHALL read both at the consult's `ended_at` from the grant's versions and their state history (AG-01), never from the grant's current state. A consult that ended while the grant was active SHALL be recorded even if the grant was paused, narrowed or expired before the write arrived. A consult that ended while no grant was active SHALL be refused, with reason `no_current_grant`, `grant_paused`, `grant_expired` or `grant_revoked`, shown to the medical director as an integration exception under AC-06, and kept as quarantined AI communication under AC-11.
 
 #### Scenario: Failure: a consult arrives after a pause
 - **WHEN** a consult ended at 10:00, the medical director paused the grant at 10:05, and the write arrives at 10:10
-- **THEN** openChart records the consult under the grant version in force at 10:00, and the record shows that the grant has since been paused
+- **THEN** openChart records the consult under the grant version in force at 10:00, whose state history shows it `active` then, and the record shows that the grant has since been paused
 
 #### Scenario: Failure: a consult happened while the grant was paused
 - **WHEN** a consult ended at 10:20, after the 10:05 pause
 - **THEN** openChart refuses it with reason `grant_paused`, the medical director sees the integration exception, and the consult is kept as quarantined AI communication (AC-11)
+
+#### Scenario: Failure: a consult ended during a pause that has since been lifted
+- **WHEN** the grant was paused at 10:05 and resumed at 10:30, a consult ended at 10:20, and its write arrives at 10:40
+- **THEN** openChart reads from the state history that the grant was `paused` at 10:20, refuses the write with `grant_paused` and keeps the consult as quarantined AI communication (AC-11), although the grant is `active` when the write arrives
 
 ### Requirement: AC-10 A consult with an emergency indicator is recorded, always reviewed and shown urgently, and is never AI emergency management
 An AI never manages an emergency in any mode (ruling 61). When a consult write carries the emergency indicator, openChart SHALL record it, select it for review (AC-07), list it for the patient's responsible clinician and the medical director with an urgent marker, and show where the source system routed the patient. openChart SHALL NOT treat any part of the consult as emergency management by the AI, and SHALL NOT record it as a clinical act (design call AD-22).

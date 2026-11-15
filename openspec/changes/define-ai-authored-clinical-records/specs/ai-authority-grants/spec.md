@@ -11,10 +11,12 @@ Each grant version SHALL record:
 - the approving medical director (AG-02) and the approval time;
 - the recorded legal and regulatory review for that mode (AG-05);
 - the review policy and, for the practice modes, the co-review window (AG-10);
-- the effective time, the expiry (AG-09) and the state: `active`, `paused`, `expired`, `revoked` or `superseded`;
+- the effective time and the expiry (AG-09);
 - a grant identifier and a version number. The versions of one grant SHALL be consecutive integers starting at 1: each new version takes its predecessor's number plus one, and no number is skipped or reused (design call AD-47).
 
-A grant version, once approved, SHALL NOT be edited. Every change to what a version records, other than its state, SHALL create a new version that references its predecessor, with actor, reason and time: a narrowing (AG-08) and a superseding approval (AG-09) each do. A pause, a resumption, an expiry or a revocation changes only the state of the version in force and creates no version.
+A grant version, once approved, SHALL NOT be edited. Every change to what a version records SHALL create a new version that references its predecessor, with actor, reason and time: a narrowing (AG-08) and a superseding approval (AG-09) each do.
+
+**State history.** A version's state, `active`, `paused`, `expired`, `revoked` or `superseded`, SHALL be kept as an append-only history of dated state events on that version, and never by editing the version: its approval (`active`), a pause, a resumption, an expiry of the version or of the legal review it relies on, a revocation, and its supersession by a new version. Each state event SHALL record the new state, the time it takes effect, the actor (a named person; the AI system's notice, for a reduction under AG-08; or openChart, for an expiry) and the reason. A state event creates no version. A version's state at any time is the state set by its latest event at or before that time. No state event SHALL be changed or removed; a mistaken one is corrected by a later event, with its own actor and reason.
 
 #### Scenario: Failure: a write claims more authority than the chart's record
 - **WHEN** a `consult.write` claims `full_practice` under a grant whose current version in openChart records `advice_only`
@@ -22,7 +24,11 @@ A grant version, once approved, SHALL NOT be edited. Every change to what a vers
 
 #### Scenario: Grant versions are consecutive
 - **WHEN** the medical director approves a grant, pauses and resumes it, narrows it, and later approves a superseding version
-- **THEN** the versions are numbered 1, 2 and 3: the pause and the resumption create no version, the narrowing creates version 2, and the superseding approval creates version 3
+- **THEN** the versions are numbered 1, 2 and 3: the pause and the resumption create no version but are two dated state events on version 1, with actor and reason, the narrowing creates version 2, and the superseding approval creates version 3
+
+#### Scenario: Failure: someone rewrites a grant's state history
+- **WHEN** a user tries to change the time of a recorded pause, or to delete it
+- **THEN** the change is refused, the state event stays as recorded, and a correction can only be a later state event with its own actor and reason
 
 #### Scenario: Failure: a version number would be skipped
 - **WHEN** an implementation tries to record version 4 of a grant whose latest version is 2
@@ -90,7 +96,7 @@ openChart SHALL NOT encode any legal or regulatory rule as fact. The topics the 
 
 #### Scenario: Failure: the legal review has expired
 - **WHEN** the legal review a grant relies on passes its expiry
-- **THEN** openChart sets the grant to `expired`, refuses writes with reason `grant_expired`, sends an `authority.notice` with `change` `expired`, and answers a grant readback `grant_not_current` with `grant_expired`, until a current review is recorded and the medical director approves a new version (AG-09)
+- **THEN** openChart appends an `expired` state event to the grant version, refuses writes with reason `grant_expired`, sends an `authority.notice` with `change` `expired`, and answers a grant readback `grant_not_current` with `grant_expired`, until a current review is recorded and the medical director approves a new version (AG-09)
 
 ### Requirement: AG-06 Every write is checked against the current grant, and anything missing, expired, paused, narrowed or mismatched fails closed
 For every `consult.write` and `act.write`, openChart SHALL find the grant for the write's practice and source system, and SHALL refuse the write when any of these holds, checking in the order of this table after the earlier steps of AW-06's precedence (for an `act.write`, `tier2_not_in_force` comes first):
@@ -130,7 +136,7 @@ Anything not on the allowlist SHALL be refused with reason `allowlist_entry_unkn
 - **THEN** the entry is refused
 
 ### Requirement: AG-08 The medical director can narrow or pause at once, and any reduction from any source applies at once
-The medical director SHALL be able to narrow a grant (remove allowlist entries, lower the mode, shorten windows or add reserved acts) or pause it, in openChart, effective at once (ruling 59). A narrowing SHALL create a new grant version; a pause SHALL set the grant to `paused`. openChart SHALL send an `authority.notice` with `direction` `from_openchart` for every change to a grant, through AW-08.
+The medical director SHALL be able to narrow a grant (remove allowlist entries, lower the mode, shorten windows or add reserved acts) or pause it, in openChart, effective at once (ruling 59). A narrowing SHALL create a new grant version; a pause SHALL append a `paused` state event to the version in force (AG-01). openChart SHALL send an `authority.notice` with `direction` `from_openchart` for every change to a grant, through AW-08, whose `effective_at` is the time that change takes effect in the grant's history.
 
 openChart SHALL also apply at once an `authority.notice` from the AI system whose `change` is `paused` or `narrowed`, and SHALL record it as a reduction pending the medical director's review (design call AD-6). A notice can only reduce authority. Only the medical director's act in openChart SHALL widen or resume a grant. Pending AI acts on a narrowing or pause SHALL be handled under AA-11.
 
@@ -143,7 +149,7 @@ openChart SHALL also apply at once an `authority.notice` from the AI system whos
 - **THEN** openChart refuses it with reason `notice_would_widen` and the grant is unchanged
 
 ### Requirement: AG-09 Grants and legal reviews expire, and nothing renews itself
-Every grant version and every recorded legal review SHALL carry an expiry or re-review date set by the medical director (design call AD-10). When a grant version, or the legal review it relies on, reaches its expiry, the grant SHALL stop accepting writes, its state SHALL become `expired`, and openChart SHALL send an `authority.notice` with `change` `expired` (AW-08) and answer the grant readback `grant_not_current` with `grant_expired` (AW-14; design call AD-44). No grant, review or allowlist entry SHALL renew, extend or reactivate itself, and recording a current legal review does not restore an expired version. Only a new version approved by the medical director, relying on a current legal review, SHALL restore it; openChart then sends `superseded` naming that version, and the readback answers `grant_current`.
+Every grant version and every recorded legal review SHALL carry an expiry or re-review date set by the medical director (design call AD-10). When a grant version, or the legal review it relies on, reaches its expiry, the grant SHALL stop accepting writes, openChart SHALL append an `expired` state event to it (AG-01), and SHALL send an `authority.notice` with `change` `expired` (AW-08) and answer the grant readback `grant_not_current` with `grant_expired` (AW-14; design call AD-44). No grant, review or allowlist entry SHALL renew, extend or reactivate itself, and recording a current legal review does not restore an expired version. Only a new version approved by the medical director, relying on a current legal review, SHALL restore it; openChart then sends `superseded` naming that version, and the readback answers `grant_current`.
 
 #### Scenario: Failure: a grant reaches its expiry
 - **WHEN** an active grant reaches its expiry with no new version approved
@@ -151,7 +157,7 @@ Every grant version and every recorded legal review SHALL carry an expiry or re-
 
 #### Scenario: Failure: the legal review reaches its re-review date
 - **WHEN** the legal review an active grant relies on reaches its re-review date, while the grant's own expiry is months away
-- **THEN** openChart sets the grant to `expired`, sends an `authority.notice` with `change` `expired`, refuses later writes with `grant_expired`, and answers a grant readback `grant_not_current` with `grant_expired`
+- **THEN** openChart appends an `expired` state event to the grant version, sends an `authority.notice` with `change` `expired`, refuses later writes with `grant_expired`, and answers a grant readback `grant_not_current` with `grant_expired`
 
 #### Scenario: The medical director restores a grant after its legal review lapsed
 - **WHEN** a current legal review is recorded, and the medical director approves a new grant version that relies on it
