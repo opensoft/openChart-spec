@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: PG-01 One gate decision governs every prescription signature, co-signature and release
-openChart SHALL decide exactly one gate decision, with a coded reason, for each attempt to sign a prescription or a new version of one, to co-sign it, or to release it from `pending_release`. `define-clinical-acts-foundation` RX-02 (not yet on main) SHALL rely on this decision (owner rulings 74 and 78). The decision SHALL be `open` only when all of these hold:
+openChart SHALL decide exactly one gate decision, with a coded reason, for each attempt to sign a prescription or a new version of one, to co-sign it, or to release it from `pending_release`. Once a governed amendment puts `define-ai-authored-clinical-records` Tier 2 in force, it SHALL also decide one for each acceptance of an AI-authored prescription, which SHALL need `open` (PG-02; tension PT-4). `define-clinical-acts-foundation` RX-02 (not yet on main) SHALL rely on this decision (owner rulings 74 and 78). The decision SHALL be `open` only when all of these hold:
 - this capability is built and enabled in the deployment;
 - a recorded legal and regulatory review is in force (PG-04);
 - a source is connected, verified (KA-03) and current (KA-04);

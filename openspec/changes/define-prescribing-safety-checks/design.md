@@ -9,7 +9,7 @@ These facts about what is built were checked at `opensoft/openChart-code` revisi
 
 **Related drafts, none on main:**
 - `define-clinical-acts-foundation` (openChart-spec#5, head `17f8eca`) specifies the prescription record (RX-01 to RX-04), its signing gate (RX-02), the act model (CA-01 to CA-15) and authority (AU-01 to AU-05). It names this change as required before any prescription is signed, with minimum contents (checked below).
-- `define-ai-authored-clinical-records` (openChart-spec#4, `dbb1fc5`) has a Tier 2 that would accept AI-authored prescriptions.
+- `define-ai-authored-clinical-records` (openChart-spec#4, read at `dbb1fc5` and in part at `6989780`) has a Tier 2 that would accept AI-authored prescriptions. PG-01 covers that acceptance, and it needs `open`.
 - `define-openpractice-boundary` (openChart-spec#2, `e7c3090`) has CF-03.
 
 openPractice FD-11 (`opensoft/openPractice-spec`, `ideation/review/openpractice-framing-decisions.md`) governs openPractice's licensed code sets. This change applies the same principle to drug knowledge, by ruling 78.
