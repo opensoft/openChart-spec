@@ -60,7 +60,7 @@
     "reason": "order category outside the closed list"
   },
   "party-field-of-another-kind.invalid.json": {
-    "expect_in_error": "added_by/model",
+    "expect_in_error": "does not allow 'SYN-MODEL'",
     "reason": "a party carries only its own kind's identifying fields (AN-02)"
   },
   "patient-external-namespace.invalid.json": {

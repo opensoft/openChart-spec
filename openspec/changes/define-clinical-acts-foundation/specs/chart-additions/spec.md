@@ -132,8 +132,9 @@ A decision made without authority SHALL still be entered in the chart, in full, 
   - `attestation_not_verified`: the openSig attestation did not verify against the wallet over the content and provenance digests;
   - `signing_service_unavailable`: openWallet or openSig could not be reached;
   - `practice_attestation_not_in_force`: the practice-supplied licensure or prescriber attestation that the grant rests on is not in force (AU-03);
-  - `prescribing_gate_not_open`: the prescribing-safety gate (RX-02) was not open for this step. A practitioner's own gated signature is refused and the prescription stays a draft (RX-02), so this code applies only where no draft holds the content, as for a prescription from a writer without `draft` scope;
 - optionally, the writing path's own coded reason, `path_reason`: the scheme that defines the code, the scheme's version and the code (design call CD-51, PROPOSED). A path that fails on finer reasons of its own maps each of its codes to one or more codes of the closed list, records those in `missing_authority`, and keeps its own code in `path_reason` for the source and the reviewer. `path_reason` never replaces `missing_authority`. It is shown to the reviewer beside it, and it decides nothing.
+
+A safety gate is never a missing-authority reason: the list names only which authority was missing (owner ruling 80, clauses 13 and 14). A recommendation is not gated. The prescribing-safety gate applies to the practitioner's own decision when they adopt the recommendation (AN-11, RX-02). A writing path that stops at a gate check of its own SHALL record in `missing_authority` the authority codes that are true of the entry, such as `no_practitioner_sign_off`, and SHALL keep its gate code in `path_reason` only.
 
 Content stored as given is kept for the source and the reviewer. This contract does not validate it, and nothing reads it as an act's content. An act class this contract does not define is kept, as declared, only with such content. A clinician who adopts the recommendation creates a new act whose content is validated under CA-01 (AN-11).
 

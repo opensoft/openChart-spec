@@ -1,8 +1,10 @@
 """Synthetic self-test for openchart-clinical-act-content 1.0.
 
 Usage (from any directory): python3 -I <path>/contracts/selftest.py
-Needs the `jsonschema` package (4.18 or later). It touches no network and
-no file outside this directory.
+Needs the `jsonschema` package, with draft 2020-12 support. Tested with
+jsonschema 4.10.3 and 4.26.0, which report the error of a `false`
+subschema at different paths, so no expected token depends on that path.
+It touches no network and no file outside this directory.
 
 Checks:
   1. the schema is a valid draft 2020-12 schema;

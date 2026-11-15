@@ -793,7 +793,7 @@
       }
     },
     "missingAuthority": {
-      "description": "Why a decision was entered as a recommendation: the closed list that every reader uses (AN-09; design call CD-45, PROPOSED). A writing path's own finer code goes in path_reason.",
+      "description": "Which authority was missing: the closed list that every reader uses (AN-09; design call CD-45, PROPOSED). A safety gate is never a missing-authority reason. A writing path's own finer code, a gate code included, goes in path_reason.",
       "enum": [
         "no_grant_in_force",
         "no_decision_authority",
@@ -803,8 +803,7 @@
         "licence_verification_missing",
         "attestation_not_verified",
         "signing_service_unavailable",
-        "practice_attestation_not_in_force",
-        "prescribing_gate_not_open"
+        "practice_attestation_not_in_force"
       ]
     },
     "proposedAct": {
@@ -968,7 +967,7 @@
         "missing_authority": {
           "type": "array",
           "minItems": 1,
-          "maxItems": 10,
+          "maxItems": 9,
           "uniqueItems": true,
           "items": { "$ref": "#/$defs/missingAuthority" }
         },
