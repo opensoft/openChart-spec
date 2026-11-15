@@ -1,0 +1,329 @@
+## Context
+
+openChart is an original Frappe v15 application, `open_chart`, kept in `opensoft/openChart-code`. Its canonical, ratified capability is [`openspec/specs/expanded-patient-intake/spec.md`](../../specs/expanded-patient-intake/spec.md).
+
+This change touches these facts about what is already built. They were checked at `opensoft/openChart-code` revision `30b9645`.
+
+- **DocTypes.** The built DocTypes are `OC Patient`, `OC Patient External Identifier`, `OC Intake Submission`, and eight statement DocTypes: allergy, condition, document reference, goal, medication, observation, supplement and symptom. None holds a message, a clinician-authored record or a work queue.
+- **Roles.** Every built DocType grants permissions to `System Manager` only. No clinician, nurse or medical-director role exists.
+- **Events.** `emit_submission_event` uses `frappe.publish_realtime`, which never leaves the site.
+- **Medx references.** The ratified intake keeps Medx and HealthLinc references as namespaced external identifiers. A test fixture, `tests/fixtures/medx/binding-03-openchart.yaml`, binds HealthLinc, OpenEMR and openChart references to one `medx_patient_id` ("gate G3"). See tension MT-12.
+
+**The openPractice side** is `opensoft/openPractice-spec` change `define-patient-gateway-and-escalation`, PR #6, not yet on main. In this document it is called "the openPractice change", and its identifiers are cited as, for example, "openPractice ER-06". Its capability `escalation-routing` (ER-01 to ER-17) owns the contract `openpractice-clinical-handoff/1.0` and its canonical schema. That change's design lists this inbox as a required companion change, with eight items; they are checked below under "The openPractice change's companion items".
+
+**This branch is stacked on `define-openpractice-boundary`.** That change is a draft, and this change cites its PL-01 to PL-16, CF-02, CF-05 and CF-06. This change can be ratified only with or after it.
+
+Brett Heap's rulings are tabulated below. **Rulings are not ratification.** This change stays `Status: draft` until he stamps `Ratified by` in `proposal.md`.
+
+**Constitution status.** openChart's `.specify/memory/constitution.md`, in the assembly root `opensoft/openChart`, is the unfilled Spec Kit template on `main` (checked at revision `d20de75`). There is nothing ratified to check against. This design therefore checks against openChart's `AGENTS.md` and the ratified `expanded-patient-intake` requirements. The plan phase waits on adopting a constitution.
+
+## Owner rulings (2026-11-14)
+
+Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** The numbering is shared with the openPractice change. Rows marked "context only" are recorded so the binding text can be checked against them; they add no openChart requirement of their own.
+
+| # | Ruling | Governs |
+|---|---|---|
+| 34 | openPractice is the gateway and router. Clinical questions go to openChart, the doctor's clinical interface, where the doctor reads and answers them. openPractice keeps only a routing record, with no clinical content. | MI-01, MI-03, MI-11, MI-12 |
+| 35 | For now the physician uses openChart on mobile or workstation. This is a current-phase decision and can be revisited. | MI-01 (no requirement depends on a device), MI-21 |
+| 39 | There is no master patient identity across HealthLinc, openPractice and openChart. HealthLinc links to each backend through that backend's own link contract. | MI-03, MI-17, MI-18; MT-12 |
+| 41 | A payment hold is applied at the gateway (openPractice). It blocks only non-urgent clinical messaging and new non-urgent scheduling, never urgent escalations. | MI-19, MI-25 |
+| 43 | openChart owns the queue and the response clock for routed clinical questions. openPractice gets an acknowledgment for each handoff, and alerts the office manager on a missing acknowledgment or on clock expiry. | MI-04, MI-05, MI-06, MI-09 |
+| 44 | HealthLinc's AI proposes category and urgency, and openPractice's rules apply them. Staff can re-route a misfiled item but cannot answer outside their lane. A mixed question is split. Urgency is never downgraded. **Amended by ruling 51** (category and urgency may also come from medXfactory's medical AI). | MI-10, MI-13, MI-15, MI-16 |
+| 47 | "Draft the openChart companion change too." | This change |
+| 50 | Context only. If the access check is unavailable, routine clinical messages still route to openChart. A lapsed membership or a deactivation stops messaging only after notice and a grace period, and a clinician may keep access open for continuity. | openPractice. openChart's part is the clinician-continuity mechanism, MI-25. |
+| 51 | HealthLinc's in-app AI is a coach, not an MD: general health information with a not-medical-advice statement. Clinical AI doctors live in MedxSoft/medXfactory. HealthLinc is a gateway to the patient's doctor: the patient can connect to their human doctor (through openPractice to openChart) or to medXfactory's medical AI. **Amends ruling 44:** category and urgency may be proposed by HealthLinc's coach or by medXfactory's medical AI, with the same conservative defaults, and openPractice never downgrades. | MI-01, MI-02, MI-03, MI-12, MI-13, MI-14; MT-11 |
+| 52 | Context only. Non-urgent medical-AI consults sit behind the practice's access check, and a payment hold may withhold them with the same safeguards. Urgent is never withheld. | openPractice and medXfactory. openChart is unaffected (MI-19). |
+| 53 | The medical AI's exchanges with a patient are recorded in the chart through medXfactory's own governed path (MedxEHR and openChart). They never pass through openPractice, which holds no clinical content. | MI-12, MI-14, MI-24 |
+| 54 | Context only. HealthLinc's coach gives general information only. Anything individualized goes to medXfactory's medical AI or to the doctor. | MI-13 (how coach content is labelled) |
+| 56, 57, 58 | Accepted. Cited here by number only. | medXfactory change `define-patient-medical-ai-connection`; not this change |
+| 59 | The medical director sets the configuration of medXfactory's AI in one of three modes: advice only, full practice or limited practice. The medXfactory change owns the mode framework and its gates. | MI-26; Decision 13; the required later openChart practice-mode change; MT-14 |
+
+## Goals / Non-Goals
+
+**Goals:**
+
+- Implement openChart's half of `openpractice-clinical-handoff/1.0` against openPractice's canonical schema, verified by digest.
+- Make sure every routed clinical item has a named owner, an acknowledgment, a clock and an escalation, so that an urgent item is never blocked, dropped or left unowned.
+- Keep clinical content out of openPractice: obtain conversations by reference from the system that holds them, and reply through HealthLinc.
+- Keep AI-authored content always distinguishable from clinician-authored content, and keep patient-reported and AI text from ever becoming a clinical fact.
+- Keep every ratified `expanded-patient-intake` requirement intact, and keep openChart free of billing and financial status.
+
+**Non-Goals:**
+
+- Encounters, diagnoses, procedures or billable facts. CF-06 is unchanged.
+- AI drafting of clinical replies, or any agent action in the inbox.
+- AI-authored orders, prescriptions or diagnoses, and the limited-practice and full-practice modes of ruling 59. A required later openChart change covers them (Decision 13). Until it is ratified, AI-authored content in the chart is communication only (MI-26).
+- An administrative work queue in openChart.
+- Defining HealthLinc's or medXfactory's internals. Their sides are stated at contract level only.
+- openChart's own link contract with HealthLinc (ruling 39), and openChart's receiving side of medXfactory's governed chart path (ruling 53). Each needs its own change (Open Questions 3 and 4).
+- Changing any ratified text, or adopting the constitution inside this change.
+
+## Decisions
+
+### 1. Contract reuse
+
+openChart uses only the messages in the pinned schema, and defines no message of its own toward openPractice (MI-01).
+
+| Message | Direction | openChart's use |
+|---|---|---|
+| `handoff.offer` | openPractice → openChart | Creates one inbox item per `handoff_id` (MI-04) |
+| `handoff.ack` | openChart → openPractice | `accepted` once the item exists durably with a named owner and a running clock; `rejected` with a schema code (MI-04, MI-18) |
+| `handoff.urgency_raised` | openPractice → openChart | Raises urgency and moves deadlines only earlier (MI-10) |
+| `handoff.status` | openChart → openPractice | `responded`, `clock_expired`, `returned_not_clinical`, `content_unavailable`, `closed` (MI-06) |
+| `message.ack` | both | openChart acknowledges raises; openPractice acknowledges statuses |
+
+Two additions are expected in the openPractice change's next revision: a conversation-source field (ruling 51) and a channel for the clinician decisions in MI-25 (ruling 50 and the payment-hold "clinically needed" marker). Their names are not yet set. openChart implements neither until MI-02's pin records the new digest (tensions MT-11 and MT-13).
+
+### 2. The pinned schema
+
+MI-02 pins `openspec/changes/define-patient-gateway-and-escalation/contracts/openpractice-clinical-handoff-1.0.schema.json` in `opensoft/openPractice-spec` at revision `2353d99`, SHA-256 `74a02a9a6a85c5522e366231c2cd8b0b04141b66a4206c1a54a9209c53984f13`. The digest matches the line for that file in the change's `contracts/SHA256SUMS`. The pin is updated, in a governed revision of this change, whenever that schema changes. A revision is already expected (Decision 1).
+
+### 3. Where the conversation comes from
+
+The handoff is reference-only. openChart fetches the conversation from the system that holds it, never from openPractice (MI-03, ruling 51):
+
+| Conversation | Held by | Reference | In force |
+|---|---|---|---|
+| With HealthLinc's coach | HealthLinc | `healthlinc_message_ref` | Now |
+| With medXfactory's medical AI | medXfactory | The conversation-source field, name not yet set | After the re-pin (MT-11) |
+
+The reply always goes through the reply path the offer names. In the pinned schema that is HealthLinc's `reply_path_ref` (design call MD-16). A medical-AI exchange reaches the chart only through medXfactory's own governed path (ruling 53). The inbox keeps only its reference, source and retrieval provenance, and never files a copy of it (MI-24, design call MD-17).
+
+### 4. Acceptance, clock and deadlines
+
+`handoff.ack` `accepted` is system acceptance: the item exists durably, it has a named owner, and its clock is running (design call MD-1). It does not mean a clinician has read the item. Clinician acknowledgment is an explicit act inside openChart, and escalation runs on it (MI-09).
+
+openChart owns the clock (ruling 43). Deadlines come from an openChart response policy that the medical director approves. Until one is approved, the offer's own `ack_by` and `respond_by` apply. After approval, the earlier of the policy's deadline and the offer's applies. Nothing ever extends a deadline (design call MD-2). The openPractice change's default windows (its design call DC-3) are proposed defaults in an unratified change, not facts. This change adopts no number of its own.
+
+### 5. Ownership, cover and escalation
+
+- Every item has exactly one named owner, a clinician or nurse, in the physician or nurse lane (MI-07).
+- Until a lane policy is approved, every item enters the physician lane (design call MD-3).
+- openChart keeps its own cover roster, with the medical director as the last fallback. The inbox cannot be enabled with a gap (MI-08, design call MD-4).
+- An unacknowledged urgent item escalates to the on-call clinician, then to the medical director, and keeps re-alerting. It never drops, parks or closes (MI-09).
+- No agent owns, acknowledges, answers, re-routes or closes an item (design call MD-10).
+
+### 6. Urgency
+
+openChart never lowers urgency, by any path. A raise moves deadlines only earlier, and a raise that arrives before its offer is applied when the offer arrives (MI-10). A clinician may raise urgency inside openChart. Under 1.0 that raise is not reported, and openPractice's shadow deadline stays later, which is the safe direction (design call MD-8). A raise to `urgent` on an item already answered or closed reopens it inside openChart (design call MD-9).
+
+### 7. Reply, record and authorship
+
+- The reply goes to the patient through HealthLinc. `responded` is reported only after HealthLinc accepts it (MI-11, design call MD-15).
+- Each item is recorded as clinical communication with provenance. Nothing is silently overwritten; a correction is a new version (MI-12). The storage shape is decided in planning.
+- Every piece of content carries an author kind. AI content names its source system: HealthLinc's coach or medXfactory's medical AI. Unknown authorship is shown as `unknown`, never as clinician (MI-13).
+- Patient-reported text, and AI text, never becomes a diagnosis, a clinical fact or a billable fact (MI-14, design call MD-11).
+- Replies honor confidential-communication instructions (PL-16). An unfiled item's reply stays inside the HealthLinc conversation. A withheld reply keeps the item open (MI-22, design call MD-13).
+
+### 8. Re-routing and splitting
+
+- **An administrative item** is returned with `returned_not_clinical` and is never answered. openChart keeps no administrative queue (MI-15).
+- **A mixed item** has its clinical part answered in openChart. openChart asks HealthLinc to split the item and resubmit the administrative part to openPractice (MI-16, design call MD-7). The schema has no status for a partial return (MT-6).
+
+### 9. Identity decision
+
+A handoff resolves the patient only through the links that exist (MI-17, ruling 39):
+- the `openpractice` row for the `link_id` (PL-02), together with the `ehr_patient` triple under openChart's issuer (PL-03);
+- where one exists, HealthLinc's openChart reference for the account.
+
+There is no demographic matching, and no Medx or medXfactory reference is used (design call MD-19).
+
+| Situation | `routine` or `priority` | `urgent` |
+|---|---|---|
+| `active` row; triple matches; HealthLinc, if it reports one, agrees | Accept and file | Accept and file |
+| `link_id` unknown | Reject `link_unknown` | Accept unfiled; open identity review |
+| Row `revoked` or `superseded` | Reject `link_revoked` (the schema has no superseded code) | Accept unfiled; open identity review |
+| Row in `identity_review` (a PL-06 conflict or a PL-08 hold) | Reject `link_in_review` | Accept unfiled; show the uncertainty |
+| `ehr_patient` does not match the row | Reject `ehr_patient_mismatch` | Accept unfiled; open identity review |
+| After acceptance: HealthLinc names a different patient, or the link enters review or is revoked | Stays accepted; becomes unfiled; identity review | Same |
+
+The rejections follow the openPractice change's companion list. Accepting urgent items departs from it (MT-1, design call MD-5). An unfiled item is filed only when a link resolves the patient. No human files it by judgment until the owner rules (design call MD-6, Open Question 7).
+
+### 10. Boundaries
+
+- openChart receives no billing, hold or financial status, and never gates an item on such status (MI-19).
+- openChart keeps no administrative queue (MI-15).
+- With no gateway configured, the inbox is inert. Enabling it needs an openPractice integration identity, conversation retrieval, HealthLinc reply delivery and split requests, and full cover. Disabling it withdraws the handoff authorization (MI-20, design call MD-12).
+
+### 11. Clinician continuity exceptions and clinically-needed markers
+
+Ruling 50 lets a clinician keep a patient's messaging open for continuity after a lapse or a deactivation. The openPractice change's next revision adds a "clinically needed" marker for payment holds. Both are clinical decisions that openPractice must apply.
+
+openChart records them, attributed to a named clinician, with scope, times and withdrawal. It reports them through the clinical-handoff contract as codes only: `link_id`, an optional `handoff_id`, the kind, the scope, an opaque clinician reference and the times. No reason text crosses (MI-25, design call MD-18). openChart never learns whether a hold or lapse exists (MI-19). Until the pinned schema carries the message, the decision is recorded but not sent, and the clinician sees that (MT-13).
+
+### 12. Standalone operation
+
+Every inbox component is optional (MI-20, PL-15). The standalone golden-intake tests remain the regression gate.
+
+### 13. AI practice modes (ruling 59)
+
+The medical director sets medXfactory's AI to advice only, limited practice or full practice. medXfactory's change `define-patient-medical-ai-connection` owns the mode framework and its gates (rulings 56 to 58).
+
+This change does not cover AI-authored orders, prescriptions or diagnoses. Until a later openChart practice-mode change is ratified, MI-26 applies:
+- all AI-authored content that reaches the chart, by any path, is communication only;
+- content that presents itself as an order, a prescription or a diagnosis is held as AI-authored communication, marked as not accepted as a clinical act (design call MD-20);
+- the limited-practice and full-practice modes are not buildable in openChart.
+
+The future openChart change that defines the receiving side of medXfactory's governed chart path (Open Question 4) is bound by MI-26 as well.
+
+## The openPractice change's companion items
+
+The openPractice change's design lists eight items that this change must contain.
+
+| Item in the openPractice change | Where this change meets it |
+|---|---|
+| Receive offers validated against the schema at digest `74a02a9a…` | MI-01, MI-02 |
+| Answer each offer with `handoff.ack`, and refuse an offer on a revoked, unknown or in-review link | MI-04 and MI-18 for non-urgent offers. **Urgent offers depart (MT-1).** |
+| Own the queue and the clock; report `responded`, `clock_expired`, `returned_not_clinical`, `content_unavailable` and `closed` | MI-05, MI-06 |
+| Fetch the message body from HealthLinc, never through openPractice | MI-03, widened by ruling 51 to whichever system holds the conversation (MT-11) |
+| A reply path to HealthLinc that bypasses openPractice | MI-11 |
+| Apply `handoff.urgency_raised`, and never lower urgency | MI-10 |
+| Honor confidential-communication instructions (ruling 27) | MI-22 |
+| Say how a clinician reads a routed message for a patient with no EB-01 link (its Open Question 5) | Proposed answer in MT-2; not ruled (Open Question 5) |
+
+## Design calls for owner review
+
+Each item below goes beyond the rulings, and each is proposed, not ruled. Where a ruling is silent on something consequential, the binding text fails closed and cites the design call.
+
+| # | Design call | Where |
+|---|---|---|
+| MD-1 | `handoff.ack` `accepted` means system acceptance: the item exists durably, with a named owner and a running clock. This follows the schema's own description of `accepted`. Clinician acknowledgment is internal. The alternative, waiting for a clinician before acknowledging, is left to the owner (MT-5). | MI-04 |
+| MD-2 | Deadlines: the offer's `ack_by` and `respond_by` apply until openChart's policy is approved, then the earlier of the two. No deadline is ever extended. Until a policy exists, each escalation interval equals the item's acknowledgment window, and an item that arrives late escalates at once. | MI-05, MI-09, MI-10 |
+| MD-3 | Until the medical director approves a lane policy, every item enters the physician lane. What nurses may answer comes only from that policy; scope of practice is for the medical director and counsel. | MI-07 |
+| MD-4 | openChart keeps its own cover roster, with the medical director as the last fallback. The inbox cannot be enabled with an uncovered hour, and a change that would open a gap is refused. | MI-08 |
+| MD-5 | Identity is handled by urgency. An urgent offer whose patient cannot be resolved is accepted unfiled and routed. A non-urgent one is rejected with the openPractice change's codes. A superseded link maps to `link_revoked`, because the schema has no separate code. | MI-18 |
+| MD-6 | An unfiled item is filed only when a link resolves the patient. No human files it by judgment until the owner rules. | MI-18 |
+| MD-7 | A mixed item's administrative part goes back through a split-and-resubmit request to HealthLinc, not through a new handoff status. | MI-16 |
+| MD-8 | A clinician may raise urgency inside openChart. Under 1.0 the raise is not reported to openPractice. | MI-10 |
+| MD-9 | A raise to `urgent` on an item that is already `responded` or closed reopens it inside openChart. openChart sends no status after `closed`. | MI-10 |
+| MD-10 | No agent owns, acknowledges, answers, re-routes or closes an item, and no AI drafts a clinical reply. Content of unknown authorship is shown as `unknown`. | MI-07, MI-13 |
+| MD-11 | Inbox records are not encounters, diagnoses or procedures. They are never billable, never become intake statements, and AI text never becomes a clinical fact. | MI-14 |
+| MD-12 | With no gateway the inbox is inert. Enabling it needs integration, retrieval, reply, split and cover. Disabling it withdraws the handoff authorization. Apart from ruling 53's path, no patient message reaches openChart without passing through openPractice. | MI-20 |
+| MD-13 | An unfiled item's reply stays inside the HealthLinc conversation, with every other channel restricted. A reply that PL-16 withholds keeps the item open and owned. | MI-22 |
+| MD-14 | One item per `handoff_id`. A conflicting offer for the same `handoff_id` leaves the item unchanged and records an integration exception. | MI-04 |
+| MD-15 | Status timing. `content_unavailable` is sent at the first failed retrieval for an urgent item, and after the retry policy for any other item. `responded` is sent when HealthLinc accepts the reply. `returned_not_clinical` is the last status for its item. `closed` follows `responded`, or stands alone for an item closed without a reply. | MI-03, MI-06 |
+| MD-16 | A reply to a conversation that medXfactory holds still goes through the reply path the offer names, which in the pinned schema is HealthLinc's `reply_path_ref`. This is revisited at the re-pin. | MI-11 |
+| MD-17 | For a conversation that medXfactory holds, the inbox item keeps only the reference, the source and the retrieval provenance. It files no copy, because ruling 53 records the exchange through medXfactory's own path. Whether openChart keeps an audit copy, outside the chart, of what the clinician saw is Open Question 10. | MI-12, MI-24 |
+| MD-18 | Continuity exceptions and clinically-needed markers have these rules. Each is keyed by `link_id`, with an optional `handoff_id`. It crosses as codes only. It lasts until withdrawn, or until an end the clinician sets. It may be recorded only on an `active` link. It is held unsent until the schema carries it. Any named clinician may record one, as ruling 50 says "a clinician". | MI-25 |
+| MD-19 | A handoff never resolves the patient through a Medx or medXfactory reference, even when medXfactory holds the conversation. | MI-17 |
+| MD-20 | An AI-authored order, prescription or diagnosis is held as AI-authored communication, marked by code as not accepted as a clinical act, rather than refused. Holding it keeps a record of what the patient was told and creates nothing clinical. MI-26 applies to every path into the chart, including medXfactory's governed path, until the practice-mode change is ratified. | MI-26 |
+
+## Consistency with ratified `expanded-patient-intake` requirements
+
+| Ratified requirement | How this change stays consistent |
+|---|---|
+| Original standalone Frappe application, which must operate without openPractice | MI-20 restates it. The inbox is optional, and inert without a gateway. The golden-intake tests remain the gate. |
+| External identifiers must not replace the openChart identifier or merge patients | MI-17 and MI-18 resolve only through existing links. Nothing is matched, merged or re-pointed; an unresolved item stays unfiled. |
+| Intake submissions are versioned, auditable and idempotent | Untouched. Messages are not intake submissions and never become statements (MI-14). |
+| Medication, supplement and other statements preserve reported detail | Untouched. |
+| Amendments preserve accepted history | MI-12: communications are never silently overwritten, and corrections are new versions. |
+| APIs and hooks are authorized and versioned | MI-01 uses a role narrower than `System Manager`, authorized for subject, tenant, purpose and role. MI-02 versions the contract by MAJOR version and digest. |
+| Intake confers no clinician or autonomous authority | MI-14 keeps patient text patient-reported. MI-13 bars AI drafting. MI-26 keeps AI-authored content as communication, never an order, prescription or diagnosis. MT-10 records the reading of "autonomous action" that this change relies on. |
+
+**One possible conflict with ratified openChart text is recorded, as MT-10.** No other conflict with ratified text was found.
+
+## Consistency with `define-openpractice-boundary`
+
+| Requirement | Relation |
+|---|---|
+| PL-01, PL-06 | Kept. No merge, and identity review follows PL-06 (MI-17, MI-18). |
+| PL-02, PL-03 | Used to resolve the patient (MI-17). |
+| PL-04 | Its pattern is reused for a third pin (MI-02). PL-04's own two pins are unchanged. |
+| PL-05 | Its role pattern is reused (MI-01). openChart never creates a link from its own matching (MI-17). |
+| PL-08 | **Tension MT-3.** |
+| PL-12 | Its versioning pattern is reused (MI-02). |
+| PL-13 | Extended to the handoff contract (MI-21). |
+| PL-14 | Reused for handoff messages (MI-06, MI-25). PL-14 lists the two boundary contracts; this change adds a third user of the store and changes nothing in PL-14. |
+| PL-15 | Restated (MI-20). |
+| PL-16 | Applied to replies (MI-22). **Tension MT-9.** |
+| CF-02, CF-05, CF-06 | Kept (MI-14, MI-19). **Tension MT-8** concerns that change's design context. |
+
+## Conflicts and tensions
+
+Fourteen are recorded. Each needs the owner's disposition before ratification. None is resolved by this draft on its own authority.
+
+| # | Tension | Status |
+|---|---|---|
+| MT-1 | The openPractice change's companion list says openChart must "refuse an offer on a revoked, unknown or in-review link", and openPractice ER-06 makes an active, unreviewed link a precondition. MI-18 accepts an **urgent** offer with an unresolved identity into an unfiled item, so that it reaches a clinician. | Owner item. The binding text puts patient safety first and departs from that list for urgent offers only. Non-urgent offers follow it. The openPractice change should amend its companion text, or the owner overrules MI-18. |
+| MT-2 | Under openPractice ER-06, an urgent item on a link in review, or for a patient with no link, is never offered. openPractice ER-09 alerts the on-call clinician with only a routing id, an urgency and a coded cause (openPractice ER-16). openChart has no item to show, so the clinician cannot read the message in openChart. | Proposed answer to openPractice Open Question 5, not ruled: amend openPractice ER-06 so that an urgent item on a link in review is still offered, while the fallback also runs, and openChart applies MI-18. For a patient with no link, the 1.0 schema requires `link_id` and `ehr_patient`, so the openPractice change needs a governed schema change, or the owner chooses another route. Meanwhile, openPractice's fallback and HealthLinc's in-app emergency guidance are the only path. |
+| MT-3 | PL-08 puts a link in `identity_review` during every date-of-birth hold. openPractice EB-05 (in `define-mvp-practice-foundation`) treats "the EHR holds an update for review" as identity review. openPractice ER-06 then blocks every automatic handoff for that patient during a routine date-of-birth correction. Non-urgent messages become office-manager exceptions until openChart resolves the hold. | Owner item. Proposed: distinguish a demographic hold from a linkage conflict in both changes. The binding text fails closed: a hold counts as identity review (MI-18). |
+| MT-4 | openPractice ER-08 takes the windows from an openPractice routing-clock policy. Ruling 43 and MI-05 put the clock, and its windows, in openChart under the medical director's approval. Two policies can disagree. | MD-2 takes the earlier deadline, so openChart's policy can only tighten. Owner to confirm whether one policy record should govern both. |
+| MT-5 | `handoff.ack` means system acceptance (MD-1). Under 1.0, openPractice gets no signal that no clinician has acknowledged an urgent item until `respond_by`, so openPractice ER-09's acknowledgment trigger catches only an unreachable openChart. | Owner item. The options are a status code in a MINOR version, or deferring `handoff.ack` until a clinician acknowledges. openChart's internal escalation (MI-09) is the inner safety net meanwhile. |
+| MT-6 | The 1.0 schema has no status for returning only the administrative part of a mixed item. openPractice ER-12 describes splitting only from openPractice's side. | MD-7 routes the split through HealthLinc instead. For a conversation that medXfactory holds, who splits is open (Open Question 14). |
+| MT-7 | openPractice ER-13 keeps an on-call roster for its fallback. MI-08 keeps openChart's own cover roster. They can disagree. | Owner item, related to openPractice Open Question 6. openChart's roster governs its queue. |
+| MT-8 | `define-openpractice-boundary`'s design says that "Every statement in openChart is patient-reported" and that no clinician-authored records exist. This change adds clinician-authored replies. | Not a conflict with requirement text. CF-06 still holds, because a reply is not an encounter, a diagnosis or a procedure (MD-11). That design statement becomes stale once this change lands. |
+| MT-9 | PL-16 withholds any communication that cannot satisfy the patient's instructions. For an urgent reply, withholding delays care. | MI-22 keeps the item open and owned, and tells the owner to use a permitted channel. PL-16 is not weakened. Residual risk, recorded. |
+| MT-10 | The ratified requirement "Intake does not confer clinician or autonomous authority" bars any "API response or extension event" from creating an "autonomous action". openChart's `AGENTS.md` says "Do not enable autonomous clinical actions by default." In this change, an API call (the offer) automatically creates an item, assigns an owner, sends alerts and reports status. | Reading proposed: these steps deliver an item to humans and decide nothing about care, so they are not clinical or autonomous actions. The ratified text does not define "autonomous action", so the owner confirms this reading at ratification. |
+| MT-11 | The pinned schema (`2353d99`) can name only HealthLinc as a conversation's holder (`healthlinc_message_ref`, namespace `healthlinc`). openPractice ER-05, its ownership matrix and its companion list also say that openChart fetches from HealthLinc. Ruling 51 adds medXfactory-held conversations. | The openPractice change's next revision is expected to add a conversation-source field. MI-02 is re-pinned then, and until then medXfactory retrieval is not implemented (MI-03). |
+| MT-12 | openChart's test fixture `tests/fixtures/medx/binding-03-openchart.yaml` binds HealthLinc, OpenEMR and openChart references to one `medx_patient_id`. Ruling 39 says there is no master identity across HealthLinc, openPractice and openChart. Rulings 51 and 53 bring medXfactory into the patient's path and into the chart. | MI-17 never resolves a handoff through a Medx or medXfactory reference (MD-19). Owner to confirm that the Medx binding is not a master identity for the gateway or chart paths. The medXfactory companion must say how its governed chart path identifies an openChart patient. |
+| MT-13 | The 1.0 schema has no message for a clinician's continuity exception (ruling 50) or clinically-needed marker. Until the re-pin, openChart can record these decisions but cannot send them. Meanwhile openPractice may stop a patient's routine messaging after notice and grace, despite the clinician's decision. | MI-25 records each decision and shows the clinician that it has not reached openPractice. Urgent messaging is never withheld (rulings 41 and 52). Owner item, closed by the re-pin. |
+| MT-14 | Ruling 59 lets the medical director set medXfactory's AI to limited or full practice, under gates that medXfactory's change owns. openChart cannot record an AI-authored clinical act until its practice-mode change is ratified. A practice could therefore configure a mode in medXfactory whose acts openChart holds only as communication. | MI-26 fails closed. Owner item: medXfactory's gates should refuse limited and full practice for an openChart deployment until openChart's practice-mode change is ratified. |
+
+## Required companion changes (not drafted)
+
+Each is stated at contract level only. Nothing here describes HealthLinc's or medXfactory's internals.
+
+**HealthLinc**
+
+- **H-1. Conversation retrieval by reference.** Given a `healthlinc_message_ref` from an offer, over openChart's own authorized integration and never through openPractice, HealthLinc returns the escalated exchange. Each turn carries its author kind and time, and coach turns are marked as HealthLinc's coach (rulings 51 and 54). The response also says whether a patient or a representative wrote, and, where HealthLinc keeps one, the openChart patient reference for the account. Errors are coded and carry no PHI.
+- **H-2. Reply delivery.** HealthLinc accepts a clinician reply against `reply_path_ref`, with the sender's identity, the author kind and the applicable confidential-communication restriction codes (PL-16). It can be asked to deliver inside the conversation only (MD-13). Delivery is idempotent by message identifier, and acceptance or refusal is coded. Push text carries no PHI. Clinician-authored and AI-authored content are shown distinctly.
+- **H-3. Split and resubmit.** On openChart's request, HealthLinc splits a mixed item and resubmits only its administrative part to openPractice as a new inquiry, and acknowledges the request (MD-7).
+- **H-4. Emergency guidance stays in the app.** HealthLinc shows its own emergency guidance for urgent submissions, whether or not openChart or openPractice is available. openChart sends no advice codes.
+- **H-5. No clinical messaging without a route.** HealthLinc offers no clinical messaging to a practice with no configured gateway (MI-20).
+
+**medXfactory**
+
+- **M-1. Conversation retrieval by reference.** For a medical-AI conversation named by the conversation-source field, over openChart's own authorized integration and never through openPractice, medXfactory returns the exchange. Each turn carries its author kind, with medXfactory's medical AI named as the source. The provenance is enough for openChart to record which exchange the clinician saw. Errors are coded and carry no PHI.
+- **M-2. Its governed chart path.** This is the path by which medical-AI exchanges are recorded in the chart (MedxEHR and openChart), never through openPractice (ruling 53). It includes how that path identifies an openChart patient without a master identity (MT-12). openChart's receiving side needs its own openChart change (Open Question 4).
+
+## Required later openChart change: AI practice modes (not drafted)
+
+Ruling 59 needs a separately governed openChart change before any AI-authored clinical act can be recorded. It must provide:
+
+- **P-1.** A write path for AI-authored clinical acts. Each act records the mode it was made under (advice only, limited practice or full practice), the configuration version, and the authority the AI acted under. These come from medXfactory's mode framework (rulings 56 to 59).
+- **P-2.** Clinician co-review of AI-authored clinical acts.
+
+The limited-practice and full-practice modes are not buildable in openChart until that change is ratified. Until then, MI-26 holds every AI-authored order, prescription or diagnosis as communication. That change must also reconcile with the ratified rule that no API response or extension event creates a prescription, diagnosis or order (MT-10).
+
+## Risks / Trade-offs
+
+- **[A missed urgent message]** → A named owner from acceptance. Escalation to the on-call clinician and then the medical director, with repeated alerts. No rejection on identity grounds. `content_unavailable` sent at once. openPractice's shadow deadline and fallback remain the outer net.
+- **[Wrong-patient filing]** → Resolution only through links, no demographic matching, and unfiled items.
+- **[Clinical content leaks into openPractice]** → Reference-only handoff. No administrative text sent. Splits go through HealthLinc. Medical-AI exchanges travel on medXfactory's path.
+- **[AI text mistaken for a clinician's]** → An author kind and a named source on every turn. No AI drafting, and no agent action.
+- **[An AI-authored order or prescription acted on]** → MI-26 holds it as communication, marked as not accepted as a clinical act, until the practice-mode change exists (MT-14).
+- **[Double alerts]** → openChart's escalation and openPractice's fallback can both fire for one urgent item. This is accepted for safety.
+- **[Two clock policies drift]** → The earlier deadline governs (MT-4).
+- **[Unfiled records accumulate]** → They are listed for identity review. Manual filing is Open Question 7.
+- **[Confidentiality breach through notifications]** → PL-16 restriction codes go to HealthLinc. An unfiled item's reply stays in the conversation.
+- **[Contract drift]** → The digest pin and task 1.3. Two additions are already expected (MT-11, MT-13).
+- **[No constitution]** → The plan phase is blocked until a constitution is adopted.
+
+## Migration Plan
+
+1. Validate strictly. Ratify `define-openpractice-boundary` first or together. Brett Heap stamps `Ratified by` and sets `Status: ratified`.
+2. Adopt openChart's constitution through separate governance.
+3. Wait for the openPractice change to be ratified and to match by digest, and re-pin after its next revision.
+4. Wait for the HealthLinc companion change, and for the medXfactory companion before any medXfactory retrieval.
+5. Create the single Spec Kit feature from the assembly root. Implement against openPractice and source-system doubles, alongside the standalone regression suite.
+6. Enable the inbox only with full cover and the HealthLinc capabilities. openPractice enables clinical routing afterwards.
+7. Rollback: openPractice disables clinical routing first. openChart then disables the inbox, which withdraws the handoff authorization. Open items stay owned until they close, and no record is deleted.
+
+## Open Questions
+
+Each question is routed in `tasks.md` §2 to the gate it blocks.
+
+1. **Constitution adoption.** openChart's constitution is the unfilled template. This blocks the plan phase.
+2. **Owner dispositions** of MT-1 to MT-14 and MD-1 to MD-20. These block ratification.
+3. **openChart's HealthLinc link contract (ruling 39).** Which governed openChart change defines it? This blocks live HealthLinc retrieval.
+4. **openChart's receiving side of medXfactory's governed chart path (ruling 53).** This needs a separate openChart change. It blocks nothing in the inbox.
+5. **A patient with no EB-01 link** (openPractice Open Question 5). The proposed answer is in MT-2. Meanwhile, openPractice's exception path applies.
+6. **Clinical messaging in an openChart-only deployment.** The owner decides. Meanwhile there is none (MI-20).
+7. **Manual filing of an unfiled item** by a named human. The owner and the medical director decide. Meanwhile, filing happens only through a resolved link.
+8. **Lane policy and nurse scope.** The medical director decides, with counsel on scope of practice. Meanwhile, every item enters the physician lane.
+9. **Response windows.** The medical director decides. Meanwhile, the offer's deadlines apply.
+10. **Retention** of clinical-communication records and returned items, and whether openChart keeps an audit copy, outside the chart, of a medXfactory exchange the clinician saw (MD-17). The owner and counsel decide. Meanwhile, nothing is deleted and no copy is kept.
+11. **Billability of clinician replies.** This waits for a clinical-encounter capability (`define-openpractice-boundary` Open Question 2). Meanwhile, nothing is billable.
+12. **A representative's scope** (openPractice Open Question 2). Counsel decides. openChart shows the submitter kind as reported.
+13. **`closed` without `responded`.** Does it satisfy openPractice ER-07's shadow deadline? The openPractice change confirms.
+14. **Splitting a medXfactory-held mixed conversation.** MI-16 sends the split request to HealthLinc. The owner, or the openPractice change's next revision, decides who splits a conversation that medXfactory holds.
