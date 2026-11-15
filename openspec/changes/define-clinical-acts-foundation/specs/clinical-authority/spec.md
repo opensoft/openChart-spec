@@ -31,14 +31,16 @@ Every designation, bootstrap act and end of a designation SHALL be recorded with
 - **THEN** openChart refuses the designation until the first one ends
 
 ### Requirement: AU-02 Authority to author, sign and co-sign is a role grant recorded in openChart, and a self-grant is shown and independently attested
-Who may draft, sign, co-sign, complete or discontinue each act class SHALL be decided only by role grants recorded inside openChart (design call CD-12). A grant SHALL name:
+Who may draft, sign, co-sign, complete or discontinue each act class, and who may review AI consult records, SHALL be decided only by role grants recorded inside openChart (design calls CD-12 and CD-37). A grant SHALL name:
 - the person and the clinical role;
-- the act class and the permitted actions (`draft`, `sign`, `cosign`, `complete`, `discontinue`), optionally limited to a subset of act types;
+- its scope: either an act class with the permitted actions (`draft`, `sign`, `cosign`, `complete`, `discontinue`), optionally limited to a subset of act types; or the record class `ai_consult_record` with the single action `review`;
 - an effective interval;
 - the practice-supplied attestation it rests on (AU-03);
 - any co-signature requirement on the holder's acts (mode and window, CA-07);
 - the medical director who recorded it;
 - a version.
+
+**The consult review scope.** The scope `review` over `ai_consult_record` lets its holder record a review of an AI consult record under `define-ai-authored-clinical-records` AG-11 and AC-08 (not yet on main). `ai_consult_record` is not an act class: a review creates no act, and the scope confers no authority over any act. It SHALL be recorded only for a person holding the `clinician` role, and it follows every other rule of this requirement and of AU-03 to AU-05.
 
 Only the medical director SHALL record, widen or renew a grant. A grant the medical director records for themselves SHALL be flagged `self_granted` (design call CD-34). It SHALL rest on an attestation recorded by a named human other than the medical director, SHALL be audited, and SHALL be shown as self-granted wherever the grant is shown and wherever an act signed under it shows its authority. Every self-grant SHALL be listed for the administrative role. A person with no grant in force for an act class SHALL have no authority for it. Nothing SHALL be granted by default, by role name alone, or by the `System Manager` role.
 
@@ -53,6 +55,14 @@ Only the medical director SHALL record, widen or renew a grant. A grant the medi
 #### Scenario: Failure: the medical director self-grants prescribing on their own attestation
 - **WHEN** the medical director tries to grant themselves prescription `sign` scope, resting on a prescriber attestation they recorded themselves
 - **THEN** openChart refuses the grant
+
+#### Scenario: The medical director grants consult review
+- **WHEN** the medical director records a grant of `review` over `ai_consult_record` for a named clinician, resting on an attestation in force
+- **THEN** openChart records the grant, and the clinician can record AI consult reviews but gains no authority over any act
+
+#### Scenario: Failure: a consult review without the grant
+- **WHEN** a clinician who holds sign scope for diagnoses, but no `review` grant over `ai_consult_record`, tries to record a review of an AI consult record
+- **THEN** openChart refuses the review, and the consult record's review status is unchanged
 
 #### Scenario: Failure: a System Manager tries to sign an order
 - **WHEN** a user holding only `System Manager` tries to sign an order
@@ -92,7 +102,7 @@ A grant that includes `sign` for prescriptions SHALL require a prescriber attest
 - **THEN** every prescription-signing grant resting on it stops conferring authority, and a later signing attempt is refused
 
 ### Requirement: AU-04 Every action is checked against the grant in force at that moment, and reductions apply at once
-openChart SHALL check every draft, signature, co-signature, completion, discontinuation and entered-in-error mark against the actor's grants in force at that moment, and SHALL record the grant version relied on. A narrowing, suspension or end of a grant SHALL apply at once to every later action. Acts already signed SHALL keep their signatures, and SHALL show the grant version in force when signed. Grant history SHALL be kept; no grant version SHALL be deleted.
+openChart SHALL check every draft, signature, co-signature, completion, discontinuation, entered-in-error mark and AI consult review against the actor's grants in force at that moment, and SHALL record the grant version relied on. A narrowing, suspension or end of a grant SHALL apply at once to every later action. Acts already signed SHALL keep their signatures, and SHALL show the grant version in force when signed. Grant history SHALL be kept; no grant version SHALL be deleted.
 
 #### Scenario: A grant is narrowed mid-session
 - **WHEN** the medical director removes prescription signing from a clinician's grant while the clinician has a draft prescription open
@@ -103,7 +113,7 @@ openChart SHALL check every draft, signature, co-signature, completion, disconti
 - **THEN** openChart checks the grant in force, refuses if it does not permit the action, and records the grant it checked
 
 ### Requirement: AU-05 Only named humans author, sign or co-sign; no agent does
-Every author, signer and co-signer SHALL be a named human holding a grant in force. No AI system, agent, integration identity, scheduled job or other automated process SHALL author, sign, co-sign, complete, discontinue or mark an act entered in error, in any role, in this change. Owner ruling 67 grants no AI clinical authority now; AI-authored acts remain specified, and off, in `define-ai-authored-clinical-records` (not yet on main).
+Every author, signer and co-signer SHALL be a named human holding a grant in force. No AI system, agent, integration identity, scheduled job or other automated process SHALL author, sign, co-sign, complete, discontinue or mark an act entered in error, or record an AI consult review, in any role, in this change. Owner ruling 67 grants no AI clinical authority now; AI-authored acts remain specified, and off, in `define-ai-authored-clinical-records` (not yet on main).
 
 #### Scenario: Failure: an agent tries to co-sign
 - **WHEN** an AI agent tries to co-sign a pending order

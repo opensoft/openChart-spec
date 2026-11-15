@@ -16,7 +16,7 @@ These facts about what is built were checked at `opensoft/openChart-code` revisi
 - **Not built:** encounters, notes, diagnoses of record, procedures, orders and prescriptions. There is no practice or tenant record, and no code-set store.
 
 **Related drafts, none on main**, read at these heads:
-- `define-ai-authored-clinical-records` (openChart-spec#4) lists this change as its required prerequisite, with twelve minimum contents (checked below). It was first read at `dbb1fc5`; its rulings and its prerequisite list were re-read at `5a9947f`.
+- `define-ai-authored-clinical-records` (openChart-spec#4) lists this change as its required prerequisite, with twelve minimum contents (checked below). It was first read at `dbb1fc5`. Its rulings and its prerequisite list were re-read at `5a9947f`, and its AG-11, AD-32 and AT-12 at `6989780`.
 - `define-openpractice-boundary` (openChart-spec#2, `e7c3090`) has CF-01 to CF-06 and Open Question 2.
 - `define-clinical-message-inbox` (openChart-spec#3, `eda4b08`) has MI-12, MI-14 and Open Question 11.
 - In `opensoft/openPractice-spec`, `define-mvp-practice-foundation` (PR #2, `fecc81e`) has `ehr-boundary` EB-13 to EB-20 and owns the schema `openpractice-ehr-clinical-facts-1.0.schema.json`. That schema's SHA-256 is `6b2071fe61693d144aa91f4fc68e51d0cd7563d66b5cd2086f281a959f7e69ec`, which matches its `contracts/SHA256SUMS` and PL-04.
@@ -168,6 +168,7 @@ Tier 2 adds its authority grant as a second `source` value in a MINOR version. A
 - **The first medical director.** One audited bootstrap act by the designating account records three things: the designee's licensure attestation, the `clinician` role and the designation. The role confers no act-class authority, so the first medical director then self-grants each act class under the rule above.
 - **No medical director, nothing signable.** With no medical director, no grant can be recorded, so nothing can be signed.
 - **Grants.** Grants are per person, per act class and per action (`draft`, `sign`, `cosign`, `complete`, `discontinue`), optionally limited to act types. Each grant has an interval, rests on a practice-supplied attestation and may carry a co-signature requirement. Only the medical director records them (AU-02). `System Manager` confers no clinical authority.
+- **Consult review scope (CD-37).** A grant may instead carry the scope `review` over the record class `ai_consult_record`, for a person holding the `clinician` role. It lets the holder record AI consult reviews under `define-ai-authored-clinical-records` AG-11. It is not an act class, creates no act and gives no authority over any act. Every other grant rule applies, the self-grant rule included. This settles that change's tension AT-12.
 - **Attestations.** Licensure and prescriber facts are attestations supplied by the practice, with an expiry, recorded by someone other than their subject. openChart does not verify them and says so (AU-03, CD-13).
 - **Prescriptions fail closed.** A prescription-signing grant needs a prescriber attestation in force. Without one it is refused, and an expired attestation stops the grant at once.
 - **Checks at the moment of action.** Every action is checked against the grant in force at that moment. Reductions apply at once (AU-04).
@@ -303,7 +304,7 @@ That change's design, section "Required prerequisite change: the clinical-acts f
 | 5 | Treatment plans, versioned, each change a new dated record | Not provided: ruling 73 leaves care plans and treatment-plan records for a later change. The versioning rule a later change would inherit is CA-05. Tier 2's `treatment_plan_change` is refused with `act_type_unsupported` under its own AA-01 | No (CT-6) |
 | 6 | Authorship on every act: an author type, and clinician signing and co-signature (ruling 72). Author type `ai` and the authority basis that Tier 2 fills wait for a future governed amendment (its AT-10). | CA-02 (author type, `clinician` only), `authority_basis_ref` (the role grant today), CA-04, CA-07 | Yes |
 | 7 | An act-type registry with reserved and emergency-management flags | CA-09 | Yes |
-| 8 | Roles: clinician, nurse and medical director, with scope per act class | AU-01, AU-02 | Yes (CT-9 on the overlap with AG-02) |
+| 8 | Roles: clinician, nurse and medical director, with scope per act class | AU-01, AU-02, including the consult review scope that its AG-11 needs (CD-37). At `6989780` that change cites AU-01 as its only medical-director definition | Yes |
 | 9 | Amendment, void and countermand as new dated records; nothing edited in place or deleted | CA-05, CA-06, OR-02 (discontinuation as a signed lifecycle record), OR-03 | Yes |
 | 10 | Content schemas per act class, published so that a MINOR version of `openchart-ai-clinical-record-write` can pin them | `openchart-clinical-act-content/1.0`, `$defs/<class>Content`, SHA-256 in `contracts/SHA256SUMS` (CA-01, CD-28) | Yes |
 | 11 | Reconciliation with the ratified intake text that AT-1 records | CA-10, CA-11, §9; tensions CT-1 and CT-2 | Yes, pending the owner's disposition of CT-1 |
@@ -418,10 +419,11 @@ Each item goes beyond the rulings and is proposed, not ruled. Where a ruling is 
 | CD-34 | Authority independence. The designating account is never the medical director. The designee's clinical role rests on a licensure attestation recorded by another named human. Nobody records their own attestation. A medical director's self-grant is flagged, independently attested, shown on acts signed under it, and listed for the administrative role. The first medical director gets the `clinician` role in one audited bootstrap act. | AU-01, AU-02, AU-03 |
 | CD-35 | Every correction or retraction of a published fact is queued whatever the link state. It is delivered at once on an `active` link; held, with pending finals, during `identity_review`; and on a revoked or superseded link delivered as retractions only. | PB-02, PB-03 |
 | CD-36 | A restricted act added to a published encounter retracts every published fact of that encounter with `clinical_fact.entered_in_error`, the only retraction the 1.0 contract offers (CT-16). | PB-03, CA-15 |
+| CD-37 | AU-02 gains a second scope: action `review` over record class `ai_consult_record`. It is recorded only for a `clinician`, creates no act and gives no authority over any act, and every other AU-02 rule applies, the self-grant rule included. It is where `define-ai-authored-clinical-records` AG-11's consult review grant lives (its AT-12). | AU-02, AU-04, AU-05 |
 
 ## Conflicts and tensions
 
-Sixteen are recorded. CT-10 is resolved; each of the other fifteen needs the owner's disposition before ratification. None is resolved by this draft on its own authority. **This change does not claim to be free of conflicts.**
+Sixteen are recorded. CT-10 is resolved, and CT-9 is resolved for `define-ai-authored-clinical-records`. Each remaining open tension, including CT-9's inbox half, needs the owner's disposition before ratification. None is resolved by this draft on its own authority. **This change does not claim to be free of conflicts.**
 
 | # | Tension | Status |
 |---|---|---|
@@ -433,7 +435,7 @@ Sixteen are recorded. CT-10 is resolved; each of the other fifteen needs the own
 | CT-6 | `define-ai-authored-clinical-records` minimum item 5 (treatment plans) is not provided, because ruling 73 leaves treatment-plan records for later. | That change's own AA-01 refuses an unsupported act class with `act_type_unsupported`, so Tier 2's `treatment_plan_change` stays refused. That change should name the later treatment-plan change as a prerequisite for that act class. |
 | CT-7 | That change's item 2 names the order states "signed, … released or executed, … discontinued or countermanded, and voided". This change uses `pending_release`/`released`, `discontinued` and `entered_in_error`, with `signed` as an event. Its AA-11 scenario says "released for transmission", but this change has no transmission. | Mapping proposed in the minimum-contents table. "Pending" for AA-11 means `pending_release`. That change should adopt these status names in its MINOR version. |
 | CT-8 | That change's item 3 asks for dispense or transmission states. Ruling 73 leaves pharmacy transmission for later. | `transmission_status` is reserved, fixed at `none_recorded` in 1.x (RX-04). Dispense and transmission values wait for the later e-prescribing change. |
-| CT-9 | `define-ai-authored-clinical-records` AG-02 records the practice's medical director itself. `define-clinical-message-inbox` leaves the clinician, nurse and medical-director roles to planning (its task 3.2). This change defines both (AU-01). | Proposed: this change holds the single definition, and both drafts cite it. AG-02's rule "with no medical director recorded, no grant can be approved" agrees with AU-01. Owner confirms. Those drafts would need amending. |
+| CT-9 | Before `6989780`, `define-ai-authored-clinical-records` AG-02 recorded the practice's medical director itself. `define-clinical-message-inbox` leaves the clinician, nurse and medical-director roles to planning (its task 3.2). This change defines both (AU-01). | **Resolved for `define-ai-authored-clinical-records`** as of `6989780`: its AG-02 and AD-24 cite AU-01 as the single medical-director definition, and its AG-11 consult review grant uses AU-02's `review` scope over `ai_consult_record` (CD-37). **Open for `define-clinical-message-inbox`**, which is being aligned in parallel to cite AU-01. AG-02's rule "with no medical director recorded, no grant can be approved" agrees with AU-01. |
 | CT-10 | Field name. | **Resolved.** `define-ai-authored-clinical-records` at `5a9947f` uses "author type", as MI-12 and this change do. No naming difference remains. |
 | CT-11 | `openpractice-ehr-clinical-facts/1.0` (digest `6b2071fe…`) carries a coding as system and code only, with a code of at most 32 characters. openPractice cannot tell which code-system version a code came from, and this change stores codes of up to 64 characters. | This change publishes system and code only (PB-02). A code that does not fit blocks publication of its encounter, with an integration exception (PB-04). Carrying the version needs a MINOR version of the openPractice contract, owned by `define-mvp-practice-foundation`. Owner item. |
 | CT-12 | openPractice FD-11 lets the open-source core ship ICD-10, HCPCS Level II and other sets it calls license-free. openChart bundles no code set and asserts no license status (CA-12). The two systems may therefore load different code-set versions. | Not a conflict: FD-11 governs openPractice, and openChart is stricter. Combined with CT-11, a version mismatch between the two systems is not detectable under 1.0. Owner item. |
@@ -456,7 +458,7 @@ Sixteen are recorded. CT-10 is resolved; each of the other fifteen needs the own
 
 ## Migration Plan
 
-1. Validate strictly, check the schema digest and run the self-test. Brett Heap disposes CT-1 to CT-16 and CD-1 to CD-36, including owner decision 87 (CD-33), stamps `Ratified by` and sets `Status: ratified`.
+1. Validate strictly, check the schema digest and run the self-test. Brett Heap disposes CT-1 to CT-16 and CD-1 to CD-37, including owner decision 87 (CD-33), stamps `Ratified by` and sets `Status: ratified`.
 2. Adopt openChart's constitution through separate governance.
 3. Feature (1): acts, signing, authority, encounters and notes, contract tests against the content schema, and the standalone regression suite.
 4. Feature (2): diagnoses, procedures and publication, against an openPractice double at the PL-04 digest. Live publication waits for `define-openpractice-boundary` to be ratified and built.
@@ -470,7 +472,7 @@ Sixteen are recorded. CT-10 is resolved; each of the other fifteen needs the own
 Each question is routed in `tasks.md` §2 to the gate it blocks.
 
 1. **Constitution adoption.** openChart's constitution is the unfilled template. This blocks planning for every feature.
-2. **Owner dispositions** of CT-1 to CT-16 and CD-1 to CD-36, including owner decision 87 (CD-33: publish only confirmed encounter diagnoses). These block ratification.
+2. **Owner dispositions** of CT-1 to CT-16 and CD-1 to CD-37, including owner decision 87 (CD-33: publish only confirmed encounter diagnoses). These block ratification.
 3. **Sensitive record categories and minors' records.** Do some categories, or records of minors, need segmentation, special consent handling or restricted disclosure, and under which rules? This is a question for counsel; this change asserts no legal rule. Meanwhile, CD-27's restricted mark applies, and nothing marked restricted leaves the chart.
 4. **Retention** of acts, versions, drafts, audit trails and grants. The owner and counsel decide. Meanwhile, nothing is deleted.
 5. **The administrative role that designates the medical director**, and how a practice (tenant) is represented. Planning decides, within AU-01.

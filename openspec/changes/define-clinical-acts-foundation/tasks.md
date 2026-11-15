@@ -3,9 +3,9 @@
 - [ ] 1.1 Run `openspec validate define-clinical-acts-foundation --strict --no-interactive` on the exact revision proposed for ratification. Record the OpenSpec version, timestamp, revision, exit code and output.
 - [ ] 1.2 In this change's `contracts/` directory, run `sha256sum -c SHA256SUMS` and `python3 -I selftest.py`. The self-test needs `jsonschema` 4.18 or later. All 9 valid fixtures must validate, and all 15 invalid fixtures must fail, each for the reason stated in `examples/expected-failures.json`. Record both outputs.
 - [ ] 1.3 Obtain Brett Heap's ratification. He stamps `Ratified by` and changes `Status` from `draft` to `ratified` in `proposal.md`, in the same revision. The rulings recorded in `design.md` are not ratification. No Spec Kit feature is created before this task is complete.
-- [ ] 1.4 Record Brett Heap's disposition of tensions CT-1 to CT-16 (CT-10 is resolved) and design calls CD-1 to CD-36, including owner decision 87 (CD-33). Where a disposition needs an amendment elsewhere, name the change that must carry it:
-  - `define-ai-authored-clinical-records` for CT-6, CT-7, CT-8 and CT-9;
-  - `define-clinical-message-inbox` for CT-9;
+- [ ] 1.4 Record Brett Heap's disposition of tensions CT-1 to CT-16 (CT-10 is resolved) and design calls CD-1 to CD-37, including owner decision 87 (CD-33). Where a disposition needs an amendment elsewhere, name the change that must carry it:
+  - `define-ai-authored-clinical-records` for CT-6, CT-7 and CT-8 (CT-9 is resolved for it at `6989780`);
+  - `define-clinical-message-inbox` for CT-9's open half;
   - `opensoft/openPractice-spec` `define-mvp-practice-foundation` for CT-11 and CT-16;
   - `define-openpractice-boundary` for CT-13 and CT-15.
 
