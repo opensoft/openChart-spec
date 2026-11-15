@@ -1,0 +1,121 @@
+## ADDED Requirements
+
+### Requirement: AW-01 AI-authored records enter openChart only through the versioned write-path contract
+openChart SHALL accept content authored by an external clinical AI system only as messages under contract `openchart-ai-clinical-record-write/1.0`, owned by this change. Its canonical schema is:
+- `openspec/changes/define-ai-authored-clinical-records/contracts/openchart-ai-clinical-record-write-1.0.schema.json`, `$id` `urn:openchart:contract:openchart-ai-clinical-record-write:1.0`, at the SHA-256 recorded in this change's `contracts/SHA256SUMS`.
+
+The digest identifies the schema even after archival moves the file. openChart SHALL validate every message it receives or sends under the contract against the schema at that digest. The messages are `consult.write`, `act.write`, `authority.notice`, `write.receipt`, `act.status`, `consult.reviewed` and `message.ack`. Implementations are compatible exactly when they share the MAJOR version. openChart SHALL accept a `1.x` message at a MINOR version it has declared, refuse a message whose MAJOR version it does not support with reason `unsupported_major_version`, and refuse a message that fails the schema with reason `schema_invalid`. A refusal SHALL store no clinical content. A breaking change SHALL require a new MAJOR version and a new digest, recorded in this change and in every companion that cites it.
+
+#### Scenario: Failure: a write carries a property the schema does not define
+- **WHEN** a `consult.write` arrives with a property the schema does not define, such as `diagnosis`
+- **THEN** openChart refuses it with reason `schema_invalid` and stores no clinical content
+
+#### Scenario: Failure: an unsupported major version arrives
+- **WHEN** a `consult.write` with `contract_version` `2.0` arrives
+- **THEN** openChart refuses it with reason `unsupported_major_version` and stores no clinical content
+
+### Requirement: AW-02 Only a registered AI system's integration identity may write, for one source system and one practice
+openChart SHALL accept write-path messages only from an authenticated integration identity that is registered for exactly one external clinical AI system, identified by its `source_system` (issuer and namespace), and exactly one practice. The identity SHALL hold a dedicated write-path integration role that is narrower than `System Manager`, is named in planning, and is authorized for subject, tenant, purpose and role, as the ratified API requirement demands. Registering an AI system SHALL be an audited act by a named human. No AI system and no agent SHALL register, widen or re-scope an integration identity.
+
+#### Scenario: Failure: an unregistered caller writes
+- **WHEN** a caller without the write-path integration role sends a `consult.write`
+- **THEN** openChart refuses it with reason `unauthorized` and stores no clinical content
+
+#### Scenario: Failure: an identity claims another source system
+- **WHEN** an identity registered for one source system sends a write whose `source_system` names a different system or practice
+- **THEN** openChart refuses it with reason `unauthorized` and stores no clinical content
+
+### Requirement: AW-03 A write resolves the patient only through an existing link
+openChart SHALL resolve the patient of a write only through links that already exist. The write SHALL name the openChart patient triple (openChart issuer, `openchart`, `OC Patient` identifier) and the source system's reference for that patient on its link with openChart. That reference need not be, and should not be, the source system's internal patient identifier; a value minted for this one link suffices. openChart SHALL accept the write only when an `active` `OC Patient External Identifier` row on that `OC Patient` carries the source system's namespace, issuer and value. The link is registered through the ratified external-identifier path or a later governed link contract (design call AD-23).
+
+openChart MUST NOT match on names, dates of birth or other demographics. It MUST NOT create, change, merge or re-point a patient or a link while handling a write. The source system's reference MUST NOT replace the openChart patient identifier. This restates the ratified `expanded-patient-intake` rule on external identifiers and does not modify it.
+
+#### Scenario: Failure: the references name different patients
+- **WHEN** a write names `OC-PAT-00001`, but the active row for the source system's reference belongs to another `OC Patient`
+- **THEN** openChart refuses it with reason `patient_link_mismatch`, stores no clinical content, and records an integration exception holding only identifiers and a coded cause for identity review (design call AD-26)
+
+#### Scenario: Failure: the link is in identity review
+- **WHEN** the source system's identifier row on the named patient has status `identity_review`
+- **THEN** openChart refuses the write with reason `patient_link_in_review` and changes no identifier
+
+#### Scenario: Failure: no link exists
+- **WHEN** no row for the source system's reference exists
+- **THEN** openChart refuses the write with reason `patient_link_unknown` and creates no patient or link
+
+### Requirement: AW-04 Only operational writes are recorded; scenario and simulation content never reaches operational records
+openChart SHALL record a write only when its `context` is `operational`. A write whose `context` is `scenario` or `simulation` SHALL be refused with reason `non_operational_context` and SHALL store no clinical content (design call AD-18). No operational record SHALL reference a scenario or simulation output as its content, its evidence target or its authority.
+
+#### Scenario: Failure: a scenario consult reaches the write path
+- **WHEN** a schema-valid `consult.write` with `context` `scenario` arrives
+- **THEN** openChart refuses it with reason `non_operational_context` and creates no record
+
+### Requirement: AW-05 Writes are idempotent and replay-safe
+The `message_id` of each inbound message SHALL be its idempotency key. A message whose `message_id` was already processed SHALL be answered with the original receipt and SHALL change nothing. A write that repeats a `consult_id` and `consult_version`, or an `act_id` and `act_version`, under a new `message_id` with identical content SHALL be answered `duplicate` with the original `record_ref`. The same identifiers with different content SHALL be refused with reason `conflicting_duplicate`, SHALL leave the existing record unchanged, and SHALL be recorded as an integration exception that holds only identifiers and a coded cause. The `message_id` of every message openChart sends SHALL be a random UUID, reused on every retry. No key SHALL carry PHI.
+
+#### Scenario: Failure: a write is retried three times
+- **WHEN** the same `consult.write` arrives three times with the same `message_id`
+- **THEN** openChart holds one consult record and answers with the same receipt each time
+
+#### Scenario: Failure: a consult version is rewritten with different content
+- **WHEN** a second write for an existing `consult_id` and `consult_version` carries a different exchange
+- **THEN** openChart refuses it with reason `conflicting_duplicate`, the existing record is unchanged, and an integration exception holds only identifiers and the coded cause
+
+### Requirement: AW-06 Every write and every notice gets exactly one receipt, and a refused write stores no clinical content
+openChart SHALL answer every `consult.write`, `act.write` and `authority.notice` it receives with exactly one `write.receipt`. The receipt SHALL carry `accepted`, `duplicate` or `refused`. An accepted or duplicate receipt SHALL carry openChart's `record_ref`. A refused receipt SHALL carry one reason code from the schema and no `record_ref`. openChart SHALL durably record every receipt it sends.
+
+A refused write SHALL store no clinical content. openChart SHALL keep a refusal record of it holding only identifiers, the write kind, the act class where there is one, the claimed mode, the reason code and the time (design call AD-7). The refusal record SHALL be visible as AW-09, AC-06 and AA-12 state.
+
+#### Scenario: Failure: an act write is refused
+- **WHEN** openChart refuses an `act.write`
+- **THEN** the receipt carries `refused` and one reason code, openChart stores no part of the act's content, and the refusal record holds only identifiers and codes
+
+### Requirement: AW-07 No PHI in logs, errors, receipts, notifications, diagnostics or keys
+openChart's logs, errors, diagnostics, idempotency keys, clinician notifications and every receipt, notice and status message it sends under the contract MUST NOT contain names, dates of birth, contact details, patient identifier values, exchange or summary text, act content or any other clinical content. Diagnostics SHALL reference writes only by `message_id`, `consult_id`, `act_id`, `record_ref` and grant identifiers. A clinician notification on any device SHALL say only that a record awaits attention, with a coded cause and an opaque reference. Opening the record SHALL require an authenticated openChart session.
+
+#### Scenario: Failure: a write is refused for a patient-link mismatch
+- **WHEN** openChart refuses a write with reason `patient_link_mismatch`
+- **THEN** the log entry and the receipt carry the `message_id` and the coded reason, and no patient identifier value or clinical text
+
+#### Scenario: Failure: an always-review consult notifies the patient's doctor
+- **WHEN** openChart notifies a clinician that an AI consult was selected for review
+- **THEN** the notification carries only the coded cause and an opaque record reference
+
+### Requirement: AW-08 openChart's outbound messages under the contract use durable delivery
+Every `write.receipt` that is not returned synchronously, and every `act.status`, `consult.reviewed`, `authority.notice` and `message.ack` openChart sends, SHALL be written to a durable outbound store in the same transaction as its cause. openChart SHALL deliver them to the registered AI system with retries that reuse the original `message_id`, until the AI system answers with `message.ack` where the message calls for one. This follows the pattern of PL-14 in `define-openpractice-boundary` (not yet on main); the mechanism is decided in planning. Delivery MUST NOT rely on `frappe.publish_realtime` or any other site-local event.
+
+#### Scenario: Failure: the AI system is unreachable
+- **WHEN** the AI system is unreachable while openChart has an `authority.notice` and two `act.status` messages to send
+- **THEN** the messages stay in the durable store and are delivered with their original `message_id` when the AI system returns, and no record changes state because of the outage
+
+### Requirement: AW-09 AI authorship and the authority it rested on are shown wherever openChart shows an AI-authored record
+Wherever openChart shows an AI-authored record, to a clinician or to a patient, on mobile or workstation (ruling 35), it SHALL label the record as AI-authored and name its source system. For a clinician, the label SHALL include the mode in force, the grant and its version, and for an act the allowlist entry or full-practice grant and the co-review status. Every patient-facing display that openChart originates or releases, including one that a system it drives presents, SHALL say that the content was written by an AI system, not by a clinician, and SHALL state its review or co-review status without implying a clinician's prior sign-off. AI-authored content MUST NOT be presented as clinician-authored on any surface.
+
+#### Scenario: Failure: a patient view would omit the AI label
+- **WHEN** a patient-facing view released by openChart would show an AI consult summary without the AI-authored label
+- **THEN** openChart does not release the view without the label and the review status
+
+#### Scenario: Failure: an AI act appears in a clinician's list
+- **WHEN** a clinician opens a patient's chart that holds an accepted AI-authored act
+- **THEN** the act is labelled AI-authored with its source system, mode, grant version and co-review status, and is never shown as clinician-authored
+
+### Requirement: AW-10 openChart operates without any external clinical AI system
+openChart SHALL operate fully with no external clinical AI system registered and no authority grant recorded. Every component of this change SHALL be optional. With no registered system, the write path SHALL accept nothing, and no other operation SHALL depend on it. This requirement restates the ratified `expanded-patient-intake` rule that the application must operate without MedxFactory, MedxEHR or openPractice, and does not weaken it.
+
+#### Scenario: Standalone installation
+- **WHEN** openChart is installed on a clean supported site with no AI system registered
+- **THEN** migrations complete and the golden-patient intake tests pass
+
+#### Scenario: Failure: a write reaches a site with no AI system registered
+- **WHEN** a `consult.write` reaches an openChart site where no AI system is registered
+- **THEN** openChart refuses it with reason `unauthorized`, stores no clinical content, and every other operation is unaffected
+
+### Requirement: AW-11 The write path is covered by contract tests written first
+The write path SHALL be covered by contract tests, written first, that validate every message against the schema at the digest recorded in `contracts/SHA256SUMS`, run against an AI-system double, and use synthetic data only. The fixtures in this change's `contracts/examples/` SHALL be part of the suite. The tests SHALL cover: every reason code; idempotency, duplicates and conflicting duplicates; every patient-link case; scenario and simulation refusal; every grant check in AG-06; the always-review triggers; review and co-review outcomes; narrowing and pause; refusal of every `act.write` while Tier 2 is not in force; the AI-authorship labels; and the absence of PHI in logs, receipts, notifications and keys. The standalone golden-intake tests SHALL pass with the write path unconfigured.
+
+#### Scenario: CI runs the write-path suite
+- **WHEN** CI runs the write-path contract tests
+- **THEN** they pass against the AI-system double with synthetic data only
+
+#### Scenario: Failure: a fixture adds clinical text to a receipt
+- **WHEN** a test builds an `act.status` that carries free text
+- **THEN** schema validation fails, and the test expects that failure

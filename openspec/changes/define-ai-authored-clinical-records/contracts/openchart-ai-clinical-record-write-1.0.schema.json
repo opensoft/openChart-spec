@@ -1,0 +1,564 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openchart:contract:openchart-ai-clinical-record-write:1.0",
+  "title": "openchart-ai-clinical-record-write 1.0",
+  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which every 1.x receiver refuses with tier2_not_in_force until the clinical-acts foundation is ratified and a MINOR version pins its content schemas. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices and status messages carry identifiers and codes only, never clinical content. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
+  "oneOf": [
+    { "$ref": "#/$defs/consultWrite" },
+    { "$ref": "#/$defs/actWrite" },
+    { "$ref": "#/$defs/authorityNotice" },
+    { "$ref": "#/$defs/writeReceipt" },
+    { "$ref": "#/$defs/actStatus" },
+    { "$ref": "#/$defs/consultReviewed" },
+    { "$ref": "#/$defs/messageAck" }
+  ],
+  "$defs": {
+    "contract": { "const": "openchart-ai-clinical-record-write" },
+    "contractVersion": {
+      "description": "MAJOR.MINOR. Only MAJOR 1 is defined by this schema.",
+      "type": "string",
+      "pattern": "^1\\.(0|[1-9][0-9]*)$"
+    },
+    "uuid": { "type": "string", "format": "uuid" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "issuer": {
+      "description": "A deployment's configured, stable issuer identifier, unique across deployments and never derived from a host path.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 255
+    },
+    "namespaceToken": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+    "codeToken": { "type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,63}$" },
+    "opaqueRef": {
+      "description": "Opaque reference. Carries no name, date of birth, contact detail or clinical content.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9:_./-]{1,128}$"
+    },
+    "versionLabel": { "type": "string", "pattern": "^[A-Za-z0-9._:+-]{1,64}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "mode": {
+      "description": "The mode the medical director set. advice_only is the default; limited_practice is an allowlist; full_practice is full practice authority with a reserved list.",
+      "enum": ["advice_only", "limited_practice", "full_practice"]
+    },
+    "context": {
+      "description": "Only operational writes may be recorded. scenario and simulation are schema-valid so that the receiver can refuse them with non_operational_context and store nothing.",
+      "enum": ["operational", "scenario", "simulation"]
+    },
+    "sourceSystem": {
+      "description": "The external clinical AI system: its issuer and the namespace token under which openChart stores its patient references.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": { "$ref": "#/$defs/namespaceToken" }
+      }
+    },
+    "openchartPatientRef": {
+      "description": "The openChart patient triple (openChart issuer, openchart, OC Patient identifier). It is never replaced by an external identifier.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace", "value"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": { "const": "openchart" },
+        "value": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "externalPatientRef": {
+      "description": "The source system's own patient reference. It must match an active OC Patient External Identifier row on the named OC Patient, in the source system's namespace.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace", "value"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": {
+          "allOf": [
+            { "$ref": "#/$defs/namespaceToken" },
+            { "not": { "const": "openchart" } }
+          ]
+        },
+        "value": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "conversationRef": {
+      "description": "The source system's reference to the conversation, so that an inbox item naming the same conversation can be associated with the consult record by reference.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace", "value"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": { "$ref": "#/$defs/namespaceToken" },
+        "value": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "modelIdentity": {
+      "description": "One model the source system used, by identifier and version. role is an optional label for the model's part in producing the content.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "model_version"],
+      "properties": {
+        "model_id": { "type": "string", "pattern": "^[A-Za-z0-9._:/@+-]{1,128}$" },
+        "model_version": { "$ref": "#/$defs/versionLabel" },
+        "role": { "$ref": "#/$defs/codeToken" }
+      }
+    },
+    "evidenceRef": {
+      "description": "A reference to evidence the source system relied on, by namespace, reference, version and digest. Evidence content never crosses.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "namespace", "ref"],
+      "properties": {
+        "kind": { "enum": ["patient_record", "knowledge_source", "protocol", "other"] },
+        "namespace": { "$ref": "#/$defs/namespaceToken" },
+        "ref": { "$ref": "#/$defs/opaqueRef" },
+        "version": { "$ref": "#/$defs/versionLabel" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "authorityClaim": {
+      "description": "The authority the source system says it acted under. openChart compares every field with its own grant record and refuses on any difference.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grant_id", "grant_version", "mode", "configuration_version"],
+      "properties": {
+        "grant_id": { "$ref": "#/$defs/opaqueRef" },
+        "grant_version": { "type": "integer", "minimum": 1 },
+        "mode": { "$ref": "#/$defs/mode" },
+        "configuration_version": { "$ref": "#/$defs/versionLabel" },
+        "allowlist_entry_id": { "$ref": "#/$defs/opaqueRef" },
+        "protocol_ref": { "$ref": "#/$defs/opaqueRef" },
+        "approver_ref": { "$ref": "#/$defs/opaqueRef" },
+        "legal_review_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_authority_ref": {
+          "description": "The AI system's own reference to the configuration it acted under. openChart records it and, where the grant records one, compares it.",
+          "$ref": "#/$defs/opaqueRef"
+        }
+      }
+    },
+    "knowledgeBasis": {
+      "description": "What an AI turn's or act's clinical statements rest on: the cited evidence, the model's own knowledge with no cited source, or both.",
+      "enum": ["cited_sources", "model_knowledge", "mixed"]
+    },
+    "attachmentRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "media_type", "sha256"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/opaqueRef" },
+        "media_type": { "type": "string", "pattern": "^[a-z]+/[a-z0-9.+-]{1,100}$" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "consultTurn": {
+      "description": "One turn of the exchange. author_kind is patient, representative or ai; a consult write never carries clinician-authored content. Only an ai turn may carry evidence_refs and knowledge_basis.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["turn_id", "seq", "author_kind", "at", "text"],
+      "properties": {
+        "turn_id": { "$ref": "#/$defs/opaqueRef" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "author_kind": { "enum": ["patient", "representative", "ai"] },
+        "at": { "$ref": "#/$defs/timestamp" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "attachments": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/attachmentRef" }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "$ref": "#/$defs/evidenceRef" }
+        },
+        "knowledge_basis": { "$ref": "#/$defs/knowledgeBasis" }
+      },
+      "if": { "properties": { "author_kind": { "const": "ai" } }, "required": ["author_kind"] },
+      "else": {
+        "not": {
+          "anyOf": [
+            { "required": ["evidence_refs"] },
+            { "required": ["knowledge_basis"] }
+          ]
+        }
+      }
+    },
+    "escalation": {
+      "description": "Where the source system routed the patient. An AI never manages an emergency; emergency_services_guidance records that the patient was directed to emergency care.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["routed_to"],
+      "properties": {
+        "routed_to": { "enum": ["none", "human_clinician", "emergency_services_guidance"] },
+        "route_ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "writeEnvelope": {
+      "type": "object",
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "context", "patient", "source_patient_ref", "consent_ref"]
+    },
+    "consultWrite": {
+      "description": "Tier 1. An external clinical AI system records one consult: the full exchange, the models, the evidence references and the authority it operated under. A consult record is AI-generated communication and never a diagnosis or a clinical fact of record.",
+      "type": "object",
+      "additionalProperties": false,
+      "allOf": [
+        { "$ref": "#/$defs/writeEnvelope" },
+        { "required": ["consult_id", "consult_version", "authority", "models", "started_at", "ended_at", "exchange", "evidence_refs", "review_flags", "emergency_indicated", "escalation"] }
+      ],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "consult.write" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" },
+        "context": { "$ref": "#/$defs/context" },
+        "patient": { "$ref": "#/$defs/openchartPatientRef" },
+        "source_patient_ref": { "$ref": "#/$defs/externalPatientRef" },
+        "consent_ref": { "$ref": "#/$defs/opaqueRef" },
+        "consult_id": { "$ref": "#/$defs/opaqueRef" },
+        "consult_version": { "type": "integer", "minimum": 1 },
+        "predecessor_version": { "type": "integer", "minimum": 1 },
+        "conversation_ref": { "$ref": "#/$defs/conversationRef" },
+        "authority": { "$ref": "#/$defs/authorityClaim" },
+        "models": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/modelIdentity" }
+        },
+        "started_at": { "$ref": "#/$defs/timestamp" },
+        "ended_at": { "$ref": "#/$defs/timestamp" },
+        "exchange": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["turns", "content_sha256"],
+          "properties": {
+            "turns": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 500,
+              "items": { "$ref": "#/$defs/consultTurn" },
+              "contains": {
+                "type": "object",
+                "properties": { "author_kind": { "const": "ai" } },
+                "required": ["author_kind"]
+              }
+            },
+            "content_sha256": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "summary": {
+          "description": "Optional AI-written summary. It is labelled AI-authored and never replaces the exchange.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text"],
+          "properties": {
+            "text": { "type": "string", "minLength": 1, "maxLength": 4000 }
+          }
+        },
+        "evidence_refs": {
+          "description": "Required. An empty list is allowed, and puts the consult in the always-review set.",
+          "type": "array",
+          "maxItems": 200,
+          "items": { "$ref": "#/$defs/evidenceRef" }
+        },
+        "review_flags": {
+          "description": "Review category codes the source system declares, drawn from the vocabulary of the medical director's review policy.",
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/codeToken" }
+        },
+        "emergency_indicated": { "type": "boolean" },
+        "escalation": { "$ref": "#/$defs/escalation" },
+        "linked_act_ids": {
+          "type": "array",
+          "maxItems": 50,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/opaqueRef" }
+        }
+      }
+    },
+    "actWrite": {
+      "description": "Tier 2. An external clinical AI system records one AI-authored clinical act under limited_practice or full_practice authority. Every 1.x receiver refuses it with tier2_not_in_force until the clinical-acts foundation is ratified and built and a MINOR version of this contract pins the foundation's content schemas.",
+      "type": "object",
+      "additionalProperties": false,
+      "allOf": [
+        { "$ref": "#/$defs/writeEnvelope" },
+        { "required": ["act_id", "act_version", "act_class", "act_type", "authority", "models", "occurred_at", "evidence_refs", "declared_reserved", "emergency_indicated", "act_content"] }
+      ],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "act.write" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" },
+        "context": { "$ref": "#/$defs/context" },
+        "patient": { "$ref": "#/$defs/openchartPatientRef" },
+        "source_patient_ref": { "$ref": "#/$defs/externalPatientRef" },
+        "consent_ref": { "$ref": "#/$defs/opaqueRef" },
+        "act_id": { "$ref": "#/$defs/opaqueRef" },
+        "act_version": { "type": "integer", "minimum": 1 },
+        "act_class": { "enum": ["order", "prescription", "diagnosis_of_record", "treatment_plan_change"] },
+        "act_type": { "$ref": "#/$defs/codeToken" },
+        "authority": {
+          "allOf": [
+            { "$ref": "#/$defs/authorityClaim" },
+            { "required": ["approver_ref", "legal_review_ref"] },
+            {
+              "if": { "properties": { "mode": { "const": "limited_practice" } }, "required": ["mode"] },
+              "then": { "required": ["allowlist_entry_id", "protocol_ref"] }
+            }
+          ]
+        },
+        "models": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": { "$ref": "#/$defs/modelIdentity" }
+        },
+        "occurred_at": { "$ref": "#/$defs/timestamp" },
+        "consult_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["consult_id"],
+          "properties": {
+            "consult_id": { "$ref": "#/$defs/opaqueRef" },
+            "consult_version": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 200,
+          "items": { "$ref": "#/$defs/evidenceRef" }
+        },
+        "knowledge_basis": { "$ref": "#/$defs/knowledgeBasis" },
+        "conditions_met": {
+          "description": "For limited_practice: each condition of the allowlist entry that the source system states was met, with its evidence.",
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["condition_ref", "evidence_refs"],
+            "properties": {
+              "condition_ref": { "$ref": "#/$defs/opaqueRef" },
+              "evidence_refs": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 50,
+                "items": { "$ref": "#/$defs/evidenceRef" }
+              }
+            }
+          }
+        },
+        "declared_reserved": {
+          "description": "Whether the source system classifies the act as reserved (for example controlled-substance prescribing). openChart also applies its own classification; either one makes the act reserved.",
+          "type": "boolean"
+        },
+        "emergency_indicated": {
+          "description": "Whether the act is part of managing an emergency. true is always refused.",
+          "type": "boolean"
+        },
+        "supersedes_act": {
+          "description": "A prior AI-authored act by the same source system that this act visibly supersedes. A clinician-authored record can never be named here.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["act_id", "act_version"],
+          "properties": {
+            "act_id": { "$ref": "#/$defs/opaqueRef" },
+            "act_version": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "target_record_ref": {
+          "description": "The existing chart record that the act acts upon, if any. A clinician-authored target is refused with targets_clinician_record.",
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "act_content": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["content_schema", "content"],
+          "properties": {
+            "content_schema": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["id", "version", "sha256"],
+              "properties": {
+                "id": { "$ref": "#/$defs/codeToken" },
+                "version": { "$ref": "#/$defs/versionLabel" },
+                "sha256": { "$ref": "#/$defs/sha256" }
+              }
+            },
+            "content": {
+              "description": "The one open object. It is validated against the clinical-acts foundation's content schema named by content_schema, at that digest, once a MINOR version of this contract pins it.",
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "authorityNotice": {
+      "description": "A change in authority. From the AI system, only a reduction (paused or narrowed) is accepted, and openChart applies it at once; a widening is only ever the medical director's act in openChart. From openChart, every change to its grant is announced.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "direction", "grant_id", "change", "effective_at", "configuration_version"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "authority.notice" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" },
+        "direction": { "enum": ["from_ai_system", "from_openchart"] },
+        "grant_id": { "$ref": "#/$defs/opaqueRef" },
+        "grant_version": { "type": "integer", "minimum": 1 },
+        "change": { "enum": ["paused", "narrowed", "resumed", "expired", "revoked", "superseded"] },
+        "effective_at": { "$ref": "#/$defs/timestamp" },
+        "configuration_version": { "$ref": "#/$defs/versionLabel" },
+        "new_mode": { "$ref": "#/$defs/mode" },
+        "removed_allowlist_entry_ids": {
+          "type": "array",
+          "maxItems": 200,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/opaqueRef" }
+        }
+      },
+      "if": { "properties": { "direction": { "const": "from_ai_system" } }, "required": ["direction"] },
+      "then": { "properties": { "change": { "enum": ["paused", "narrowed"] } } }
+    },
+    "rejectReason": {
+      "enum": [
+        "schema_invalid",
+        "unsupported_major_version",
+        "unauthorized",
+        "non_operational_context",
+        "patient_link_unknown",
+        "patient_link_mismatch",
+        "patient_link_in_review",
+        "no_current_grant",
+        "grant_paused",
+        "grant_expired",
+        "grant_revoked",
+        "grant_mismatch",
+        "mode_mismatch",
+        "mode_not_permitted",
+        "allowlist_entry_unknown",
+        "allowlist_entry_mismatch",
+        "conditions_unverified",
+        "reserved_act_refused",
+        "emergency_management_refused",
+        "approver_mismatch",
+        "legal_review_mismatch",
+        "targets_clinician_record",
+        "act_type_unsupported",
+        "tier2_not_in_force",
+        "conflicting_duplicate",
+        "content_digest_mismatch",
+        "notice_would_widen"
+      ]
+    },
+    "writeReceipt": {
+      "description": "openChart's answer to every write and every authority notice it receives. A refused write stores no clinical content.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "write_kind", "result", "received_at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "write.receipt" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "in_reply_to": { "$ref": "#/$defs/uuid" },
+        "write_kind": { "enum": ["consult", "act", "authority_notice"] },
+        "result": { "enum": ["accepted", "duplicate", "refused"] },
+        "reason": { "$ref": "#/$defs/rejectReason" },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "grant_checked": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["grant_id", "grant_version"],
+          "properties": {
+            "grant_id": { "$ref": "#/$defs/opaqueRef" },
+            "grant_version": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "co_review_due_at": { "$ref": "#/$defs/timestamp" },
+        "received_at": { "$ref": "#/$defs/timestamp" }
+      },
+      "if": { "properties": { "result": { "const": "refused" } }, "required": ["result"] },
+      "then": { "required": ["reason"], "not": { "required": ["record_ref"] } },
+      "else": { "required": ["record_ref"], "not": { "required": ["reason"] } }
+    },
+    "actStatus": {
+      "description": "openChart reports what happened to an accepted AI-authored act: co-review outcome, reversal, cancellation or hand-off on narrowing or pause, and overdue escalation.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "act_id", "act_version", "record_ref", "status", "at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "act.status" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "act_id": { "$ref": "#/$defs/opaqueRef" },
+        "act_version": { "type": "integer", "minimum": 1 },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "status": {
+          "enum": [
+            "co_review_confirmed",
+            "co_review_amended",
+            "co_review_voided",
+            "voided",
+            "countermanded",
+            "cancelled_on_narrowing",
+            "handed_to_clinician",
+            "co_review_overdue_escalated"
+          ]
+        },
+        "reviewer_ref": { "$ref": "#/$defs/opaqueRef" },
+        "reason_code": { "$ref": "#/$defs/codeToken" },
+        "at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "consultReviewed": {
+      "description": "openChart reports the outcome of a clinician review of a consult record, as a code only.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "consult_id", "consult_version", "record_ref", "outcome", "at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "consult.reviewed" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "consult_id": { "$ref": "#/$defs/opaqueRef" },
+        "consult_version": { "type": "integer", "minimum": 1 },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "outcome": { "enum": ["concur", "concur_with_note", "follow_up_required", "unsafe"] },
+        "at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "messageAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "result"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "message.ack" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "in_reply_to": { "$ref": "#/$defs/uuid" },
+        "result": { "const": "received" }
+      }
+    }
+  }
+}

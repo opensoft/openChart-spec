@@ -1,0 +1,9 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "message.ack",
+  "message_id": "8de1acb0-7495-46d7-b2f3-9eafb0c1d2e9",
+  "sent_at": "2026-11-15T10:00:02Z",
+  "in_reply_to": "6bcf8a9e-5273-44b5-90d1-7c8d9eafb0c7",
+  "result": "received"
+}

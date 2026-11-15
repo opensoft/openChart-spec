@@ -1,0 +1,15 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "act.status",
+  "message_id": "6bcf8a9e-5273-44b5-90d1-7c8d9eafb0c7",
+  "sent_at": "2026-11-15T10:00:00Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "act_id": "SYN-ACT-0001",
+  "act_version": 1,
+  "record_ref": "OC-AIA-00001",
+  "status": "co_review_confirmed",
+  "reviewer_ref": "SYN-USER-CLIN-0003",
+  "at": "2026-11-15T09:58:00Z",
+  "note": "SYN free text must not cross"
+}

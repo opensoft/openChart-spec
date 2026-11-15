@@ -1,0 +1,68 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "act.write",
+  "message_id": "2d8b4c5a-1e3f-4071-8c9d-3e4f5a6b7c83",
+  "sent_at": "2026-11-14T10:00:00Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "context": "operational",
+  "patient": {
+    "issuer": "syn-openchart-site-a.example",
+    "namespace": "openchart",
+    "value": "OC-PAT-00001"
+  },
+  "source_patient_ref": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system",
+    "value": "SYN-AIPAT-0001"
+  },
+  "consent_ref": "SYN-CONSENT-0001",
+  "act_id": "SYN-ACT-0002",
+  "act_version": 1,
+  "act_class": "diagnosis_of_record",
+  "act_type": "syn.diagnosis.problem_list_entry",
+  "authority": {
+    "grant_id": "SYN-GRANT-0003",
+    "grant_version": 1,
+    "mode": "full_practice",
+    "configuration_version": "cfg-2027.03.01-1",
+    "approver_ref": "SYN-USER-MD-0001"
+  },
+  "models": [
+    {
+      "model_id": "syn-model-assess",
+      "model_version": "2026.11.0",
+      "role": "assessment"
+    }
+  ],
+  "occurred_at": "2026-11-14T09:59:00Z",
+  "consult_ref": {
+    "consult_id": "SYN-CONSULT-0002",
+    "consult_version": 1
+  },
+  "evidence_refs": [
+    {
+      "kind": "protocol",
+      "namespace": "syn_protocols",
+      "ref": "SYN-PROTOCOL-0007",
+      "version": "2"
+    }
+  ],
+  "declared_reserved": false,
+  "emergency_indicated": false,
+  "knowledge_basis": "cited_sources",
+  "act_content": {
+    "content_schema": {
+      "id": "syn.foundation.order",
+      "version": "0.0-placeholder",
+      "sha256": "adbfc74ecaef434eb888918a11bdceee0a0060fee1e6d0655a9384149e53961e"
+    },
+    "content": {
+      "syn_note": "SYN placeholder: the clinical-acts foundation defines this body."
+    }
+  }
+}

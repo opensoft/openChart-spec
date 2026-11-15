@@ -1,0 +1,118 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "consult.write",
+  "message_id": "0b6f2a3e-9c1d-4e5f-8a7b-1c2d3e4f5a61",
+  "sent_at": "14/11/2026 09:02",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "context": "operational",
+  "patient": {
+    "issuer": "syn-openchart-site-a.example",
+    "namespace": "openchart",
+    "value": "OC-PAT-00001"
+  },
+  "source_patient_ref": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system",
+    "value": "SYN-AIPAT-0001"
+  },
+  "consent_ref": "SYN-CONSENT-0001",
+  "consult_id": "SYN-CONSULT-0001",
+  "consult_version": 1,
+  "conversation_ref": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system",
+    "value": "SYN-CONV-0001"
+  },
+  "authority": {
+    "grant_id": "SYN-GRANT-0001",
+    "grant_version": 3,
+    "mode": "advice_only",
+    "configuration_version": "cfg-2026.11.14-1"
+  },
+  "models": [
+    {
+      "model_id": "syn-model-assess",
+      "model_version": "2026.11.0",
+      "role": "assessment"
+    },
+    {
+      "model_id": "syn-model-safety",
+      "model_version": "2026.10.2",
+      "role": "safety_check"
+    }
+  ],
+  "started_at": "2026-11-14T09:00:00Z",
+  "ended_at": "2026-11-14T09:01:30Z",
+  "exchange": {
+    "turns": [
+      {
+        "turn_id": "SYN-TURN-0001",
+        "seq": 1,
+        "author_kind": "patient",
+        "at": "2026-11-14T09:00:00Z",
+        "text": "SYN: I have had a mild headache for two days. Paracetamol helps a little."
+      },
+      {
+        "turn_id": "SYN-TURN-0002",
+        "seq": 2,
+        "author_kind": "ai",
+        "at": "2026-11-14T09:00:20Z",
+        "text": "SYN: Do you have fever, a stiff neck, weakness, vision changes or the worst headache of your life?"
+      },
+      {
+        "turn_id": "SYN-TURN-0003",
+        "seq": 3,
+        "author_kind": "patient",
+        "at": "2026-11-14T09:01:05Z",
+        "text": "SYN: No, none of those."
+      },
+      {
+        "turn_id": "SYN-TURN-0004",
+        "seq": 4,
+        "author_kind": "ai",
+        "at": "2026-11-14T09:01:30Z",
+        "text": "SYN: This sounds like a tension-type headache. Rest, fluids and your usual dose are reasonable. If any of those warning signs appear, seek emergency care. I have added this consult to your chart for your doctor.",
+        "knowledge_basis": "cited_sources",
+        "evidence_refs": [
+          {
+            "kind": "knowledge_source",
+            "namespace": "syn_knowledge",
+            "ref": "SYN-KNOWLEDGE-RECORD-0042",
+            "version": "3",
+            "sha256": "ba328f5e109dcf5270d6ee734f1ebbab660763bab918723d6916ccac36ba244a"
+          }
+        ]
+      }
+    ],
+    "content_sha256": "5600b0f7bfe4c0ea85f63c5a518c7234c6056a9c295d4ed573c5cb4f305c9bcb"
+  },
+  "summary": {
+    "text": "SYN: AI summary. Two-day mild headache without red-flag features; self-care advice and safety-netting given."
+  },
+  "evidence_refs": [
+    {
+      "kind": "patient_record",
+      "namespace": "syn_chart",
+      "ref": "SYN-SNAPSHOT-0001",
+      "version": "1",
+      "sha256": "59939317116f2e6db1e23dd1d13cabca43101c332756fd524dcca8f078752d1d"
+    },
+    {
+      "kind": "knowledge_source",
+      "namespace": "syn_knowledge",
+      "ref": "SYN-KNOWLEDGE-RECORD-0042",
+      "version": "3",
+      "sha256": "ba328f5e109dcf5270d6ee734f1ebbab660763bab918723d6916ccac36ba244a"
+    }
+  ],
+  "review_flags": [],
+  "emergency_indicated": false,
+  "escalation": {
+    "routed_to": "none"
+  }
+}

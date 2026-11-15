@@ -1,0 +1,75 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "consult.write",
+  "message_id": "0b6f2a3e-9c1d-4e5f-8a7b-1c2d3e4f5a61",
+  "sent_at": "2026-11-14T09:02:00Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "context": "operational",
+  "patient": {
+    "issuer": "syn-openchart-site-a.example",
+    "namespace": "openchart",
+    "value": "OC-PAT-00001"
+  },
+  "source_patient_ref": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system",
+    "value": "SYN-AIPAT-0001"
+  },
+  "consent_ref": "SYN-CONSENT-0001",
+  "consult_id": "SYN-CONSULT-0001",
+  "consult_version": 1,
+  "conversation_ref": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system",
+    "value": "SYN-CONV-0001"
+  },
+  "authority": {
+    "grant_id": "SYN-GRANT-0001",
+    "grant_version": 3,
+    "mode": "advice_only",
+    "configuration_version": "cfg-2026.11.14-1"
+  },
+  "models": [
+    {
+      "model_id": "syn-model-assess",
+      "model_version": "2026.11.0",
+      "role": "assessment"
+    },
+    {
+      "model_id": "syn-model-safety",
+      "model_version": "2026.10.2",
+      "role": "safety_check"
+    }
+  ],
+  "started_at": "2026-11-14T09:00:00Z",
+  "ended_at": "2026-11-14T09:01:30Z",
+  "summary": {
+    "text": "SYN: AI summary. Two-day mild headache without red-flag features; self-care advice and safety-netting given."
+  },
+  "evidence_refs": [
+    {
+      "kind": "patient_record",
+      "namespace": "syn_chart",
+      "ref": "SYN-SNAPSHOT-0001",
+      "version": "1",
+      "sha256": "59939317116f2e6db1e23dd1d13cabca43101c332756fd524dcca8f078752d1d"
+    },
+    {
+      "kind": "knowledge_source",
+      "namespace": "syn_knowledge",
+      "ref": "SYN-KNOWLEDGE-RECORD-0042",
+      "version": "3",
+      "sha256": "ba328f5e109dcf5270d6ee734f1ebbab660763bab918723d6916ccac36ba244a"
+    }
+  ],
+  "review_flags": [],
+  "emergency_indicated": false,
+  "escalation": {
+    "routed_to": "none"
+  }
+}
