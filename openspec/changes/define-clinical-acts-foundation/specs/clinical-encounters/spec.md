@@ -40,7 +40,7 @@ openChart SHALL let an encounter move from `in_progress` to `final` only when ev
 - no act that references the encounter is in `draft`;
 - the encounter period has an end.
 
-The encounter signature SHALL attest the encounter's documentation as a whole, and SHALL be the documentation-final signature that publication uses (PB-02). Its sign-off binds the SHA-256 of the manifest of the records attached to it, so it attests exactly those versions (CA-04; design call CD-53, PROPOSED).
+The encounter signature SHALL attest the records in its manifest: every act and information record that references the encounter and that the signing view showed, which CA-04 defines. The signing view SHALL show exactly the manifest's members, and its sign-off binds the manifest's SHA-256. The signature SHALL be the documentation-final signature that publication uses (PB-02). It attests no record outside the manifest, and never adopts a recommendation (AN-11) (CA-04; design call CD-53, PROPOSED).
 
 #### Scenario: An encounter is finalized
 - **WHEN** the primary performer signs an encounter with a final note, a final diagnosis and no drafts
@@ -48,7 +48,7 @@ The encounter signature SHALL attest the encounter's documentation as a whole, a
 
 #### Scenario: The encounter sign-off binds what is attached
 - **WHEN** a clinician signs an encounter with one final note, one final diagnosis and one procedure attached
-- **THEN** the sign-off statement carries `manifest_sha256` over those three versions and their content digests, so the signature attests exactly them, and a later amendment of any of them is not covered by it
+- **THEN** the signing view shows those three records, with any information record that references the encounter, and the sign-off statement carries `manifest_sha256` over exactly them, so the signature attests exactly them, and a later amendment of any of them is not covered by it
 
 #### Scenario: Failure: a draft diagnosis remains
 - **WHEN** a clinician tries to sign an encounter that has a diagnosis still in `draft`

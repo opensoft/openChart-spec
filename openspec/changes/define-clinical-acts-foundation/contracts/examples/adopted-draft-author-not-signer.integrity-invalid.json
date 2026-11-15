@@ -42,6 +42,23 @@
       "at": "2026-11-15T10:00:00Z"
     },
     {
+      "event": "held",
+      "by_ref": "SYN-USER-NURSE-0001",
+      "at": "2026-11-15T10:05:00Z",
+      "recommendation_ref": {
+        "recommendation_id": "SYN-REC-0008"
+      }
+    },
+    {
+      "event": "hold_released",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z",
+      "reason_code": "adopted",
+      "recommendation_ref": {
+        "recommendation_id": "SYN-REC-0008"
+      }
+    },
+    {
       "event": "signed",
       "by_ref": "SYN-USER-CLIN-0001",
       "at": "2026-11-15T10:30:00Z"

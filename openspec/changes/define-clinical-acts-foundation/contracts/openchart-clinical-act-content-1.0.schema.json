@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-clinical-act-content:1.0",
   "title": "openchart-clinical-act-content 1.0",
-  "description": "Canonical content schema for openChart's clinical record, owned by opensoft/openChart-spec change define-clinical-acts-foundation. record_kind tells the three record kinds apart. act_version ($defs/actVersion) is one version of a clinical act of six classes: encounter, clinical_note, diagnosis_of_record, procedure_performed, order and prescription; it is a practitioner's draft or a decision the practitioner signed off, written by a human; its envelope carries the author, the addition provenance of owner ruling 80 (who or what added it, on whose behalf, from what source, when), the status lifecycle, signatures and lifecycle sign-offs with the practitioner's sign-off evidence of owner ruling 151, amendment by new versions, entered-in-error handling, the co-signature hook and derivation. recommendation ($defs/recommendationRecord) is decision content entered without authority, kept in full and marked not an authorized decision, with the missing authority coded; it is never an act of record. information ($defs/informationRecord) is a clinical note's content from a writer without the authority to sign it, kept as information under its writer's name and marked not signed off; its content validates as note content, and decision content declared a note is a recommendation instead (design call CD-65). Each class's clinical content is addressable as $defs/<class>Content, so that another contract, such as openchart-ai-clinical-record-write, can pin it by this schema's digest. Codings carry the code system, code, version where the practice-supplied code set declares one, display and the practice-supplied code-set reference; openChart bundles no code set. Every object is closed. All examples are synthetic.",
+  "description": "Canonical content schema for openChart's clinical record, owned by opensoft/openChart-spec change define-clinical-acts-foundation. record_kind tells the three record kinds apart. act_version ($defs/actVersion) is one version of a clinical act of six classes: encounter, clinical_note, diagnosis_of_record, procedure_performed, order and prescription; it is a practitioner's draft or a decision the practitioner signed off, written by a human; its envelope carries the author, the addition provenance of owner ruling 80 (who or what added it, on whose behalf, from what source, when), the status lifecycle, signatures and lifecycle sign-offs with the practitioner's sign-off evidence of owner ruling 151, amendment by new versions, entered-in-error handling, the co-signature hook and derivation. recommendation ($defs/recommendationRecord) is decision content entered without authority, kept in full and marked not an authorized decision, with the missing authority coded; it is never an act of record. information ($defs/informationRecord) is a clinical note's content from a writer without the authority to sign it, kept as information under its writer's name and marked not signed off; its content validates as note content, and any other content declared a note is a recommendation with no_decision_authority instead (design call CD-65). Each class's clinical content is addressable as $defs/<class>Content, so that another contract, such as openchart-ai-clinical-record-write, can pin it by this schema's digest. Codings carry the code system, code, version where the practice-supplied code set declares one, display and the practice-supplied code-set reference; openChart bundles no code set. Every object is closed. All examples are synthetic.",
   "type": "object",
   "required": ["contract", "contract_version", "record_kind"],
   "properties": {
@@ -82,7 +82,7 @@
           "$ref": "#/$defs/recommendationRef"
         },
         "held_for": {
-          "description": "The recommendation this draft is held for, while it is open (AN-14; design call CD-46).",
+          "description": "The recommendation this draft is held for, while it is open. The hold is recorded by a held lifecycle event and ends with hold_released (AN-14; design call CD-46).",
           "$ref": "#/$defs/recommendationRef"
         },
         "restricted": {
@@ -261,12 +261,31 @@
           "then": { "properties": {"status": {"not": {"const": "completed"}}} }
         },
         {
-          "description": "An encounter's sign-offs bind the manifest of its attached records (EN-04; design call CD-53).",
+          "description": "An encounter's signatures bind the manifest of the records its signing view showed (EN-04; design call CD-53).",
           "if": { "properties": {"act_class": {"const": "encounter"}}, "required": ["act_class", "signatures"] },
           "then": {
             "properties": {
               "signatures": {
                 "items": { "properties": {"sign_off": {"required": ["manifest_sha256"]}} }
+              }
+            }
+          }
+        },
+        {
+          "description": "A held draft stays a draft while it is held: it is not cancelled until the hold is released by decline (AN-14).",
+          "if": { "required": ["held_for"], "properties": {"signatures": false} },
+          "then": { "properties": {"status": {"enum": ["draft", "in_progress"]}} }
+        },
+        {
+          "description": "Only an encounter's sign-offs carry a manifest (CA-04, EN-04).",
+          "if": { "properties": {"act_class": {"not": {"const": "encounter"}}}, "required": ["act_class"] },
+          "then": {
+            "properties": {
+              "signatures": {
+                "items": { "properties": {"sign_off": {"properties": {"manifest_sha256": false}}} }
+              },
+              "lifecycle": {
+                "items": { "properties": {"sign_off": {"properties": {"manifest_sha256": false}}} }
               }
             }
           }
@@ -394,13 +413,19 @@
       ]
     },
     "party": {
-      "description": "An identified party (AN-02): the writer of an addition, a party on whose behalf it was written, or a decision maker. kind is human (identified by their own named account in the chart, account_ref; clinical_role, licence_attestation_ref and openwallet_id are recorded where they apply and are never part of the identity, design call CD-55), patient (the verified link; a representative is named as such), ai (openwallet_id with the model and model version), device (make, model and serial, or a device_id with its kind) or system (the registered integration identity and its operator). A human or system whose identity another system vouches for, and that has no account or registration here, is named by external_ref instead, is asserted_by that system, and is never the writer (design call CD-57). identity_basis says whether openChart authenticated the identity itself, an identified system vouched for it, or the party named could not be identified (design calls CD-42 and CD-66); a party that is not identified carries only what is known of it.",
+      "description": "An identified party (AN-02): the writer of an addition, a party on whose behalf it was written, or a decision maker. kind is human (identified by their own named account in the chart, account_ref; clinical_role, licence_attestation_ref and openwallet_id are recorded where they apply and are never part of the identity, design call CD-55), patient (the verified link; a representative is named as such), ai (openwallet_id with the model and model version), device (make, model and serial, or a device_id with its kind) or system (the registered integration identity and its operator). A human or system whose identity another system vouches for, and that has no account or registration here, is named by external_ref instead, is asserted_by that system, and is never the writer (design call CD-57). identity_basis says whether openChart authenticated the identity itself, an identified system vouched for it, or the party named could not be identified (design calls CD-42 and CD-66); a party that is not identified carries described_as and no account, clinical role, licence attestation or wallet.",
       "type": "object",
       "additionalProperties": false,
       "required": ["kind", "identity_basis"],
       "properties": {
         "kind": { "enum": ["human", "patient", "ai", "device", "system"] },
         "identity_basis": { "$ref": "#/$defs/identityBasis" },
+        "described_as": {
+          "description": "For a party that is not identified only: what is known of it, as the record gave it, such as the name and role on an outside letter (design call CD-66). It never identifies the party.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
         "external_ref": {
           "description": "Another organization's or system's identifier for a human or system party that has no account or registration in this chart (design call CD-57).",
           "$ref": "#/$defs/externalRef"
@@ -586,6 +611,21 @@
             "required": ["kind", "acting_as"]
           },
           "then": { "properties": {"representative_ref": false} }
+        },
+        {
+          "description": "A party that is not identified is described, and carries no account, clinical role, licence attestation or wallet, which would claim an identity the chart does not hold (design call CD-66).",
+          "if": {
+            "properties": {
+              "kind": { "enum": ["human", "system", "device"] },
+              "identity_basis": { "properties": {"basis": {"const": "not_identified"}}, "required": ["basis"] }
+            },
+            "required": ["kind", "identity_basis"]
+          },
+          "then": {
+            "required": ["described_as"],
+            "properties": { "account_ref": false, "clinical_role": false, "licence_attestation_ref": false, "openwallet_id": false }
+          },
+          "else": { "properties": {"described_as": false} }
         }
       ]
     },
@@ -626,10 +666,24 @@
         "on_behalf_of": { "type": "array", "minItems": 1, "maxItems": 20, "items": {"$ref": "#/$defs/party"} },
         "corrects": { "$ref": "#/$defs/additionRef" },
         "submission_ref": {
-          "description": "The writer's own identifier for this submission. A repeat with the same writer, submission_ref and content digest is answered with the first result and adds nothing; a reused submission_ref with a different content digest is refused with conflicting_submission (design call CD-64).",
+          "description": "The writer's own identifier for this submission. A repeat with the same writer, submission_ref and content digest is answered with the first result and adds nothing. A reused submission_ref with a different content digest is stored as a new addition flagged submission_ref_conflict, and the writer is told at once (design call CD-64).",
           "$ref": "#/$defs/opaqueRef"
+        },
+        "submission_ref_conflict": {
+          "description": "Set when this addition reused a submission_ref that the same writer gave earlier content under: the first addition and its content digest (AN-10; design call CD-64).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["first_addition", "first_content_sha256"],
+          "properties": { "first_addition": {"$ref": "#/$defs/additionRef"}, "first_content_sha256": {"$ref": "#/$defs/sha256"} }
         }
-      }
+      },
+      "allOf": [
+        {
+          "description": "A submission_ref conflict is flagged only on a submission that carries the reference.",
+          "if": { "required": ["submission_ref_conflict"] },
+          "then": { "required": ["submission_ref"] }
+        }
+      ]
     },
     "author": {
       "description": "The named author of this version. author_type is clinician: a named human holding an openChart clinical role grant (clinician or nurse), acting through their own authenticated openChart session. Act content from any other author is entered as a recommendation record, never refused for that reason (CA-02, AN-09).",
@@ -732,7 +786,7 @@
           "$ref": "#/$defs/sha256"
         },
         "manifest_sha256": {
-          "description": "For an encounter's sign-off: the SHA-256 of the RFC 8785 canonical JSON of the manifest of its attached records, the list of act_id, act_version and content_sha256 of the latest version of every act that references the encounter at signing, except a cancelled one, sorted by act_id and act_version. It is part of the sign-off statement (design call CD-53).",
+          "description": "For an encounter's signature, and the copy on its cosigned event: the SHA-256 of the RFC 8785 canonical JSON of the manifest of every record its signing view showed. The view shows every act and information record that references the encounter at signing: the latest version of each act, except a cancelled one, and each information record; never a recommendation. Each entry is {record_kind, id, version (acts only), content_sha256}, sorted by record_kind, id and version. It is part of the sign-off statement, and the signature attests exactly the records in it (EN-04; design call CD-53).",
           "$ref": "#/$defs/sha256"
         },
         "opensig_attestation_ref": { "$ref": "#/$defs/opaqueRef" },
@@ -798,7 +852,9 @@
             "discontinued",
             "cancelled",
             "entered_in_error",
-            "amended"
+            "amended",
+            "held",
+            "hold_released"
           ]
         },
         "by_ref": { "$ref": "#/$defs/opaqueRef" },
@@ -814,6 +870,10 @@
         "sign_off": { "$ref": "#/$defs/signOff" },
         "adopted_from": {
           "description": "The recommendation whose action this event adopts (AN-11).",
+          "$ref": "#/$defs/recommendationRef"
+        },
+        "recommendation_ref": {
+          "description": "For held and hold_released: the recommendation the draft is or was held for (AN-14).",
           "$ref": "#/$defs/recommendationRef"
         },
         "information_ref": {
@@ -869,15 +929,41 @@
           "if": {
             "properties": {
               "event": {
-                "enum": ["created", "revised", "signed", "released", "cosignature_overdue_escalated", "completed", "amended"]
+                "enum": [
+                  "created",
+                  "revised",
+                  "signed",
+                  "released",
+                  "cosignature_overdue_escalated",
+                  "completed",
+                  "amended",
+                  "held",
+                  "hold_released"
+                ]
               }
             },
             "required": ["event"]
           },
           "then": { "properties": {"sign_off": false, "attestation": false} }
+        },
+        {
+          "description": "A hold and its release name the recommendation (AN-14).",
+          "if": { "properties": {"event": {"enum": ["held", "hold_released"]}}, "required": ["event"] },
+          "then": { "required": ["recommendation_ref"] },
+          "else": { "properties": {"recommendation_ref": false} }
+        },
+        {
+          "description": "A hold is released only by adoption or by decline (AN-11, AN-14).",
+          "if": { "properties": {"event": {"const": "hold_released"}}, "required": ["event"] },
+          "then": { "required": ["reason_code"], "properties": {"reason_code": {"enum": ["adopted", "declined"]}} }
+        },
+        {
+          "description": "Only a co-signature event repeats an encounter signature's manifest; no other event carries one (CA-04).",
+          "if": { "properties": {"event": {"not": {"const": "cosigned"}}}, "required": ["event"] },
+          "then": { "properties": {"sign_off": {"properties": {"manifest_sha256": false}}} }
         }
       ],
-      "description": "An attributed, dated status transition (CA-03). A discontinuation, an entered-in-error mark, a co-signature and the cancellation of a signed act are decisions, so their events carry the practitioner's sign-off evidence and attestation (CA-04, CA-06, CA-07, OR-02). A cosigned event carries an identical copy of the co-signer signature's sign-off (CA-07). A completion of an order is a record of work done, not a decision, and a prescription is never completed in this version (design call CD-58)."
+      "description": "An attributed, dated status transition (CA-03). A discontinuation, an entered-in-error mark, a co-signature and the cancellation of a signed act are decisions, so their events carry the practitioner's sign-off evidence and attestation (CA-04, CA-06, CA-07, OR-02). A cosigned event carries an identical copy of the co-signer signature's sign-off (CA-07). A hold and its release are recorded as held and hold_released, naming the recommendation (AN-14). A completion of an order is a record of work done, not a decision, and a prescription is never completed in this version (design call CD-58)."
     },
     "coding": {
       "description": "A code from a practice-supplied code set. openChart bundles no code set and asserts no license status for any code system.",
@@ -1080,7 +1166,7 @@
       ]
     },
     "proposedAct": {
-      "description": "The decision that was attempted: the action; the act class and act type as the writer gave them, whether or not this chart defines them (AN-06); and the content exactly as given, checked only for being a well-formed object, with content_schema naming another schema it was declared under where there is one; or, for an action on an existing act, that act's version. Content declared a clinical note that validates as note content is information, never a recommendation (design call CD-65). Act-validity rules apply when a clinician adopts it (AN-09, AN-11; design calls CD-51 and CD-56).",
+      "description": "The decision that was attempted: the action; the act class and act type as the writer gave them, whether or not this chart defines them (AN-06); and the content exactly as given, checked only for being a well-formed object, with content_schema naming another schema it was declared under where there is one; or, for an action on an existing act, that act's version (target), or the writing path's own reference to it where it does not resolve (target_as_given), with any content the path gave with the action kept as given. Content declared a clinical note that validates as note content is information, never a recommendation (design call CD-65). Act-validity rules apply when a clinician adopts it (AN-09, AN-11; design calls CD-51 and CD-56).",
       "type": "object",
       "additionalProperties": false,
       "required": ["action", "act_class"],
@@ -1102,6 +1188,10 @@
         },
         "content_schema": { "$ref": "#/$defs/declaredSchemaRef" },
         "target": { "$ref": "#/$defs/actVersionRef" },
+        "target_as_given": {
+          "description": "The writing path's own reference to the existing record its action is on, kept as given beside target. Where openChart cannot resolve it to an act version of this patient's chart, target is absent and the reviewer sees this reference as given (AN-09).",
+          "$ref": "#/$defs/opaqueRef"
+        },
         "draft_ref": { "$ref": "#/$defs/actVersionRef" },
         "reason_code": { "$ref": "#/$defs/codeToken" },
         "declared_entry_class": {
@@ -1115,6 +1205,7 @@
           "then": { "required": ["content"] }
         },
         {
+          "description": "An action on an existing act names it, resolved (target) or as the writing path gave it (target_as_given).",
           "if": {
             "properties": {
               "action": {
@@ -1123,20 +1214,32 @@
             },
             "required": ["action"]
           },
-          "then": { "required": ["target"] }
+          "then": {
+            "anyOf": [
+              { "required": ["target"] },
+              { "required": ["target_as_given"] }
+            ]
+          }
         },
         {
-          "description": "Content declared under another schema is kept only for an action that carries content.",
+          "description": "Content declared under another schema is kept with its content, for any action but a co-signature, which carries no content of its own (AN-09, CD-51).",
           "if": { "required": ["content_schema"] },
-          "then": { "properties": {"action": {"enum": ["sign", "new_version"]}} }
+          "then": {
+            "required": ["content"],
+            "properties": {
+              "action": {
+                "enum": ["sign", "new_version", "discontinue", "enter_in_error", "cancel"]
+              }
+            }
+          }
         },
         {
           "description": "A sign-off of new content names no existing act; it may name the draft it came from (draft_ref).",
           "if": { "properties": {"action": {"const": "sign"}}, "required": ["action"] },
-          "then": { "properties": {"target": false} }
+          "then": { "properties": {"target": false, "target_as_given": false} }
         },
         {
-          "description": "Content declared a note is a recommendation only when it is not note content (AN-06, CD-63, CD-65).",
+          "description": "Content declared a note is a recommendation only when it is not note content; it is then entered with no_decision_authority (AN-06, CD-63, CD-65).",
           "if": { "properties": {"act_class": {"const": "clinical_note"}}, "required": ["act_class", "content"] },
           "then": {
             "properties": { "content": {"not": {"$ref": "#/$defs/clinicalNoteContent"}} }
@@ -1231,7 +1334,17 @@
           "items": { "$ref": "#/$defs/missingAuthority" }
         },
         "path_reason": { "$ref": "#/$defs/pathReason" },
-        "decision_maker": { "$ref": "#/$defs/party" },
+        "decision_maker": {
+          "description": "Whose decision it was, judged by AN-08. Never a party that is not identified: where the claimed maker cannot be identified, the carrying writer is the decision maker and the claim is kept in claimed_decision_maker (CD-66).",
+          "allOf": [
+            { "$ref": "#/$defs/party" },
+            {
+              "properties": {
+                "identity_basis": { "properties": {"basis": {"enum": ["verified_by_chart", "asserted_by"]}} }
+              }
+            }
+          ]
+        },
         "claimed_decision_maker": { "$ref": "#/$defs/party" },
         "proposed": { "$ref": "#/$defs/proposedAct" },
         "provenance": { "$ref": "#/$defs/provenance" },
@@ -1240,7 +1353,14 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["code", "sent_at"],
-          "properties": { "code": {"const": "recorded_as_recommendation"}, "sent_at": {"$ref": "#/$defs/timestamp"} }
+          "properties": {
+            "code": { "const": "recorded_as_recommendation" },
+            "sent_at": { "$ref": "#/$defs/timestamp" },
+            "submission_ref_conflict": {
+              "description": "The writer was told that its submission_ref named earlier, different content (AN-10).",
+              "const": true
+            }
+          }
         },
         "review": { "$ref": "#/$defs/recommendationReview" },
         "restricted": { "type": "boolean" }
@@ -1260,6 +1380,35 @@
           "then": {
             "properties": { "missing_authority": {"contains": {"const": "decision_maker_not_confirmed"}} }
           }
+        },
+        {
+          "description": "A recommendation whose decision maker is not a human carries no_practitioner_sign_off, since only a human practitioner signs off a decision (owner ruling 151; AN-09).",
+          "if": {
+            "properties": {
+              "decision_maker": { "properties": {"kind": {"enum": ["ai", "patient", "device", "system"]}}, "required": ["kind"] }
+            },
+            "required": ["decision_maker"]
+          },
+          "then": {
+            "properties": { "missing_authority": {"contains": {"const": "no_practitioner_sign_off"}} }
+          }
+        },
+        {
+          "description": "Content declared a note that is not note content is decision content, entered with no_decision_authority (AN-06; design call CD-65).",
+          "if": {
+            "properties": {
+              "proposed": { "properties": {"act_class": {"const": "clinical_note"}}, "required": ["act_class"] }
+            },
+            "required": ["proposed"]
+          },
+          "then": {
+            "properties": { "missing_authority": {"contains": {"const": "no_decision_authority"}} }
+          }
+        },
+        {
+          "description": "A writer whose submission_ref conflicted is told so in its receipt (AN-10).",
+          "if": { "properties": {"provenance": {"required": ["submission_ref_conflict"]}}, "required": ["provenance"] },
+          "then": { "properties": {"receipt": {"required": ["submission_ref_conflict"]}} }
         }
       ]
     },
@@ -1327,10 +1476,24 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["code", "sent_at"],
-          "properties": { "code": {"const": "kept_as_information"}, "sent_at": {"$ref": "#/$defs/timestamp"} }
+          "properties": {
+            "code": { "const": "kept_as_information" },
+            "sent_at": { "$ref": "#/$defs/timestamp" },
+            "submission_ref_conflict": {
+              "description": "The writer was told that its submission_ref named earlier, different content (AN-10).",
+              "const": true
+            }
+          }
         },
         "restricted": { "type": "boolean" }
-      }
+      },
+      "allOf": [
+        {
+          "description": "A writer whose submission_ref conflicted is told so in its receipt (AN-10).",
+          "if": { "properties": {"provenance": {"required": ["submission_ref_conflict"]}}, "required": ["provenance"] },
+          "then": { "properties": {"receipt": {"required": ["submission_ref_conflict"]}} }
+        }
+      ]
     },
     "adoptionFailure": {
       "description": "Why an adoption did not complete (AN-11): a missing-authority code, a failed act-validity rule, a sign-off failure the clinician can cure, or a gate refusal (RX-02, RX-03).",

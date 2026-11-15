@@ -19,6 +19,10 @@
     "expect_in_error": "'openwallet_id' is a required property",
     "reason": "an AI is identified by its openWallet ID (AN-02)"
   },
+  "ai-recommendation-without-no-practitioner-sign-off.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "a recommendation whose decision maker is not a human carries no_practitioner_sign_off (AN-09, ruling 151)"
+  },
   "amended-first-version.invalid.json": {
     "expect_in_error": "act_version",
     "reason": "only a later version can carry the status amended"
@@ -35,6 +39,10 @@
     "expect_in_error": "author_type",
     "reason": "an act's author type is clinician; act content from an AI is entered as a recommendation record instead (CA-02, AN-09)"
   },
+  "challenge-reused.integrity-invalid.json": {
+    "expect_in_error": "challenge",
+    "reason": "one challenge served two sign-offs"
+  },
   "cosignature-copies-differ.integrity-invalid.json": {
     "expect_in_error": "differs from",
     "reason": "the co-signed event carries a sign-off other than the co-signer's signature"
@@ -50,6 +58,10 @@
   "derived-from-unknown-kind.invalid.json": {
     "expect_in_error": "source_kind",
     "reason": "derivation sources are intake statements and clinical communications only"
+  },
+  "described-as-on-identified-party.invalid.json": {
+    "expect_in_error": "does not allow 'SYN a description'",
+    "reason": "only a party that is not identified is described instead of identified (CD-66)"
   },
   "device-id-kind-without-id.invalid.json": {
     "expect_in_error": "does not allow 'udi'",
@@ -87,6 +99,10 @@
     "expect_in_error": "'end' is a required property",
     "reason": "a signed encounter has an end time"
   },
+  "encounter-manifest-omits-information.integrity-invalid.json": {
+    "expect_in_error": "manifest",
+    "reason": "the manifest leaves out an information record the signing view showed"
+  },
   "encounter-sign-off-without-manifest.invalid.json": {
     "expect_in_error": "'manifest_sha256' is a required property",
     "reason": "an encounter's sign-off binds the manifest of its attached records (EN-04, CD-53)"
@@ -111,6 +127,22 @@
     "expect_in_error": "'signatures' is a required property",
     "reason": "a signed status needs the author's signature"
   },
+  "held-draft-cancelled.invalid.json": {
+    "expect_in_error": "is not one of ['draft', 'in_progress']",
+    "reason": "a held draft is not cancelled while it is held; it returns to its author only when the recommendation is declined (AN-14)"
+  },
+  "held-draft-signed-without-adoption.integrity-invalid.json": {
+    "expect_in_error": "hold",
+    "reason": "a draft signed while held, without adoption or a release by decline"
+  },
+  "held-event-without-recommendation.invalid.json": {
+    "expect_in_error": "'recommendation_ref' is a required property",
+    "reason": "a hold names the recommendation the draft is held for (AN-14)"
+  },
+  "hold-released-without-reason.invalid.json": {
+    "expect_in_error": "'reason_code' is a required property",
+    "reason": "a hold is released only by adoption or by decline, and says which (AN-14)"
+  },
   "information-with-order-content-from-ai-relay.invalid.json": {
     "expect_in_error": "not valid under any of the given schemas",
     "reason": "an AI's order content cannot be kept as information to avoid the not-an-authorized-decision marking (AN-06, CD-65)"
@@ -127,6 +159,14 @@
     "expect_in_error": "'receipt' is a required property",
     "reason": "the writer of a note kept as information is told at once (AN-14)"
   },
+  "not-identified-party-with-account.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-USER-CLIN-0001'",
+    "reason": "a party that is not identified carries no chart account, which would claim an identity the chart does not hold (CD-66)"
+  },
+  "not-identified-party-without-description.invalid.json": {
+    "expect_in_error": "'described_as' is a required property",
+    "reason": "a party that is not identified carries what is known of it (CD-66; ruling 80, clause 7)"
+  },
   "note-draft-closed-without-information-ref.invalid.json": {
     "expect_in_error": "'information_ref' is a required property",
     "reason": "a note draft closed because its content was kept as information names that record (AN-14)"
@@ -134,6 +174,10 @@
   "note-request-status.invalid.json": {
     "expect_in_error": "status",
     "reason": "a clinical note has no release lifecycle"
+  },
+  "note-signature-with-manifest.invalid.json": {
+    "expect_in_error": "does not allow '0000000000000000",
+    "reason": "only an encounter's signature binds a manifest (CA-04, EN-04)"
   },
   "order-unknown-category.invalid.json": {
     "expect_in_error": "order_category",
@@ -163,6 +207,14 @@
     "expect_in_error": "transmission_status",
     "reason": "transmission and dispense states are reserved for a later governed change"
   },
+  "received-at-impossible-day.integrity-invalid.json": {
+    "expect_in_error": "calendar",
+    "reason": "30 February passes the pattern but is not a real calendar time"
+  },
+  "recommendation-action-without-target.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "a proposed action on an existing act names that act, resolved or as the writing path gave it (AN-09)"
+  },
   "recommendation-adopted-without-act.invalid.json": {
     "expect_in_error": "'adopted_act' is a required property",
     "reason": "adoption creates a decision of the clinician's own, and the recommendation names it (AN-11)"
@@ -179,6 +231,10 @@
     "expect_in_error": "proposed/action",
     "reason": "content declared under another schema is kept only for an action that carries content (AN-09, CD-51)"
   },
+  "recommendation-decision-maker-not-identified.invalid.json": {
+    "expect_in_error": "decision_maker/identity_basis/basis",
+    "reason": "a recommendation's decision maker is never a party that is not identified; the carrying writer is (AN-08, CD-66)"
+  },
   "recommendation-holding-note-content.invalid.json": {
     "expect_in_error": "proposed/content",
     "reason": "note content is information, never a not-an-authorized-decision recommendation (CD-63)"
@@ -186,6 +242,10 @@
   "recommendation-marked-authorized.invalid.json": {
     "expect_in_error": "not_authorized_decision",
     "reason": "a recommendation is always marked not an authorized decision (AN-09)"
+  },
+  "recommendation-note-declared-without-no-decision-authority.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "content declared a note that is not note content is entered with no_decision_authority (AN-06, CD-65)"
   },
   "recommendation-path-reason-without-scheme.invalid.json": {
     "expect_in_error": "'scheme' is a required property",
@@ -242,6 +302,14 @@
   "signed-order-cancelled-without-sign-off.invalid.json": {
     "expect_in_error": "lifecycle",
     "reason": "cancelling a signed order is a decision and carries the practitioner's sign-off (OR-02)"
+  },
+  "submission-ref-conflict-not-told.invalid.json": {
+    "expect_in_error": "'submission_ref_conflict' is a required property",
+    "reason": "a writer whose submission_ref named earlier, different content is told so at once (AN-10, CD-64)"
+  },
+  "submission-ref-conflict-without-submission-ref.invalid.json": {
+    "expect_in_error": "'submission_ref' is a required property",
+    "reason": "a submission_ref conflict is flagged only on a submission that carries the reference (AN-10, CD-64)"
   },
   "timestamp-not-date-time.invalid.json": {
     "expect_in_error": "received_at",

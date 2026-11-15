@@ -11,7 +11,8 @@
   "entry_class": "information",
   "not_authorized_decision": true,
   "missing_authority": [
-    "decision_maker_not_confirmed"
+    "decision_maker_not_confirmed",
+    "no_practitioner_sign_off"
   ],
   "decision_maker": {
     "kind": "system",
@@ -50,7 +51,8 @@
         "kind": "human",
         "identity_basis": {
           "basis": "not_identified"
-        }
+        },
+        "described_as": "SYN signing clinician named on an outside letter"
       },
       {
         "kind": "system",
@@ -79,6 +81,7 @@
     "kind": "human",
     "identity_basis": {
       "basis": "not_identified"
-    }
+    },
+    "described_as": "SYN signing clinician named on an outside letter"
   }
 }

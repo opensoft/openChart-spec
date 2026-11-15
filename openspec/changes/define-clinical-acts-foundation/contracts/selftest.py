@@ -16,13 +16,23 @@ Checks:
      reason only;
   6. the valid fixtures cover every record kind: act_version,
      recommendation and information (owner ruling 80);
-  7. the integrity verifier of CA-08 passes every valid fixture: each
-     content and provenance digest, and each sign-off statement digest,
-     recomputes from the record's own fields (design call CD-53); each
-     author signature is by the act's author; and a co-signed event's
-     sign-off equals the co-signer signature's. An encounter's manifest
-     digest is not recomputed here, because the attached records are other
-     records;
+  7. the integrity verifier of CA-08 passes every valid fixture:
+     - each content and provenance digest, and each sign-off statement
+       digest, recomputes from the record's own fields (design call CD-53);
+     - each author signature is by the act's author;
+     - a co-signed event's sign-off equals the co-signer signature's;
+     - no challenge serves two sign-offs within a record (a production
+       verifier checks this across the whole store);
+     - every time is a real calendar time (the schema pattern checks
+       ranges only, so 30 February passes it);
+     - an act signed after a hold carries adopted_from, or its hold was
+       released by decline before it was signed, and a draft carries
+       held_for exactly while its last hold event is held;
+     - an encounter signature's manifest digest recomputes from the
+       records of the fixture set that its signing view showed: every act
+       and information record that references the encounter and was
+       received by the time of signing, the latest version of each act,
+       except a cancelled one, and never a recommendation;
   8. every examples/*.integrity-invalid.json validates against the schema
      and fails the verifier, naming the token recorded for it.
 The digests use canonical JSON with sorted keys and no whitespace, which
@@ -30,9 +40,11 @@ equals RFC 8785 for the strings, integers and booleans the fixtures use; a
 production verifier uses a full RFC 8785 implementation.
 Exit status 0 only when every check passes.
 """
+import datetime
 import hashlib
 import json
 import pathlib
+import re
 import sys
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -56,11 +68,58 @@ def sha(obj):
     return hashlib.sha256(json.dumps(obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
 
 
-def verify(record):
-    """The integrity verifier of CA-08 for one act version. Returns the problems found."""
+TIME = re.compile(r"^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})(\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$")
+
+
+def times(obj, path=""):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from times(v, f"{path}/{k}")
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            yield from times(v, f"{path}/{i}")
+    elif isinstance(obj, str) and TIME.match(obj):
+        yield path, obj
+
+
+def real_time(value):
+    y, mo, d, h, mi, s = (int(x) for x in TIME.match(value).groups()[:6])
+    try:
+        datetime.date(y, mo, d)
+    except ValueError:
+        return False
+    return h < 24 and mi < 60 and (s < 60 or (s == 60 and mi == 59))
+
+
+def manifest_of(encounter_id, signed_at, records):
+    """The manifest of the records an encounter's signing view showed (EN-04, CD-53)."""
+    at = parse(signed_at)
+    latest, entries = {}, []
+    for r in records:
+        if r.get("record_kind") not in ("act_version", "information"):
+            continue
+        if r.get("act_id") == encounter_id or (r.get("content") or {}).get("encounter_ref", {}).get("act_id") != encounter_id:
+            continue
+        if parse(r["provenance"]["received_at"]) > at:
+            continue
+        if r["record_kind"] == "information":
+            entries.append({"record_kind": "information", "id": r["information_id"], "content_sha256": sha(r["content"])})
+        elif r["status"] != "cancelled" and r["act_version"] > latest.get(r["act_id"], (0, None))[0]:
+            latest[r["act_id"]] = (r["act_version"], r)
+    for _, r in latest.values():
+        entries.append({"record_kind": "act_version", "id": r["act_id"], "version": r["act_version"], "content_sha256": sha(r["content"])})
+    return sha(sorted(entries, key=lambda e: (e["record_kind"], e["id"], e.get("version", 0))))
+
+
+def parse(value):
+    return datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def verify(record, records=()):
+    """The integrity verifier of CA-08 for one record. records is the set an encounter's manifest is recomputed from."""
+    problems = [f"{path}: {value} is not a real calendar time" for path, value in times(record) if not real_time(value)]
     if record.get("record_kind") != "act_version":
-        return []
-    problems = []
+        return problems
     content, provenance = record["content"], record["provenance"]
     base = {"act_id": record["act_id"], "act_version": record["act_version"], "patient": record["patient"],
             "act_class": record["act_class"], "act_type": record["act_type"],
@@ -92,6 +151,32 @@ def verify(record):
         check(ev["sign_off"], role, ev["by_ref"], ev["attestation"], ev["at"], f"lifecycle/{i}")
         if ev["event"] == "cosigned" and ev["sign_off"] not in cosigner_offs:
             problems.append(f"lifecycle/{i}: the co-signed event's sign-off differs from the co-signer signature's")
+
+    seen = {}
+    offs = [(f"signatures/{i}", s["sign_off"]) for i, s in enumerate(record.get("signatures", []))]
+    offs += [(f"lifecycle/{i}", ev["sign_off"]) for i, ev in enumerate(record["lifecycle"]) if "sign_off" in ev]
+    for where, so in offs:
+        first = seen.setdefault(so["challenge_ref"], (where, so))
+        if first[0] != where and first[1] != so:
+            problems.append(f"{where}: its challenge already served the sign-off at {first[0]}")
+
+    holds = [(i, ev) for i, ev in enumerate(record["lifecycle"]) if ev["event"] in ("held", "hold_released")]
+    signed_at = next((i for i, ev in enumerate(record["lifecycle"]) if ev["event"] == "signed"), None)
+    if record.get("signatures"):
+        held_before = [h for h in holds if h[0] < signed_at]
+        if held_before and held_before[-1][1]["event"] == "held":
+            problems.append("the act was signed while its draft was on hold: no hold_released precedes the signature")
+        elif held_before and held_before[-1][1].get("reason_code") == "adopted" and "adopted_from" not in record:
+            problems.append("the hold was released by adoption, but the act carries no adopted_from")
+    else:
+        on_hold = bool(holds) and holds[-1][1]["event"] == "held"
+        if on_hold != ("held_for" in record):
+            problems.append("held_for does not match the last hold event")
+
+    if record["act_class"] == "encounter" and records:
+        for i, s in enumerate(record.get("signatures", [])):
+            if "manifest_sha256" in s["sign_off"] and s["sign_off"]["manifest_sha256"] != manifest_of(record["act_id"], s["signed_at"], records):
+                problems.append(f"signatures/{i}: manifest_sha256 does not recompute from the records its signing view showed")
     return problems
 
 
@@ -104,6 +189,7 @@ def main():
     valid = invalid = integrity = 0
     names = set()
     kinds = set()
+    valid_set = [json.loads(p.read_text()) for p in sorted(EXAMPLES.glob("*.valid.json"))]
     for path in sorted(EXAMPLES.glob("*.json")):
         if path.name == "expected-failures.json":
             continue
@@ -115,12 +201,12 @@ def main():
             kinds.add(record.get("record_kind"))
             if errors:
                 failures.append(f"{path.name}: expected valid, got: {describe(errors[0])}")
-            for problem in verify(record):
+            for problem in verify(record, valid_set):
                 failures.append(f"{path.name}: integrity: {problem}")
         elif path.name.endswith(".integrity-invalid.json"):
             integrity += 1
             entry = expected.get(path.name)
-            problems = verify(record)
+            problems = verify(record, valid_set)
             if entry is None:
                 failures.append(f"{path.name}: no entry in expected-failures.json")
             elif errors:

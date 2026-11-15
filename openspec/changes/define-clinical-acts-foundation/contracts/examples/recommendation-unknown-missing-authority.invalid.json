@@ -11,7 +11,9 @@
   "entry_class": "information",
   "not_authorized_decision": true,
   "missing_authority": [
-    "authority_waived"
+    "authority_waived",
+    "no_decision_authority",
+    "no_practitioner_sign_off"
   ],
   "decision_maker": {
     "kind": "ai",

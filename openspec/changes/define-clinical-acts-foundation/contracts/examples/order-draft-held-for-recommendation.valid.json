@@ -40,6 +40,14 @@
       "event": "created",
       "by_ref": "SYN-USER-NURSE-0001",
       "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "held",
+      "by_ref": "SYN-USER-NURSE-0001",
+      "at": "2026-11-15T10:05:00Z",
+      "recommendation_ref": {
+        "recommendation_id": "SYN-REC-0013"
+      }
     }
   ],
   "content": {

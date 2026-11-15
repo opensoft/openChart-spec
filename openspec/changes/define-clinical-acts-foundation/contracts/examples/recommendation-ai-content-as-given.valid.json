@@ -11,7 +11,8 @@
   "entry_class": "information",
   "not_authorized_decision": true,
   "missing_authority": [
-    "no_decision_authority"
+    "no_decision_authority",
+    "no_practitioner_sign_off"
   ],
   "decision_maker": {
     "kind": "ai",
@@ -33,9 +34,9 @@
       "urgency": "routine"
     },
     "content_schema": {
-      "id": "openchart-ai-clinical-record-write",
-      "version": "1.0",
-      "sha256": "aae19424aca577035554af8457968910c3be37745a0f525c274b1073e94a119a"
+      "id": "syn-declared-ai-content",
+      "version": "0.0-syn",
+      "sha256": "eb72f1ad18a4acabd9b3bbf1d9cbbb5eae9d883702803c403307142c93728cb5"
     }
   },
   "provenance": {

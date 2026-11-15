@@ -11,12 +11,14 @@
   "entry_class": "information",
   "not_authorized_decision": true,
   "missing_authority": [
-    "no_decision_authority"
+    "no_decision_authority",
+    "no_practitioner_sign_off"
   ],
   "decision_maker": {
     "kind": "ai",
     "identity_basis": {
-      "basis": "not_identified"
+      "basis": "asserted_by",
+      "asserted_by_system_id": "SYN-SYS-RELAY-01"
     },
     "openwallet_id": "wal-agent-SYN-0007",
     "model": "syn-medical-model",
@@ -52,8 +54,7 @@
       {
         "kind": "ai",
         "identity_basis": {
-          "basis": "asserted_by",
-          "asserted_by_system_id": "SYN-SYS-RELAY-01"
+          "basis": "not_identified"
         },
         "openwallet_id": "wal-agent-SYN-0007",
         "model": "syn-medical-model",
