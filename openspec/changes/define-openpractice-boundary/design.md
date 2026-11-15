@@ -119,6 +119,11 @@ There are two conflict cases (PL-06). The second, a second active value from the
 
 A link that has never been established refuses no edit, receives updates without applying or holding them, projects nothing and routes nothing.
 
+**Confirming a link that has never been established (⚑ design call 3).**
+- The link becomes established at the moment of confirmation, and only then do snapshots apply.
+- The reviewer confirms against the latest snapshot received on the link, read side by side with the `OC Patient`. openChart applies exactly that snapshot, never one received before the confirmation that the reviewer did not read.
+- `link.review_resolved` carries its version as `applied_version`. A later snapshot waits for openPractice's next publication (PL-06).
+
 ### 4. Applying demographics and projecting them
 
 - Each applied version is stored immutably.
@@ -190,6 +195,15 @@ Items marked ⚑ are design calls this change makes beyond Brett Heap's rulings.
    - The other reading is to honor the flags and never the channels. The open corrections to `opensoft/openPractice-spec` `define-mvp-practice-foundation` take that reading for a same-person group (its PR-15, proposed there).
 
    Recommendation: take nothing until the link is confirmed, and treat the patient meanwhile as a patient with no link.
+3. ⚑ **Confirming a link that has never been established** (PL-06). The link becomes established at the moment of confirmation, and openChart applies snapshots only from then on.
+   - **What is applied.** The reviewer confirms against the latest snapshot received on the link, read side by side with the `OC Patient`. openChart applies exactly that snapshot in the same transaction, never a snapshot received before the confirmation that the reviewer did not read.
+   - **`applied_version`.** `link.review_resolved` carries that snapshot's `demographic_version` as `applied_version`. Each link request carries a snapshot, so a confirmation always has one to read.
+   - **A later snapshot.** One that arrives after the reviewer's reading is not applied by the confirmation. openChart applies the next snapshot openPractice publishes on the link.
+   - **What the contract fixes.** `openpractice-ehr-patient-link/1.0` leaves `applied_version` optional and gives it no further meaning. It has a provenance reason, `republish_after_review`, but no rule says when it is used. The resume rule of `define-mvp-practice-foundation` EB-08, "publishing the current snapshot if it is newer than the applied version", covers held updates only. So openPractice may learn of an older `applied_version` and still publish nothing until its next change.
+   - **Why.** A snapshot that arrived while nothing confirmed the two records as one person was never checked against this patient. Applying it unread would let a confirmation carry demographics that nobody compared.
+   - **The other reading** was to apply the latest snapshot received, read or not. That is simpler, but it applies data no human compared with the patient.
+
+   Recommendation: confirm. The companion change should extend EB-08's resume rule to every `confirmed` resolution: openPractice republishes its current snapshot, with reason `republish_after_review`, when `applied_version` is lower than its current version.
 
 ## Risks / Trade-offs
 

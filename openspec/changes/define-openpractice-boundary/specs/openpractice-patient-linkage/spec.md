@@ -73,6 +73,14 @@ openChart SHALL place a link in `identity_review` in either of these cases:
 
 The side that raised a review SHALL be its only resolver. For reviews it raises, openChart SHALL record the outcome (`confirmed` or `revoked`) with actor, time and reason, and send `link.review_resolved`. A review of the second kind SHALL NOT resolve as `confirmed`. A `link.revoked` for the same `link_id` from either side SHALL win over any confirmation. No demographic update SHALL apply on a link in review, and resolution MUST NOT merge, overwrite or delete records. Version counters SHALL be tracked per `link_id`.
 
+**Confirming a link that has never been established (⚑ design call 3 in `design.md`).** This covers a review openChart raised under PL-05 or under this requirement's first case. When its reviewer confirms such a link, the link SHALL become `active` and established (PL-02) at that moment, and openChart SHALL apply demographic snapshots on it under PL-07 and PL-09 from that moment.
+- **No unread snapshot.** openChart SHALL NOT apply a snapshot received before the confirmation unless the reviewer re-read it, side by side with the `OC Patient` they confirmed, as part of the confirmation.
+- **The snapshot read at confirmation.** The reviewer confirms against the latest snapshot received on the link, the one with the highest `demographic_version`: the `link.request` snapshot, or a later `demographics.updated` answered `identity_review` (PL-07). openChart applies exactly that snapshot, and projects it under PL-09, in the same transaction as the confirmation.
+- **A later snapshot.** A snapshot that arrived after the one the reviewer read is not applied by the confirmation. openChart applies the next snapshot openPractice publishes on the link under PL-07.
+- **`applied_version`.** `link.review_resolved` with outcome `confirmed` SHALL carry `applied_version` set to the `demographic_version` of the snapshot applied at confirmation. A version lower than openPractice's current version tells openPractice that its later changes have not been applied.
+
+The contract leaves `applied_version` optional and gives it no meaning beyond the version applied. It fixes nothing else for this case: the resume rule of `define-mvp-practice-foundation` EB-08 covers held updates only.
+
 #### Scenario: Two openPractice records claim one patient
 - **WHEN** a link request targets an `OC Patient` that already holds an active `openpractice` identifier from the same issuer with a different value
 - **THEN** the new link enters review, openChart resolves it, it cannot resolve as `confirmed`, and nothing merges
@@ -80,6 +88,14 @@ The side that raised a review SHALL be its only resolver. For reviews it raises,
 #### Scenario: Revocation crosses confirmation
 - **WHEN** openPractice revokes a link while an openChart reviewer is confirming it
 - **THEN** the link ends `revoked`
+
+#### Scenario: A link that was never established is confirmed
+- **WHEN** a `link_existing` request carrying version 2 failed the agree check, version 3 arrived on the link during the review and was answered `identity_review`, and the reviewer confirms after reading version 3 side by side with the `OC Patient`
+- **THEN** the link becomes `active` and established, openChart applies and projects version 3, and `link.review_resolved` carries `applied_version` 3
+
+#### Scenario: A snapshot arrives after the reviewer read the last one
+- **WHEN** the reviewer read version 3, version 4 arrives on the link before the reviewer confirms, and the reviewer then confirms
+- **THEN** openChart applies version 3 only, `link.review_resolved` carries `applied_version` 3, version 4 is not applied, and openChart applies the next snapshot openPractice publishes on the link under PL-07
 
 ### Requirement: PL-07 Administrative demographic updates apply only on an active link through the contract
 openChart SHALL accept administrative demographic changes for linked patients only as `demographics.updated` messages on an `active` link. It SHALL compare each message's version with the last version applied on that `link_id`, and answer with exactly one result:
