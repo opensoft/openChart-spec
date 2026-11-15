@@ -23,9 +23,11 @@ Checks:
      examples/expected-outcomes.json stating what openChart does with it,
      whose codes are codes of this schema, and every entry has a fixture;
   6. beside the schema, for every valid fixture: exchange.content_sha256
-     recomputes from exchange.turns (RFC 8785); a write names its parties in
-     AW-02's order; and every timestamp names a real calendar day, which
-     openChart refuses as malformed otherwise (AW-01);
+     recomputes from exchange.turns (RFC 8785); a write that names its AI
+     names its parties in AW-02's order, and one whose on_behalf_of names no
+     AI names only the source system, under a relay (a write that names no
+     AI is held by the AI check, AW-06); and every timestamp names a real
+     calendar day, which openChart refuses as malformed otherwise (AW-01);
   7. every examples/*.calendar-invalid.json validates and fails only the
      calendar check.
 The digests use canonical JSON with sorted keys and no whitespace, which
@@ -87,9 +89,12 @@ def beside_schema(doc):
     if kind == "consult.write":
         if hashlib.sha256(jcs(doc["exchange"]["turns"])).hexdigest() != doc["exchange"]["content_sha256"]:
             problems.append("exchange.content_sha256 does not recompute from exchange.turns")
-    if kind in ("consult.write", "act.write"):
+    if kind in ("consult.write", "act.write") and doc.get("on_behalf_of"):
         src, writer, chain = doc["source_system"], doc["added_by"], doc["on_behalf_of"]
-        if writer.get("system") == src:
+        if chain[0].get("kind") != "ai":
+            if writer.get("system") == src or len(chain) != 1 or chain[0].get("system") != src:
+                problems.append("AW-02: an on_behalf_of that names no AI names only the source system, under a relay")
+        elif writer.get("system") == src:
             if len(chain) != 1:
                 problems.append("AW-02: the source system writes, so on_behalf_of names the AI only")
         elif len(chain) != 2 or chain[1].get("system") != src:

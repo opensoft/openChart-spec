@@ -45,12 +45,10 @@
   "act_version": 1,
   "act_class": "clinical_note",
   "authority": {
-    "grant_id": "SYN-GRANT-0003",
-    "grant_version": 1,
-    "mode": "full_practice",
-    "configuration_version": "cfg-2027.03.01-1",
-    "approver_ref": "SYN-USER-MD-0001",
-    "legal_review_ref": "SYN-LEGAL-REVIEW-0003"
+    "grant_id": "SYN-GRANT-0001",
+    "grant_version": 3,
+    "mode": "advice_only",
+    "configuration_version": "cfg-2026.11.14-1"
   },
   "models": [
     {

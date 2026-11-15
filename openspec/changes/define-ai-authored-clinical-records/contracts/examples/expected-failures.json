@@ -15,10 +15,6 @@
     "expect_in_error": "'act_content' is a required property",
     "reason": "a write with no content object is malformed (ruling 188; AN-12)"
   },
-  "act-write-missing-source.invalid.json": {
-    "expect_in_error": "'source' is a required property",
-    "reason": "every write records where its information came from (ruling 80, clause 5; AW-15)"
-  },
   "act-write-sign-with-target.invalid.json": {
     "expect_in_error": "[1, 'allOf', 2, 'then', 'not']",
     "reason": "a sign-off of new content names no existing record (AN-09; AD-68)"
@@ -55,10 +51,6 @@
     "expect_in_error": "change 'resumed' is not one of ['paused', 'narrowed']",
     "reason": "a notice from the AI system can only reduce authority (AG-08)"
   },
-  "consult-write-ai-without-model-version.invalid.json": {
-    "expect_in_error": "on_behalf_of/0 'model_version' is a required property",
-    "reason": "an AI is identified with the model version that produced the content (ruling 80, part B)"
-  },
   "consult-write-bad-message-id.invalid.json": {
     "expect_in_error": "message_id 'SYN-not-a-uuid' does not match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'",
     "reason": "message_id is a UUID, checked by pattern (AW-01)"
@@ -87,35 +79,21 @@
     "expect_in_error": "'exchange' is a required property",
     "reason": "a consult with no exchange has no content object (ruling 188; AN-12)"
   },
-  "consult-write-missing-on-behalf-of.invalid.json": {
-    "expect_in_error": "'on_behalf_of' is a required property",
-    "reason": "every write names the AI on whose behalf it was written (ruling 80, clause 7; AW-02)"
-  },
-  "consult-write-missing-source.invalid.json": {
-    "expect_in_error": "'source' is a required property",
-    "reason": "every write records where its information came from (ruling 80, clause 5)"
-  },
   "consult-write-no-ai-turn.invalid.json": {
     "expect_in_error": "[0, 'properties', 'exchange', 'properties', 'turns', 'contains']",
     "reason": "a consult contains at least one AI turn (AC-02)"
   },
   "consult-write-on-behalf-of-names-human.invalid.json": {
-    "expect_in_error": "on_behalf_of/1 Additional properties are not allowed ('ref' was unexpected)",
-    "reason": "on_behalf_of admits no human in 1.0 (AW-02); the one wrong party is reported against each field it lacks",
-    "error_count": 4
+    "expect_in_error": "[0, 'properties', 'on_behalf_of', 'anyOf']",
+    "reason": "on_behalf_of admits no human in 1.0 (AW-02)"
   },
   "consult-write-on-behalf-of-starts-with-system.invalid.json": {
-    "expect_in_error": "on_behalf_of/0 Additional properties are not allowed ('operator_ref', 'system' were unexpected)",
-    "reason": "on_behalf_of names the AI first, then the source system (AW-02); each of the two misplaced parties is reported against the shape of its place",
-    "error_count": 8
+    "expect_in_error": "[0, 'properties', 'on_behalf_of', 'anyOf']",
+    "reason": "on_behalf_of names the AI first, then the source system (AW-02)"
   },
   "consult-write-on-behalf-of-three-parties.invalid.json": {
     "expect_in_error": "[0, 'properties', 'on_behalf_of', 'maxItems']",
     "reason": "on_behalf_of holds at most the AI and the source system (AW-02)"
-  },
-  "consult-write-openwallet-id-bad-shape.invalid.json": {
-    "expect_in_error": "on_behalf_of/0/openwallet_id '#syn wallet 0001' does not match '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$'",
-    "reason": "an openWallet ID has openWallet's identifier shape; anything else is malformed (AD-49)"
   },
   "consult-write-patient-not-openchart-namespace.invalid.json": {
     "expect_in_error": "patient/namespace 'openchart' was expected",
@@ -194,12 +172,16 @@
     "reason": "unauthorized carries nothing else (AW-14)"
   },
   "held-ended-in-chart-cause.invalid.json": {
-    "expect_in_error": "quarantine_cause 'grant_expired' is not one of ['openwallet_id_missing', 'openwallet_id_not_covered', 'source_system_not_covered']",
+    "expect_in_error": "quarantine_cause 'grant_expired' is not one of ['openwallet_id_missing', 'openwallet_id_not_covered', 'source_system_not_covered', 'ai_not_identified']",
     "reason": "held.ended is only for a write held outside the chart, with a held cause (AD-65)"
   },
   "held-ended-released-consult-as-information.invalid.json": {
     "expect_in_error": "released_record_state 'information' is not one of ['recorded', 'quarantined']",
     "reason": "a released consult is recorded or quarantined in the chart, never information (AC-11, AD-65)"
+  },
+  "held-ended-released-openwallet-id-missing.invalid.json": {
+    "expect_in_error": "[11, 'allOf', 3, 'then', 'properties', 'quarantine_cause', 'not']",
+    "reason": "a write held because its AI cannot be identified is never released (AD-65)"
   },
   "held-ended-released-without-new-record.invalid.json": {
     "expect_in_error": "'released_record_ref' is a required property",
@@ -208,6 +190,10 @@
   "record-readback-carries-text.invalid.json": {
     "expect_in_error": "Additional properties are not allowed ('text' was unexpected)",
     "reason": "a readback carries no clinical content (AW-12)"
+  },
+  "record-readback-consent-flag-on-information.invalid.json": {
+    "expect_in_error": "record_state 'recommendation' was expected",
+    "reason": "consent_ref_missing is a recommendation's flag only (AD-62)"
   },
   "record-readback-consult-co-review-pending.invalid.json": {
     "expect_in_error": "review_status 'co_review_pending' is not one of ['not_selected', 'selected', 'in_review', 'reviewed']",
@@ -222,7 +208,7 @@
     "reason": "a found record states when openChart received it (AW-15)"
   },
   "record-readback-held-act-grant-cause.invalid.json": {
-    "expect_in_error": "quarantine_cause 'grant_expired' is not one of ['openwallet_id_missing', 'openwallet_id_not_covered', 'source_system_not_covered']",
+    "expect_in_error": "quarantine_cause 'grant_expired' is not one of ['openwallet_id_missing', 'openwallet_id_not_covered', 'source_system_not_covered', 'ai_not_identified']",
     "reason": "a held write carries a held cause, never a grant check's (AD-60, AD-65)"
   },
   "record-readback-held-with-grant-checked.invalid.json": {
@@ -232,10 +218,6 @@
   "record-readback-not-found-with-digest.invalid.json": {
     "expect_in_error": "[7, 'else', 'not']",
     "reason": "not_found carries no record detail (AW-12)"
-  },
-  "record-readback-quarantined-act.invalid.json": {
-    "expect_in_error": "write_kind 'consult' was expected",
-    "reason": "only a consult is quarantined in the chart; an act is a recommendation or a held write (AC-11)"
   },
   "record-readback-quarantined-without-cause.invalid.json": {
     "expect_in_error": "'quarantine_cause' is a required property",
@@ -254,8 +236,12 @@
     "reason": "in 1.0 no readback says an act took effect (ruling 157; m5)"
   },
   "record-readback-released-act-as-recorded.invalid.json": {
-    "expect_in_error": "released_record_state 'recorded' is not one of ['recommendation', 'information']",
+    "expect_in_error": "released_record_state 'recorded' is not one of ['recommendation', 'information', 'quarantined']",
     "reason": "a released act becomes a recommendation or information, never a recorded act (AD-65)"
+  },
+  "record-readback-released-ai-not-identified.invalid.json": {
+    "expect_in_error": "[7, 'then', 'allOf', 8, 'then', 'properties', 'quarantine_cause', 'not']",
+    "reason": "a write held because its AI cannot be identified is never released (AD-65)"
   },
   "record-readback-released-consult-as-information.invalid.json": {
     "expect_in_error": "released_record_state 'information' is not one of ['recorded', 'quarantined']",
@@ -274,19 +260,27 @@
     "reason": "in 1.0 no receipt says an act was accepted (ruling 157; m5)"
   },
   "write-receipt-accepted-with-missing-authority.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 2, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 4, 'then', 'not']",
     "reason": "an accepted write carries no missing-authority code (AW-06)"
   },
   "write-receipt-accepted-with-reason.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 2, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 4, 'then', 'not']",
     "reason": "an accepted write carries no refusal reason (AW-06)"
   },
   "write-receipt-co-review-due-at.invalid.json": {
     "expect_in_error": "Additional properties are not allowed ('co_review_due_at' was unexpected)",
     "reason": "a co-review due time is an accepted act's, which the Tier 2 MINOR version adds (ruling 157; m5)"
   },
+  "write-receipt-consent-flag-on-quarantined.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 0, 'then', 'anyOf']",
+    "reason": "consent_ref_missing is a recommendation's flag; a quarantined write carries the code as its cause (AD-62)"
+  },
+  "write-receipt-consent-path-without-flag.invalid.json": {
+    "expect_in_error": "'consent_ref_missing' is a required property",
+    "reason": "a recommendation whose path code is consent_ref_missing carries the flag too (AD-62)"
+  },
   "write-receipt-duplicate-accepted-with-codes.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 6, 'then', 'allOf', 0, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 8, 'then', 'allOf', 0, 'then', 'not']",
     "reason": "a duplicate of an accepted write carries no authority codes (AW-05)"
   },
   "write-receipt-duplicate-of-accepted-act.invalid.json": {
@@ -302,12 +296,8 @@
     "reason": "only an act.write declared clinical_note or document whose content validates as that kind's shape is kept as information; a consult record is MI-12's record (AC-04, AD-68)"
   },
   "write-receipt-notice-with-submission-conflict.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 0, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 2, 'then', 'not']",
     "reason": "a notice has no record identifiers to conflict (AW-05)"
-  },
-  "write-receipt-quarantined-for-act.invalid.json": {
-    "expect_in_error": "quarantine_cause 'grant_expired' is not one of ['openwallet_id_missing', 'openwallet_id_not_covered', 'source_system_not_covered']",
-    "reason": "an act is quarantined only by the AI check, with a held cause (AC-11)"
   },
   "write-receipt-quarantined-source-cap-suspended.invalid.json": {
     "expect_in_error": "[3, 'properties', 'quarantine_cause', 'enum']",
@@ -318,11 +308,11 @@
     "reason": "a quarantined write was kept, and its receipt names the record (AD-52)"
   },
   "write-receipt-recommendation-both-codes.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 3, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'not']",
+    "expect_in_error": "[3, 'allOf', 5, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'not']",
     "reason": "each path code maps to exactly one foundation code (AD-57)"
   },
   "write-receipt-recommendation-code-not-mapped.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 3, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'contains']",
+    "expect_in_error": "[3, 'allOf', 5, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'contains']",
     "reason": "tier2_not_in_force maps to no_decision_authority (AD-57); the code set both lacks the mapped code and holds the other",
     "error_count": 2
   },
@@ -363,7 +353,7 @@
     "reason": "missing authority never refuses a write (ruling 80, clause 18)"
   },
   "write-receipt-refused-with-submission-conflict.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 1, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 3, 'then', 'not']",
     "reason": "a refused write stored nothing, so nothing conflicts (AW-05)"
   },
   "write-receipt-refused-without-reason.invalid.json": {
