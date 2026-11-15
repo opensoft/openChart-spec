@@ -87,7 +87,7 @@ openChart SHALL record licensure, scope and prescriber facts only as attestation
 - an expiry date;
 - an opaque reference to the practice's own evidence.
 
-The recorder SHALL hold the attestation-recording permission that planning names, and SHALL NOT be the attestation's subject. openChart SHALL refuse any attestation that a person records about themselves. Every attestation SHALL be listed for the administrative role and, once one is designated, for the medical director. openChart SHALL NOT verify attestations against any registry, and SHALL NOT state or imply that it has. It SHALL show each attestation as practice-supplied, naming its recorder. A decision's sign-off also relies on the licence verification held in the practitioner's openWallet (owner ruling 151; CA-04). These attestations still underpin every grant and designation, and both SHALL hold for a sign-off to take effect. openChart SHALL show which licence verification a sign-off relied on and that it came from the practitioner's openWallet. It SHALL NOT state that it verified the licence itself (tension CT-18).
+The recorder SHALL hold the attestation-recording permission that planning names, and SHALL NOT be the attestation's subject. openChart SHALL refuse any attestation that a person records about themselves. Every attestation SHALL be listed for the administrative role and, once one is designated, for the medical director. openChart SHALL NOT verify attestations against any registry, and SHALL NOT state or imply that it has. It SHALL show each attestation as practice-supplied, naming its recorder. A decision's sign-off also relies on the licence verification held in the practitioner's openWallet (owner ruling 151; CA-04). These attestations still underpin every grant and designation, and both SHALL hold for a sign-off to take effect. openChart SHALL show which licence verification a sign-off relied on and that it came from the practitioner's openWallet. It SHALL NOT state that it verified the licence itself (tension CT-18). When the practice's attestation and the wallet's licence verification disagree, neither governs alone: the sign-off SHALL NOT count, and openChart SHALL enter the entry as a recommendation whose `missing_authority` names the record that does not support it, `practice_attestation_not_in_force` or `licence_verification_missing`, or both when they differ about the licence itself.
 
 A grant that includes `sign` for prescriptions SHALL require a prescriber attestation in force; without one, the grant SHALL be refused. When an attestation expires or is withdrawn, every grant and designation that rests on it SHALL stop conferring authority at once.
 
@@ -105,7 +105,11 @@ A grant that includes `sign` for prescriptions SHALL require a prescriber attest
 
 #### Scenario: Failure: an attestation expires
 - **WHEN** a clinician's prescriber attestation expires
-- **THEN** every prescription-signing grant resting on it stops conferring authority, and a later signing attempt takes no effect and is entered as a recommendation with `no_grant_in_force`, never refused for that reason
+- **THEN** every prescription-signing grant resting on it stops conferring authority, and a later signing attempt takes no effect and is entered as a recommendation with `practice_attestation_not_in_force` and `no_grant_in_force`, never refused for that reason
+
+#### Scenario: Failure: the practice's attestation and the wallet's verification disagree
+- **WHEN** a clinician whose openWallet holds a current licence verification signs off an order after the practice's licensure attestation for them has expired
+- **THEN** the sign-off does not count, and openChart enters the order as a recommendation with `practice_attestation_not_in_force` and `no_grant_in_force`
 
 ### Requirement: AU-04 Every action is checked against its decision maker's authority in force at that moment, whatever kind of decision maker it is, and reductions apply at once
 openChart SHALL check every action below against its decision maker's authority in force at that moment, whatever kind of decision maker it is (owner ruling 80, clause 11):

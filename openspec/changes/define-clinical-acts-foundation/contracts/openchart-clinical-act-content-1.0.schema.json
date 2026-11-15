@@ -793,7 +793,7 @@
       }
     },
     "missingAuthority": {
-      "description": "Why a decision was entered as a recommendation (AN-09; design call CD-45, PROPOSED).",
+      "description": "Why a decision was entered as a recommendation: the closed list that every reader uses (AN-09; design call CD-45, PROPOSED). A writing path's own finer code goes in path_reason.",
       "enum": [
         "no_grant_in_force",
         "no_decision_authority",
@@ -802,11 +802,13 @@
         "wallet_not_bound",
         "licence_verification_missing",
         "attestation_not_verified",
-        "signing_service_unavailable"
+        "signing_service_unavailable",
+        "practice_attestation_not_in_force",
+        "prescribing_gate_not_open"
       ]
     },
     "proposedAct": {
-      "description": "The decision that was attempted: the action, the act class and type, and the content in full under this contract, or for an action on an existing act, that act's version.",
+      "description": "The decision that was attempted: the action, the act class and type, and the content in full, validated under this contract, or stored exactly as given with content_schema naming the schema it was declared under; or, for an action on an existing act, that act's version.",
       "type": "object",
       "additionalProperties": false,
       "required": ["action", "act_class", "act_type"],
@@ -814,9 +816,13 @@
         "action": {
           "enum": ["sign", "new_version", "cosign", "complete", "discontinue", "enter_in_error"]
         },
-        "act_class": { "$ref": "#/$defs/actClass" },
+        "act_class": {
+          "description": "One of this contract's act classes. Another class is kept as declared only with content_schema.",
+          "$ref": "#/$defs/codeToken"
+        },
         "act_type": { "$ref": "#/$defs/codeToken" },
         "content": { "type": "object" },
+        "content_schema": { "$ref": "#/$defs/declaredSchemaRef" },
         "target": { "$ref": "#/$defs/actVersionRef" },
         "draft_ref": { "$ref": "#/$defs/actVersionRef" },
         "reason_code": { "$ref": "#/$defs/codeToken" },
@@ -827,27 +833,56 @@
       },
       "allOf": [
         {
-          "if": { "properties": {"act_class": {"const": "encounter"}}, "required": ["act_class"] },
+          "description": "Without a declared schema, the class is one of this contract's, and the content is validated under it.",
+          "if": { "not": {"required": ["content_schema"]} },
+          "then": { "properties": {"act_class": {"$ref": "#/$defs/actClass"}} }
+        },
+        {
+          "if": {
+            "properties": { "act_class": {"const": "encounter"} },
+            "required": ["act_class"],
+            "not": { "required": ["content_schema"] }
+          },
           "then": { "properties": {"content": {"$ref": "#/$defs/encounterContent"}} }
         },
         {
-          "if": { "properties": {"act_class": {"const": "clinical_note"}}, "required": ["act_class"] },
+          "if": {
+            "properties": { "act_class": {"const": "clinical_note"} },
+            "required": ["act_class"],
+            "not": { "required": ["content_schema"] }
+          },
           "then": { "properties": {"content": {"$ref": "#/$defs/clinicalNoteContent"}} }
         },
         {
-          "if": { "properties": {"act_class": {"const": "diagnosis_of_record"}}, "required": ["act_class"] },
+          "if": {
+            "properties": { "act_class": {"const": "diagnosis_of_record"} },
+            "required": ["act_class"],
+            "not": { "required": ["content_schema"] }
+          },
           "then": { "properties": {"content": {"$ref": "#/$defs/diagnosisContent"}} }
         },
         {
-          "if": { "properties": {"act_class": {"const": "procedure_performed"}}, "required": ["act_class"] },
+          "if": {
+            "properties": { "act_class": {"const": "procedure_performed"} },
+            "required": ["act_class"],
+            "not": { "required": ["content_schema"] }
+          },
           "then": { "properties": {"content": {"$ref": "#/$defs/procedureContent"}} }
         },
         {
-          "if": { "properties": {"act_class": {"const": "order"}}, "required": ["act_class"] },
+          "if": {
+            "properties": { "act_class": {"const": "order"} },
+            "required": ["act_class"],
+            "not": { "required": ["content_schema"] }
+          },
           "then": { "properties": {"content": {"$ref": "#/$defs/orderContent"}} }
         },
         {
-          "if": { "properties": {"act_class": {"const": "prescription"}}, "required": ["act_class"] },
+          "if": {
+            "properties": { "act_class": {"const": "prescription"} },
+            "required": ["act_class"],
+            "not": { "required": ["content_schema"] }
+          },
           "then": { "properties": {"content": {"$ref": "#/$defs/prescriptionContent"}} }
         },
         {
@@ -864,6 +899,11 @@
             "required": ["action"]
           },
           "then": { "required": ["target"] }
+        },
+        {
+          "description": "Content declared under another schema is kept only for an action that carries content.",
+          "if": { "required": ["content_schema"] },
+          "then": { "properties": {"action": {"enum": ["sign", "new_version"]}} }
         }
       ]
     },
@@ -928,10 +968,11 @@
         "missing_authority": {
           "type": "array",
           "minItems": 1,
-          "maxItems": 8,
+          "maxItems": 10,
           "uniqueItems": true,
           "items": { "$ref": "#/$defs/missingAuthority" }
         },
+        "path_reason": { "$ref": "#/$defs/pathReason" },
         "decision_maker": { "$ref": "#/$defs/party" },
         "claimed_decision_maker": { "$ref": "#/$defs/party" },
         "proposed": { "$ref": "#/$defs/proposedAct" },
@@ -956,6 +997,31 @@
           "then": { "required": ["claimed_decision_maker"] }
         }
       ]
+    },
+    "pathReason": {
+      "description": "The writing path's own coded reason, kept beside missing_authority for the source and the reviewer. It never replaces missing_authority and decides nothing (AN-09; design call CD-51, PROPOSED).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scheme", "scheme_version", "code"],
+      "properties": {
+        "scheme": {
+          "description": "The contract and code list that define the code, for example openchart-ai-clinical-record-write.missing_authority.",
+          "$ref": "#/$defs/codeToken"
+        },
+        "scheme_version": { "$ref": "#/$defs/versionLabel" },
+        "code": { "$ref": "#/$defs/codeToken" }
+      }
+    },
+    "declaredSchemaRef": {
+      "description": "The schema that content was declared under, when it is not validated under this contract: its identifier, version and SHA-256. Such content is stored exactly as given (AN-09; design call CD-51, PROPOSED).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/codeToken" },
+        "version": { "$ref": "#/$defs/versionLabel" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
     }
   }
 }

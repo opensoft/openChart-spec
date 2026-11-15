@@ -54,7 +54,7 @@ Before it accepts a sign-off, openChart SHALL check all four of these at that mo
 - the signer's account is bound to the `openwallet_id` that signs;
 - that wallet holds a current licence verification that covers this kind of decision;
 - the openSig attestation verifies against that wallet, over the SHA-256 of the canonical content and of its provenance;
-- the signer holds a grant in force with the action's scope for the act class and act type (AU-02, AU-04).
+- the signer holds a grant in force with the action's scope for the act class and act type (AU-02, AU-04), resting on a practice attestation in force (AU-03).
 
 openChart SHALL also accept a sign-off only from a wallet key whose declared custody evidences that the holder acted, and SHALL record the custody model in force. openWallet states that only custody isolating the key from the holder's execution context evidences that the holder acted.
 

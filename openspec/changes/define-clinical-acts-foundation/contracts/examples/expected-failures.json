@@ -83,9 +83,21 @@
     "expect_in_error": "'claimed_decision_maker' is a required property",
     "reason": "a decision a system carried for an unconfirmed decision maker names who was claimed (AN-08)"
   },
+  "recommendation-class-not-defined-without-schema.invalid.json": {
+    "expect_in_error": "proposed/act_class",
+    "reason": "an act class this contract does not define is kept only with content declared under another schema (AN-09, CD-51)"
+  },
+  "recommendation-content-schema-on-cosign.invalid.json": {
+    "expect_in_error": "proposed/action",
+    "reason": "content declared under another schema is kept only for an action that carries content (AN-09, CD-51)"
+  },
   "recommendation-marked-authorized.invalid.json": {
     "expect_in_error": "not_authorized_decision",
     "reason": "a recommendation is always marked not an authorized decision (AN-09)"
+  },
+  "recommendation-path-reason-without-scheme.invalid.json": {
+    "expect_in_error": "'scheme' is a required property",
+    "reason": "a writing path's own reason names the scheme that defines it (AN-09, CD-51)"
   },
   "recommendation-signed.invalid.json": {
     "expect_in_error": "'signatures' was unexpected",

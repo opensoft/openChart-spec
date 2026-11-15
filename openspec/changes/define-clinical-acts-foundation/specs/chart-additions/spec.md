@@ -119,18 +119,23 @@ When a system adds a decision on someone's behalf, openChart SHALL judge authori
 ### Requirement: AN-09 A decision made without authority is entered in full as a recommendation, marked not an authorized decision, with no effect
 A decision made without authority SHALL still be entered in the chart, in full, as a recommendation and not a decision (owner ruling 80, clause 13). The recommendation record SHALL hold:
 - the proposed act's class, type and action;
-- its content under `openchart-clinical-act-content` (CA-01), or for an action on an existing act, that act's version and the action;
+- its content, in one of three forms: validated under `openchart-clinical-act-content` (CA-01); or exactly as given, when the writing path declared it under another schema, such as the AI write contract's own, with `content_schema` naming the schema it was declared under (its identifier, version and SHA-256); or, for an action on an existing act, that act's version and the action;
 - the same identification and provenance (AN-02, AN-04);
 - the marker `not_authorized_decision`;
-- each coded `missing_authority` reason (design call CD-45, PROPOSED):
-  - `no_grant_in_force`;
-  - `no_decision_authority`;
-  - `decision_maker_not_confirmed`;
-  - `no_practitioner_sign_off`;
-  - `wallet_not_bound`;
-  - `licence_verification_missing`;
-  - `attestation_not_verified`;
-  - `signing_service_unavailable`.
+- each coded `missing_authority` reason, from this closed list that every reader uses (design call CD-45, PROPOSED). Several may apply at once:
+  - `no_grant_in_force`: the decision maker holds no grant in force for this action, act class and act type. For a human that is AU-02; for an AI it is the mode and scope the medical director approved, with their conditions;
+  - `no_decision_authority`: no decision maker of this kind can hold authority for this decision now. That covers an AI today (AN-12), a patient, a device or a plain integration, an act reserved to a human clinician, the management of an emergency, an AI's action on a clinician-authored record, and an act class or type this chart does not define;
+  - `decision_maker_not_confirmed`: it was added on someone's behalf without that person's own confirmed sign-off (AN-08);
+  - `no_practitioner_sign_off`: no practitioner signed it off under CA-04;
+  - `wallet_not_bound`: the signer's account is not bound to the `openwallet_id` that signed;
+  - `licence_verification_missing`: the wallet holds no current licence verification that covers this decision;
+  - `attestation_not_verified`: the openSig attestation did not verify against the wallet over the content and provenance digests;
+  - `signing_service_unavailable`: openWallet or openSig could not be reached;
+  - `practice_attestation_not_in_force`: the practice-supplied licensure or prescriber attestation that the grant rests on is not in force (AU-03);
+  - `prescribing_gate_not_open`: the prescribing-safety gate (RX-02) was not open for this step. A practitioner's own gated signature is refused and the prescription stays a draft (RX-02), so this code applies only where no draft holds the content, as for a prescription from a writer without `draft` scope;
+- optionally, the writing path's own coded reason, `path_reason`: the scheme that defines the code, the scheme's version and the code (design call CD-51, PROPOSED). A path that fails on finer reasons of its own maps each of its codes to one or more codes of the closed list, records those in `missing_authority`, and keeps its own code in `path_reason` for the source and the reviewer. `path_reason` never replaces `missing_authority`. It is shown to the reviewer beside it, and it decides nothing.
+
+Content stored as given is kept for the source and the reviewer. This contract does not validate it, and nothing reads it as an act's content. An act class this contract does not define is kept, as declared, only with such content. A clinician who adopts the recommendation creates a new act whose content is validated under CA-01 (AN-11).
 
 Wherever a recommendation is shown, to a clinician or a patient, it SHALL be clearly marked "not an authorized decision" and SHALL say which authority was missing.
 
@@ -139,6 +144,10 @@ A recommendation SHALL have no effect (clause 14). It is never an act of record.
 #### Scenario: A nurse's unauthorized order is kept
 - **WHEN** a nurse without order `sign` scope submits a laboratory order as final
 - **THEN** openChart enters it in full as a recommendation marked "not an authorized decision", with `no_grant_in_force`, and no order exists or is released
+
+#### Scenario: An AI's act content is kept as given, with the path's own reason
+- **WHEN** a relay delivers an AI's order whose content was declared under the AI write contract's own schema, and the AI write path records it with a code of its own for the check that failed
+- **THEN** openChart enters it as a recommendation with `missing_authority` `no_decision_authority`, keeps the content exactly as given with `content_schema` naming the declared schema, and keeps the path's scheme and code in `path_reason`
 
 #### Scenario: Failure: a recommendation would be published or counted
 - **WHEN** a recommendation holds a confirmed encounter diagnosis, and openPractice reads that encounter's facts, or a duplicate-therapy check lists active prescriptions
