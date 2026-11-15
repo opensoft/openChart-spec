@@ -1,12 +1,12 @@
 ## ADDED Requirements
 
-### Requirement: PG-01 One gate decision governs every prescription signature
-openChart SHALL decide, for each attempt to sign a prescription or a new version of one, exactly one gate decision with a coded reason. `define-clinical-acts-foundation` RX-02 (not yet on main) SHALL rely on this decision (owner rulings 74 and 78). The decision SHALL be `open` only when all of these hold:
+### Requirement: PG-01 One gate decision governs every prescription signature, co-signature and release
+openChart SHALL decide exactly one gate decision, with a coded reason, for each attempt to sign a prescription or a new version of one, to co-sign it, or to release it from `pending_release`. `define-clinical-acts-foundation` RX-02 (not yet on main) SHALL rely on this decision (owner rulings 74 and 78). The decision SHALL be `open` only when all of these hold:
 - this capability is built and enabled in the deployment;
 - a recorded legal and regulatory review is in force (PG-04);
 - a source is connected, verified (KA-03) and current (KA-04);
-- a signing-time check has completed for the exact content digest being signed (PC-04);
-- every alert and warning has a response that meets PC-06.
+- a check for that step has completed against the exact content digest (PC-04);
+- every alert and warning from that check has a response that meets PC-06.
 
 When the source is connected and verified but unavailable at signing (KA-04, KA-05), the decision SHALL be `outage_path`, governed by PG-02. In every other case it SHALL be `refused`, with one of these reasons: `capability_disabled`, `legal_review_missing`, `no_verified_source`, `currency_policy_missing`, `check_not_completed`, `check_stale` or `alerts_unanswered`.
 
@@ -23,13 +23,14 @@ When the source is connected and verified but unavailable at signing (KA-04, KA-
 - **THEN** the gate decision is `refused` with reason `alerts_unanswered`
 
 ### Requirement: PG-02 When the source is unavailable at signing, only a clinician may sign, with a recorded statement, and the prescription is flagged and re-checked
-When the gate decision is `outage_path`, openChart SHALL let the prescription be signed only when all three of these hold (owner ruling 76):
-- the signer's author type is `clinician`;
-- the signer holds prescription `sign` scope;
-- the signer records a statement, as part of the signature, that the checks were unavailable and that a manual review was done.
+When the gate decision is `outage_path`, openChart SHALL let the step (signature, co-signature or release) complete only when all four of these hold (owner ruling 76; design call PD-22):
+- the acting clinician's author type is `clinician`;
+- the acting clinician holds prescription `sign` scope, or `cosign` scope for a co-signature;
+- **the local review is done.** openChart SHALL show every input that needs no knowledge source: the clinician-confirmed allergy list, every unreconciled patient-reported allergy, medication and supplement statement, the other `pending_release` and `released` prescriptions, and the "allergy status not recorded" warning where it applies. The clinician SHALL respond to each one under PC-06's individual-response rule, and the inputs and responses SHALL be stored as an outage-review check record (PC-07);
+- **the statement is recorded.** The clinician records, as the attestation of that signature, the statement that the checks were unavailable and that a manual review was done, using the attestation code `prescribing.checks_unavailable_manual_review`.
 
 openChart SHALL then:
-- flag the prescription `checks_unavailable_at_signing`;
+- set the prescription content's `checks_unavailable_at_signing` flag (SL-03, PD-1), which the signature covers;
 - list it for the signer and for the medical director;
 - re-check it automatically as soon as the source is available and current again;
 - route any alert from that re-check to the signer, or to the medical director where the signer cannot act, as an open work item.
@@ -43,6 +44,10 @@ The work item SHALL stay open until a named clinician responds under PC-06. No t
 #### Scenario: Failure: the statement is missing
 - **WHEN** a clinician tries to sign during an outage without recording the statement
 - **THEN** openChart refuses the signature and the prescription stays `draft`
+
+#### Scenario: Failure: a patient-reported allergy is skipped at outage signing
+- **WHEN** a clinician signs during an outage, and the patient has an unreconciled patient-reported allergy
+- **THEN** openChart shows that allergy, and refuses the signature until the clinician gives it its own response, which is stored in the outage-review check record
 
 #### Scenario: Failure: an AI author meets an outage
 - **WHEN** an AI-authored prescription arrives under a future Tier 2 while the source is unavailable

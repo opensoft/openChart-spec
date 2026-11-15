@@ -1,9 +1,9 @@
 ## 1. Ratification And Contract Alignment
 
 - [ ] 1.1 Run `openspec validate define-prescribing-safety-checks --strict --no-interactive` on the exact revision proposed for ratification. Record the OpenSpec version, timestamp, revision, exit code and output.
-- [ ] 1.2 In this change's `contracts/` directory, run `sha256sum -c SHA256SUMS` and `python3 -I selftest.py`. The self-test needs `jsonschema` 4.18 or later. All 10 valid fixtures must validate, and all 10 invalid fixtures must fail, each for the reason stated in `examples/expected-failures.json`. Record both outputs.
+- [ ] 1.2 In this change's `contracts/` directory, run `sha256sum -c SHA256SUMS` and `python3 -I selftest.py`. The self-test needs `jsonschema` 4.18 or later. All 11 valid fixtures must validate, and all 12 invalid fixtures must fail, each for the reason stated in `examples/expected-failures.json`. Record both outputs.
 - [ ] 1.3 Obtain Brett Heap's ratification. He stamps `Ratified by` and changes `Status` from `draft` to `ratified` in `proposal.md`, in the same revision. The rulings recorded in `design.md` are not ratification. No Spec Kit feature is created before this task is complete.
-- [ ] 1.4 Record Brett Heap's disposition of tensions PT-1 to PT-5 and design calls PD-1 to PD-19. Where a disposition needs an amendment elsewhere, name the change that must carry it:
+- [ ] 1.4 Record Brett Heap's disposition of tensions PT-1 to PT-5 and design calls PD-1 to PD-22. Where a disposition needs an amendment elsewhere, name the change that must carry it:
   - `define-clinical-acts-foundation` for PT-3 (CA-01 wording and a MINOR content-schema version);
   - `define-ai-authored-clinical-records` for PT-4.
 
@@ -38,13 +38,14 @@
   - every uncheckable input and every check kind not run raises a visible warning;
   - drug–supplement is checked only where declared;
   - a same-ingredient allergy match is always critical, and an unmapped severity is critical;
-  - a critical alert cannot be dismissed in bulk;
+  - critical and high alerts and every warning (allergy inputs above all) each need their own response, and only lower-severity alerts can be acknowledged together;
+  - checks re-run at co-signature and release; the co-signer sees earlier overrides; a new finding at release holds the prescription; pending prescriptions are inputs;
   - every check record holds inputs, source and version, alerts and responses, and cannot be edited;
   - adapter failures never show "no alerts";
-  - no request carries patient identity;
+  - no request carries patient identity or labels, and free text is never sent without the recorded agreement;
   - every gate refusal reason is reachable;
   - with no verified source there is no outage path;
-  - the outage path accepts only a clinician with a recorded statement, flags the prescription and re-checks it on return;
+  - the outage path accepts only a clinician who has answered every local input individually and recorded the statement with code `prescribing.checks_unavailable_manual_review`; it sets the signed flag `checks_unavailable_at_signing` and re-checks on return;
   - no non-clinician author uses the outage path;
   - `System Manager` cannot bypass the gate;
   - a lapsed legal review refuses every signature;

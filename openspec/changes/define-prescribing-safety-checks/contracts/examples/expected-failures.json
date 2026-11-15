@@ -11,6 +11,10 @@
     "expect_in_error": "error_code",
     "reason": "error codes are closed; an error is never 'no alerts'"
   },
+  "free-text-without-agreement.invalid.json": {
+    "expect_in_error": "'free_text_agreement_ref' is a required property",
+    "reason": "free text is sent only with the agreement recorded in the source's verification"
+  },
   "interaction-single-item.invalid.json": {
     "expect_in_error": "item_refs",
     "reason": "an interaction finding names at least two items"
@@ -22,6 +26,10 @@
   "not-checked-unknown-reason.invalid.json": {
     "expect_in_error": "reason",
     "reason": "a not-checked item carries a closed reason"
+  },
+  "request-with-label.invalid.json": {
+    "expect_in_error": "'label' was unexpected",
+    "reason": "requests carry codes only; labels appear only in results"
   },
   "request-with-patient.invalid.json": {
     "expect_in_error": "'patient' was unexpected",

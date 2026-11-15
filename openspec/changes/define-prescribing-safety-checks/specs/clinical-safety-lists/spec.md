@@ -44,7 +44,7 @@ Allergy entries and medication list entries SHALL follow every rule of `define-c
 - provenance and audit (CA-08);
 - role grants per act class (AU-02).
 
-This change SHALL NOT define a second signing, amendment or authorship model. The two act classes SHALL be added to `openchart-clinical-act-content` in a new MINOR version, published by a governed revision of `define-clinical-acts-foundation` once both changes are ratified (design call PD-1; tension PT-3).
+This change SHALL NOT define a second signing, amendment or authorship model. A new MINOR version of `openchart-clinical-act-content` SHALL add the two act classes, together with a boolean `checks_unavailable_at_signing` on prescription content (PG-02). It SHALL be published by a governed revision of `define-clinical-acts-foundation` once both changes are ratified (design call PD-1; tension PT-3).
 
 #### Scenario: An allergy entry is amended
 - **WHEN** a clinician changes a confirmed allergy's criticality

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-drug-knowledge-adapter:1.0",
   "title": "openchart-drug-knowledge-adapter 1.0",
-  "description": "Canonical message schema for the adapter through which an openChart deployment connects a drug knowledge source that its practice has licensed or verified. Owned by opensoft/openChart-spec change define-prescribing-safety-checks. openChart bundles no drug knowledge. openChart sends requests; the adapter answers each with a result or an error. Requests carry medication and allergen descriptions and codes only: every object is closed and no message has a patient field, so no patient identifier, name, date of birth or contact detail can cross. openChart maps every source severity through the severity mapping in the adapter's capability declaration; an unmapped severity is treated as critical. An error, a timeout or an invalid result makes the source unavailable for that check and is never read as 'no alerts'. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR. All examples are synthetic.",
+  "description": "Canonical message schema for the adapter through which an openChart deployment connects a drug knowledge source that its practice has licensed or verified. Owned by opensoft/openChart-spec change define-prescribing-safety-checks. openChart bundles no drug knowledge. openChart sends requests; the adapter answers each with a result or an error. Requests carry codes and opaque item references only. Free text, such as a patient-typed medication or allergen name, may be sent only on an item marked free_text, and only in a request that names the free_text_agreement_ref recorded in the source's verification; without that agreement, uncoded entries stay in openChart as 'could not be checked'. Every object is closed and no message has a patient field, so no patient identifier, name, date of birth or contact detail can cross. Labels appear only in results, where the source supplies them. openChart maps every source severity through the severity mapping in the adapter's capability declaration; an unmapped severity is treated as critical. An error, a timeout or an invalid result makes the source unavailable for that check and is never read as 'no alerts'. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR. All examples are synthetic.",
   "type": "object",
   "required": [
     "message_type"
@@ -368,18 +368,30 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "item_ref",
-        "text"
+        "item_ref"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "coding"
+          ]
+        },
+        {
+          "required": [
+            "free_text"
+          ]
+        }
       ],
       "properties": {
         "item_ref": {
           "$ref": "#/$defs/opaqueRef"
         },
-        "text": {
-          "$ref": "#/$defs/label"
-        },
         "coding": {
           "$ref": "#/$defs/code"
+        },
+        "free_text": {
+          "description": "Sent only with the request's free_text_agreement_ref (KA-06).",
+          "$ref": "#/$defs/label"
         },
         "item_kind": {
           "enum": [
@@ -705,7 +717,29 @@
           "items": {
             "$ref": "#/$defs/medicationItem"
           }
+        },
+        "free_text_agreement_ref": {
+          "$ref": "#/$defs/freeTextGate"
         }
+      },
+      "if": {
+        "properties": {
+          "items": {
+            "contains": {
+              "required": [
+                "free_text"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "then": {
+        "required": [
+          "free_text_agreement_ref"
+        ]
       }
     },
     "normalizeResult": {
@@ -772,33 +806,7 @@
           "minItems": 1,
           "maxItems": 500,
           "items": {
-            "type": "object",
-            "additionalProperties": false,
-            "required": [
-              "allergen_ref",
-              "text",
-              "category"
-            ],
-            "properties": {
-              "allergen_ref": {
-                "$ref": "#/$defs/opaqueRef"
-              },
-              "text": {
-                "$ref": "#/$defs/label"
-              },
-              "coding": {
-                "$ref": "#/$defs/code"
-              },
-              "category": {
-                "enum": [
-                  "medication",
-                  "food",
-                  "environment",
-                  "biologic",
-                  "unknown"
-                ]
-              }
-            }
+            "$ref": "#/$defs/allergenItem"
           }
         },
         "medications": {
@@ -806,9 +814,31 @@
           "minItems": 1,
           "maxItems": 1000,
           "items": {
-            "$ref": "#/$defs/normalizedItem"
+            "$ref": "#/$defs/normalizedRef"
           }
+        },
+        "free_text_agreement_ref": {
+          "$ref": "#/$defs/freeTextGate"
         }
+      },
+      "if": {
+        "properties": {
+          "allergens": {
+            "contains": {
+              "required": [
+                "free_text"
+              ]
+            }
+          }
+        },
+        "required": [
+          "allergens"
+        ]
+      },
+      "then": {
+        "required": [
+          "free_text_agreement_ref"
+        ]
       }
     },
     "allergyCrossReferenceResult": {
@@ -904,7 +934,7 @@
           "minItems": 1,
           "maxItems": 1000,
           "items": {
-            "$ref": "#/$defs/normalizedItem"
+            "$ref": "#/$defs/normalizedRef"
           }
         },
         "check_kinds": {
@@ -1051,6 +1081,87 @@
           "type": "boolean"
         }
       }
+    },
+    "allergenItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allergen_ref",
+        "category"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "coding"
+          ]
+        },
+        {
+          "required": [
+            "free_text"
+          ]
+        }
+      ],
+      "properties": {
+        "allergen_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "coding": {
+          "$ref": "#/$defs/code"
+        },
+        "free_text": {
+          "description": "Sent only with the request's free_text_agreement_ref (KA-06).",
+          "$ref": "#/$defs/label"
+        },
+        "category": {
+          "enum": [
+            "medication",
+            "food",
+            "environment",
+            "biologic",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "normalizedRef": {
+      "description": "A normalized item as openChart sends it back to the source: codes only, no labels.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_ref",
+        "item_kind",
+        "ingredient_codes"
+      ],
+      "properties": {
+        "item_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "item_kind": {
+          "enum": [
+            "drug",
+            "supplement"
+          ]
+        },
+        "ingredient_codes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/code"
+          }
+        },
+        "class_codes": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/code"
+          }
+        }
+      }
+    },
+    "freeTextGate": {
+      "description": "A request that carries any free_text must name the agreement recorded in the source's verification.",
+      "$ref": "#/$defs/opaqueRef"
     }
   }
 }

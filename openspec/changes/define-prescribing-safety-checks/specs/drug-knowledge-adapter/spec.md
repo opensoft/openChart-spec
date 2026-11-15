@@ -36,7 +36,8 @@ A connected source SHALL be usable for checks only after the medical director, a
 - the adapter identity and version;
 - an opaque reference to the practice's own licence or permission evidence;
 - the result of the adapter contract tests against the synthetic fixtures;
-- an effective date and a review date.
+- an effective date and a review date;
+- optionally, `free_text_agreement_ref`: an opaque reference to the agreement that counsel requires before free text may be sent to this source (KA-06, design call PD-20). Without it, no free text is sent.
 
 openChart SHALL NOT judge the licence. It records the practice's attestation and shows it as practice-supplied. A new source version, a new adapter version or a passed review date SHALL need a new verification before the source is usable again.
 
@@ -70,12 +71,16 @@ A timeout, an adapter error, a schema-invalid result, an unsupported version, or
 - **WHEN** an interaction result lists neither a finding for, nor a `not_checked` entry for, one input medication
 - **THEN** openChart raises "could not be checked" for that medication
 
-### Requirement: KA-06 Adapter messages carry no patient identity, and fixtures are synthetic
-Requests to a source SHALL carry only medication and allergen descriptions and codes, item references and a deployment reference. They SHALL carry no patient identifier, name, date of birth, contact detail or note text; the schema closes every object to enforce it (design call PD-14). The contract's fixtures and every test SHALL use clearly synthetic substance names, classes, codes and rules, and SHALL contain no real drug data.
+### Requirement: KA-06 Adapter requests carry codes only, free text only under a recorded agreement, and no patient identity
+Requests to a source SHALL carry only codes, item references and a deployment reference (design calls PD-14 and PD-20). Normalized items sent back to the source SHALL carry ingredient and class codes, without labels. A free-text medication or allergen description, such as a patient's own wording, SHALL be sent only as an item's `free_text`, and only in a request that names the `free_text_agreement_ref` recorded in the source's verification (KA-03). Without that agreement, an uncoded entry SHALL NOT be sent and SHALL stay in openChart as "could not be checked" (PC-02). Requests SHALL carry no patient identifier, name, date of birth, contact detail or note text. The schema enforces all of this: every object is closed, no message has a patient field, request items have no label, and `free_text` requires the agreement reference. The contract's fixtures and every test SHALL use clearly synthetic substance names, classes, codes and rules, and SHALL contain no real drug data.
 
 #### Scenario: Failure: a request would carry the patient
 - **WHEN** an implementation adds a patient reference to an interaction lookup request
 - **THEN** the request fails the schema and is not sent
+
+#### Scenario: Failure: patient wording would be sent without an agreement
+- **WHEN** a patient-reported allergy is free text, and the source's verification records no free-text agreement
+- **THEN** openChart does not send the text, a request carrying it would fail the schema, and the clinician sees "could not be checked" for that allergy
 
 #### Scenario: Failure: a fixture uses real drug data
 - **WHEN** a contributor adds a fixture naming a real medicine or interaction

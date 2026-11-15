@@ -14,11 +14,11 @@ The foundation's scope (ruling 73) has no clinician-confirmed allergy list or me
 - **Lists** (SL-01 to SL-05). openChart gains a clinician-confirmed allergy and intolerance list, with an explicit "no known drug allergies" assertion, so that an empty list never means "none". It also gains an active medication list: clinician-confirmed entries plus openChart's released prescriptions, by reference. Both reuse the foundation's act model, and no second signing model is defined. Patient-reported statements reach the lists only by an explicit, attributed clinician action. The chart always shows unreconciled reports beside confirmed entries, each labelled.
 - **Checks** (PC-01 to PC-08).
   - **Inputs:** clinician-confirmed entries and patient-reported statements alike. A report is never ignored because nobody has confirmed it.
-  - **What cannot be checked:** anything the source cannot check gets an explicit "could not be checked" warning, never silence.
+  - **What cannot be checked:** anything the source cannot check gets an explicit "could not be checked" warning, never silence. Free text stays local unless a counsel-required agreement is recorded for the source.
   - **First checks (ruling 77):** allergy by ingredient and class, drug–drug interaction and duplicate therapy, plus drug–supplement interaction only where the source declares support.
-  - **When they run:** at drafting, after each change, and at signing against the exact content signed.
+  - **When they run:** at drafting, after each change, at signing, at co-signature (the co-signer sees every earlier alert and override) and at release. A new finding at release holds the prescription. Pending prescriptions are inputs too.
   - **Severity:** a closed severity scale. A same-ingredient allergy match is always critical, and an unmapped severity counts as critical.
-  - **Responses:** every alert gets a response. A critical alert needs its own explicit override with a reason, never a bulk dismissal.
+  - **Responses:** every alert gets a response. Critical and high alerts and every warning each need their own response with a reason; only lower-severity alerts may be acknowledged together.
   - **Record:** an immutable check record holds the inputs, the source and its version, the alerts and the responses.
   - **Labels:** alerts are labelled as advice, and the record names the clinician as the decision-maker.
 - **Knowledge source** (KA-01 to KA-06).
@@ -26,12 +26,12 @@ The foundation's scope (ruling 73) has no clinician-confirmed allergy list or me
   - The operations are: source identity, capability declaration, normalization to ingredients and classes, allergy cross-reference, interaction lookup, and coded errors.
   - A source is usable only after the medical director records its verification and a currency policy. A stale source counts as unavailable.
   - Adapter failures are never read as "no alerts".
-  - Requests carry no patient identity.
+  - Requests carry codes only and no patient identity. Free text is sent only under an agreement recorded in the source's verification.
   - Nothing is asserted about any vendor, product, database or licence.
 - **Gate** (PG-01 to PG-05).
-  - One gate decision per prescription signature, which the foundation's RX-02 relies on.
+  - One gate decision per prescription signature, co-signature and release, which the foundation's RX-02 relies on.
   - **No verified source, no signing** (ruling 78).
-  - **Outage path (ruling 76):** when the source is unavailable at signing, only a clinician may sign. The clinician records a statement that the checks were unavailable and a manual review was done; the prescription is flagged and re-checked when the source returns. A non-clinician author, including any future AI author, can never use this path.
+  - **Outage path (ruling 76):** when the source is unavailable at signing, only a clinician may sign. The clinician first answers every local input individually, then records the statement (attestation code `prescribing.checks_unavailable_manual_review`); the prescription carries the signed flag `checks_unavailable_at_signing` and is re-checked when the source returns. A non-clinician author, including any future AI author, can never use this path.
   - **Go-live** needs a recorded legal and regulatory review, whose topics are listed. No legal rule is asserted.
   - No role or setting bypasses the gate.
   - Foundation feature (4) depends on this change's ratification.

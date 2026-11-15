@@ -4,7 +4,7 @@
 Every prescribing-safety check SHALL take as inputs, for the patient:
 - the prescription version being checked;
 - every active clinician-confirmed allergy entry and medication list entry (SL-01, SL-02);
-- every `released` openChart prescription;
+- every other openChart prescription that is `pending_release` or `released`, so that a duplicate between two prescriptions not yet released is caught;
 - the latest accepted version of every active patient-reported allergy, medication and supplement statement, whether or not a clinician has reconciled it, reviewed it or marked it `clinician_verified` (design call PD-4).
 
 A patient-reported entry MUST NOT be ignored because no clinician has confirmed it. Every alert that arises from a patient-reported or unconfirmed input SHALL say so. A `draft` or `refuted` entry SHALL NOT suppress a patient-reported statement of the same substance.
@@ -13,16 +13,20 @@ A patient-reported entry MUST NOT be ignored because no clinician has confirmed 
 - **WHEN** a clinician drafts a prescription whose ingredient matches an allergy that the patient reported at intake and no clinician has confirmed
 - **THEN** the check raises an allergy alert labelled as resting on a patient-reported allergy
 
+#### Scenario: Failure: two pending prescriptions duplicate each other
+- **WHEN** a clinician drafts a prescription that duplicates another prescription still `pending_release` for a co-signature
+- **THEN** the check raises a `duplicate_therapy` alert naming both
+
 #### Scenario: Failure: an unconfirmed report would be skipped
 - **WHEN** a check would run only against clinician-confirmed entries
 - **THEN** openChart includes the patient-reported statements, and the check record lists them as inputs
 
 ### Requirement: PC-02 An input that cannot be checked produces an explicit warning, never silence
-For every input the source cannot recognize, resolve or check — uncoded or free-text entries, items the adapter reports as `not_recognized`, `ambiguous`, `uncoded_not_resolvable`, `kind_not_supported` or `outside_source_scope`, and every requested check kind the source did not run — openChart SHALL raise an explicit "could not be checked" warning that names the input or the check kind. A patient whose allergy status is not recorded (SL-01) SHALL raise an "allergy status not recorded" warning. These warnings SHALL be shown with the alerts, SHALL need the clinician's response under PC-06, and SHALL be stored in the check record. openChart MUST NOT skip any input silently, and MUST NOT present a check with such warnings as complete.
+openChart SHALL send the source codes only (KA-06). An uncoded or free-text entry SHALL NOT be sent unless the source's verification records the agreement that counsel requires for free text (KA-03). Otherwise it SHALL stay in openChart as "could not be checked". For every input the source cannot recognize, resolve or check — uncoded or free-text entries that were not sent, items the adapter reports as `not_recognized`, `ambiguous`, `uncoded_not_resolvable`, `kind_not_supported` or `outside_source_scope`, and every requested check kind the source did not run — openChart SHALL raise an explicit "could not be checked" warning that names the input or the check kind. A patient whose allergy status is not recorded (SL-01) SHALL raise an "allergy status not recorded" warning. These warnings SHALL be shown with the alerts, SHALL need the clinician's response under PC-06, and SHALL be stored in the check record. openChart MUST NOT skip any input silently, and MUST NOT present a check with such warnings as complete.
 
-#### Scenario: A free-text medication cannot be normalized
-- **WHEN** a patient-reported medication is free text that the source reports as `uncoded_not_resolvable`
-- **THEN** the clinician sees "could not be checked" for that medication, and must respond to it before signing
+#### Scenario: A free-text medication stays local
+- **WHEN** a patient-reported medication is free text, and the source's verification records no free-text agreement
+- **THEN** the text is not sent to the source, the clinician sees "could not be checked" for that medication, and must respond to it before signing
 
 #### Scenario: Failure: drug–supplement checking is not supported
 - **WHEN** the source's capability declaration does not include `drug_supplement`, and the patient reports a supplement
@@ -45,12 +49,24 @@ Dose range, drug–condition, pregnancy and lactation, renal and hepatic adjustm
 - **WHEN** the check finds no alerts
 - **THEN** openChart states which check kinds ran and that dose range, drug–condition, pregnancy and lactation, renal and hepatic, and paediatric and geriatric rules were not checked
 
-### Requirement: PC-04 Checks run when a prescription is drafted or changed, and again at signing
-openChart SHALL run the checks when a prescription draft is created, after every change to it, and again at the moment of signing. The signing-time check SHALL be the one the gate relies on (PG-01). It SHALL be run against the exact content digest of the version being signed and against the inputs as they stand at that moment. A check result from before the latest change to the prescription or to any input SHALL be stale and SHALL NOT satisfy the gate.
+### Requirement: PC-04 Checks run when a prescription is drafted or changed, at signing, at co-signature and at release
+openChart SHALL run the checks at five points: when a prescription draft is created, after every change to it, at the moment of signing, at the moment of co-signature, and at the moment the prescription is released from `pending_release`, including at a deferred release time (design call PD-21). Each of the last three SHALL be a step check that the gate relies on for that step (PG-01). It SHALL run against the exact content digest of the signed version and against the inputs as they stand at that moment. A check result from before the latest change to the prescription or to any input SHALL be stale and SHALL NOT satisfy the gate.
+
+At co-signature, the co-signer SHALL see every alert, warning and override recorded so far, with who responded and why. The co-signer SHALL respond to every alert and warning that is new since the last step check, under PC-06. A finding counts as new unless a response to the same finding, for the same inputs and source version, is already recorded.
+
+At release, a new alert or warning SHALL hold the prescription in `pending_release` and open a work item for its signer, or for the medical director where the signer cannot act (`define-clinical-acts-foundation` RX-02). It SHALL be released only after a clinician responds under PC-06. No timer SHALL release it.
 
 #### Scenario: A check is re-run at signing
 - **WHEN** a clinician signs a prescription an hour after drafting it, and an allergy was added in between
 - **THEN** openChart re-runs the checks at signing, and the new allergy is considered
+
+#### Scenario: The co-signer sees the overrides
+- **WHEN** a co-signer opens a nurse-signed prescription whose signer overrode a `high` interaction alert
+- **THEN** the co-signer sees the alert, the override, its reason and who recorded it, and a fresh check runs before the co-signature can complete
+
+#### Scenario: Failure: a new allergy appears before a deferred release
+- **WHEN** a clinician-confirmed allergy is added after signing, and the prescription's deferred release time arrives
+- **THEN** the release-time check raises the allergy alert, the prescription stays `pending_release`, and a work item goes to the signer
 
 #### Scenario: Failure: a stale check would be relied on
 - **WHEN** a prescription's dose text changed after its last check
@@ -67,8 +83,14 @@ openChart SHALL give each alert one severity on the closed scale `critical`, `hi
 - **WHEN** a finding carries a source severity that the capability declaration does not map
 - **THEN** openChart treats the alert as `critical`
 
-### Requirement: PC-06 The clinician responds to every alert, and a critical alert needs its own explicit override
-Before a prescription can be signed, the signing clinician SHALL respond to every alert and every "could not be checked" warning from the signing-time check. A response is one of these: change the prescription, which runs a new check; cancel it; or override with a recorded reason, given as a code with optional text (design call PD-6). Each `critical` alert SHALL need its own explicit override, with its own reason, and SHALL NOT be dismissed in bulk or by a default. Alerts below `critical`, and warnings, MAY be acknowledged together with one recorded reason. Every response SHALL record the clinician, the time and the reason.
+### Requirement: PC-06 The clinician responds to every alert; critical and high alerts and every warning each need their own response
+Before a step that PC-04 checks can complete, the acting clinician SHALL respond to every alert and every warning from that step's check. A response is one of these: change the prescription, which runs a new check; cancel it; or override with a recorded reason, given as a code with optional text (design call PD-6). These SHALL each need their own explicit response, with their own reason, and SHALL NOT be dismissed in bulk or by a default:
+- each `critical` alert;
+- each `high` alert;
+- each "could not be checked" warning, above all every warning on an allergy input;
+- the "allergy status not recorded" warning.
+
+Only `moderate`, `low` and `info` alerts MAY be acknowledged together with one recorded reason. Every response SHALL record the clinician, the time and the reason.
 
 #### Scenario: A clinician overrides a high alert with a reason
 - **WHEN** a clinician overrides a `high` drug–drug alert with reason code `benefit_outweighs_risk`
@@ -78,6 +100,10 @@ Before a prescription can be signed, the signing clinician SHALL respond to ever
 - **WHEN** a clinician selects "acknowledge all" while a `critical` allergy alert is open
 - **THEN** the critical alert stays open, and signing is refused until it gets its own override with a reason
 
+#### Scenario: Failure: allergy warnings and high alerts are dismissed in bulk
+- **WHEN** a clinician selects "acknowledge all" while a `high` alert and a "could not be checked" warning on a patient-reported allergy are open
+- **THEN** both stay open, and only the `moderate` and lower alerts are acknowledged; signing is refused until each of the two gets its own response
+
 ### Requirement: PC-07 Every check is recorded with its inputs, source, alerts and the clinician's response
 openChart SHALL store each check as an immutable record attached to the prescription version's provenance. The record SHALL hold:
 - the prescription act and version, and the content digest checked;
@@ -86,7 +112,7 @@ openChart SHALL store each check as an immutable record attached to the prescrip
 - the check kinds requested and run;
 - every alert and warning, with severity and source text as shown;
 - every response, with clinician, time and reason;
-- the outcome, and whether it was a signing-time check.
+- the outcome, and the step it served: drafting, signing, co-signature, release or outage review (PG-02).
 
 The record MUST NOT be edited or deleted.
 

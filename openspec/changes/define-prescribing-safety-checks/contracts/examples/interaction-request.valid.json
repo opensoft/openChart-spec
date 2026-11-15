@@ -9,57 +9,42 @@
     {
       "item_ref": "SYN-ITEM-RX-0001",
       "item_kind": "drug",
-      "ingredients": [
+      "ingredient_codes": [
         {
-          "code": {
-            "system": "urn:example:synthetic:substance",
-            "code": "SYN-ING-0001"
-          },
-          "label": "synthexamol (synthetic)"
+          "system": "urn:example:synthetic:substance",
+          "code": "SYN-ING-0001"
         }
       ],
-      "classes": [
+      "class_codes": [
         {
-          "code": {
-            "system": "urn:example:synthetic:class",
-            "code": "SYN-CLASS-ALPHA"
-          },
-          "label": "synthetic class alpha"
+          "system": "urn:example:synthetic:class",
+          "code": "SYN-CLASS-ALPHA"
         }
       ]
     },
     {
       "item_ref": "SYN-ITEM-MED-0002",
       "item_kind": "drug",
-      "ingredients": [
+      "ingredient_codes": [
         {
-          "code": {
-            "system": "urn:example:synthetic:substance",
-            "code": "SYN-ING-0002"
-          },
-          "label": "fictorine (synthetic)"
+          "system": "urn:example:synthetic:substance",
+          "code": "SYN-ING-0002"
         }
       ],
-      "classes": [
+      "class_codes": [
         {
-          "code": {
-            "system": "urn:example:synthetic:class",
-            "code": "SYN-CLASS-ALPHA"
-          },
-          "label": "synthetic class alpha"
+          "system": "urn:example:synthetic:class",
+          "code": "SYN-CLASS-ALPHA"
         }
       ]
     },
     {
       "item_ref": "SYN-ITEM-SUP-0003",
       "item_kind": "supplement",
-      "ingredients": [
+      "ingredient_codes": [
         {
-          "code": {
-            "system": "urn:example:synthetic:substance",
-            "code": "SYN-ING-0900"
-          },
-          "label": "herbaloid extract (synthetic)"
+          "system": "urn:example:synthetic:substance",
+          "code": "SYN-ING-0900"
         }
       ]
     }
