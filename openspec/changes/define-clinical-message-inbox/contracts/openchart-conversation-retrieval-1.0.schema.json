@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-conversation-retrieval:1.0",
   "title": "openchart-conversation-retrieval 1.0",
-  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token. The result carries the patient's sharing-consent reference, and a holder may withhold turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
+  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token, and an ai turn may carry its mode, disclosure code, model reference and advice-statement reference. The result carries the patient's sharing-consent reference and always at least one request turn. For a priority or urgent item the request turns are always shared on the urgent_escalation basis with the patient told; a holder may withhold other turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
   "oneOf": [
     {
       "$ref": "#/$defs/capabilitiesRequest"
@@ -153,6 +153,7 @@
         "capability_not_supported",
         "conversation_not_found",
         "reference_not_found",
+        "result_mismatch",
         "consent_not_granted",
         "reply_path_invalid",
         "temporarily_unavailable",
@@ -244,6 +245,22 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9_]{1,63}$"
     },
+    "urgency": {
+      "description": "The item's applied urgency. Ordered routine < priority < urgent.",
+      "enum": [
+        "routine",
+        "priority",
+        "urgent"
+      ]
+    },
+    "aiMode": {
+      "description": "The mode the practice's medical director set for the AI that wrote the turn (ruling 59). Same values as the mode in openchart-ai-clinical-record-write/1.0.",
+      "enum": [
+        "advice_only",
+        "limited_practice",
+        "full_practice"
+      ]
+    },
     "turn": {
       "description": "One turn of the conversation, keyed by turn_id, with its author type and source.",
       "type": "object",
@@ -254,6 +271,7 @@
         "author_type",
         "source",
         "authored_at",
+        "request_turn",
         "content"
       ],
       "properties": {
@@ -264,6 +282,10 @@
         "position": {
           "type": "integer",
           "minimum": 1
+        },
+        "request_turn": {
+          "description": "True for a turn of the escalated request: what the patient or representative asked the doctor. Such a turn is authored by the patient or a representative and has non-empty text.",
+          "type": "boolean"
         },
         "author_type": {
           "$ref": "#/$defs/authorType"
@@ -279,7 +301,7 @@
           "$ref": "#/$defs/opaqueRef"
         },
         "shared_basis": {
-          "description": "Optional. Why the holder shares this turn: within the patient's sharing consent, confirmed by the patient, or as a trigger of an urgent escalation.",
+          "description": "Why the holder shares this turn: within the patient's sharing consent, confirmed by the patient, or as a turn that triggered an escalation. For a priority or urgent item, at least one request turn carries urgent_escalation.",
           "enum": [
             "consent_scope",
             "patient_confirmed",
@@ -297,11 +319,98 @@
           "description": "For a clinician turn: the reply_id of the reply.deliver that carried it.",
           "$ref": "#/$defs/uuid"
         },
+        "ai_mode": {
+          "description": "Optional, ai turns only: the mode in force when the AI wrote the turn.",
+          "$ref": "#/$defs/aiMode"
+        },
+        "disclosure_code": {
+          "description": "Optional, ai turns only: the code of the AI disclosure the patient was shown with the turn.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{1,63}$"
+        },
+        "model_ref": {
+          "description": "Optional, ai turns only: the model identifier and version that wrote the turn, as one reference.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/@+-]{1,128}$"
+        },
+        "advice_statement_ref": {
+          "description": "Optional, ai turns only: the holder's reference to the version of the advice statement shown with the turn, for example a not-medical-advice statement.",
+          "$ref": "#/$defs/opaqueRef"
+        },
         "content": {
           "$ref": "#/$defs/textContent"
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "request_turn": {
+                "const": true
+              }
+            },
+            "required": [
+              "request_turn"
+            ]
+          },
+          "then": {
+            "properties": {
+              "author_type": {
+                "enum": [
+                  "patient",
+                  "representative"
+                ]
+              },
+              "content": {
+                "properties": {
+                  "text": {
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "properties": {
+                "author_type": {
+                  "const": "ai"
+                }
+              },
+              "required": [
+                "author_type"
+              ]
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "ai_mode"
+                  ]
+                },
+                {
+                  "required": [
+                    "disclosure_code"
+                  ]
+                },
+                {
+                  "required": [
+                    "model_ref"
+                  ]
+                },
+                {
+                  "required": [
+                    "advice_statement_ref"
+                  ]
+                }
+              ]
+            }
+          }
+        },
         {
           "if": {
             "properties": {
@@ -559,6 +668,7 @@
           "required": [
             "handoff_id",
             "conversation_ref",
+            "urgency",
             "purpose"
           ],
           "properties": {
@@ -569,6 +679,10 @@
             "conversation_ref": {
               "$ref": "#/$defs/conversationRef"
             },
+            "urgency": {
+              "description": "The item's urgency when openChart asks. For priority or urgent, the holder must share the request turns on the urgent_escalation basis and tell the patient.",
+              "$ref": "#/$defs/urgency"
+            },
             "purpose": {
               "const": "clinical_handoff"
             }
@@ -577,7 +691,7 @@
       }
     },
     "conversationResult": {
-      "description": "The holder returns the conversation's shareable turns, each with its turn_id, author type and source, under the patient's sharing consent. A holder may return only the turns that consent allows, and then reports how many it withheld. A holder that shares the turns that triggered an urgent escalation marks them and says when the patient was told.",
+      "description": "The holder returns the conversation's shareable turns, each with its turn_id, author type and source, under the patient's sharing consent. The result always carries at least one request turn: what the patient or representative asked. For a priority or urgent item, the request turns are always shared on the urgent_escalation basis and the patient is told, whatever else the patient's consent withholds. A holder may withhold other turns that consent does not allow, and then reports how many it withheld. A result that does not answer its retrieve is refused with result_mismatch.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -619,6 +733,7 @@
             "acked_message_id",
             "handoff_id",
             "conversation_ref",
+            "urgency",
             "consent_ref",
             "snapshot_ref",
             "as_of",
@@ -634,6 +749,10 @@
             "conversation_ref": {
               "$ref": "#/$defs/conversationRef"
             },
+            "urgency": {
+              "description": "The urgency the holder applied: the urgency of the conversation.retrieve it answers.",
+              "$ref": "#/$defs/urgency"
+            },
             "consent_ref": {
               "description": "The holder's reference to the patient's sharing consent it applied.",
               "$ref": "#/$defs/opaqueRef"
@@ -647,8 +766,19 @@
             },
             "turns": {
               "type": "array",
+              "minItems": 1,
               "items": {
                 "$ref": "#/$defs/turn"
+              },
+              "contains": {
+                "properties": {
+                  "request_turn": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "request_turn"
+                ]
               }
             },
             "turns_withheld": {
@@ -657,7 +787,7 @@
               "minimum": 0
             },
             "patient_told_at": {
-              "description": "When the patient was told that turns were shared for an urgent escalation. Required when any turn has shared_basis urgent_escalation.",
+              "description": "When the patient was told that turns were shared for an escalation. Required when the urgency is priority or urgent, and whenever any turn has shared_basis urgent_escalation.",
               "$ref": "#/$defs/timestamp"
             },
             "ehr_patient": {
@@ -689,6 +819,44 @@
                 "required": [
                   "patient_told_at"
                 ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "urgency": {
+                    "enum": [
+                      "priority",
+                      "urgent"
+                    ]
+                  }
+                },
+                "required": [
+                  "urgency"
+                ]
+              },
+              "then": {
+                "required": [
+                  "patient_told_at"
+                ],
+                "properties": {
+                  "turns": {
+                    "contains": {
+                      "properties": {
+                        "request_turn": {
+                          "const": true
+                        },
+                        "shared_basis": {
+                          "const": "urgent_escalation"
+                        }
+                      },
+                      "required": [
+                        "request_turn",
+                        "shared_basis"
+                      ]
+                    }
+                  }
+                }
               }
             }
           ]

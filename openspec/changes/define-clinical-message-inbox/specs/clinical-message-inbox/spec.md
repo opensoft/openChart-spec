@@ -18,7 +18,7 @@ Every requirement in this capability SHALL apply in the same way on every client
 ### Requirement: MI-02 Handoff and conversation-retrieval messages are validated against canonical schemas, pinned by path and digest
 openChart SHALL validate every message it receives or sends under its two inbox contracts against that contract's canonical schema:
 - **`openpractice-clinical-handoff/1.0`**, owned by change `define-patient-gateway-and-escalation` in `opensoft/openPractice-spec`: `openspec/changes/define-patient-gateway-and-escalation/contracts/openpractice-clinical-handoff-1.0.schema.json`, at revision `0a82fc2` (`main`, still draft and unratified), SHA-256 `19dff20f95cd31afdef02270119a123a7c4662a4fcc5b20ef09d5b9cd5d91e2d`;
-- **`openchart-conversation-retrieval/1.0`**, owned by this change (ruling 69): `openspec/changes/define-clinical-message-inbox/contracts/openchart-conversation-retrieval-1.0.schema.json` in `opensoft/openChart-spec`, SHA-256 `68754bf25d8a09c2d98ac23e697d154cee8cb85f25f9c0037b715d127e1ba88e`, as listed in this change's `contracts/SHA256SUMS`. HealthLinc and medXfactory implement it (MI-03).
+- **`openchart-conversation-retrieval/1.0`**, owned by this change (ruling 69): `openspec/changes/define-clinical-message-inbox/contracts/openchart-conversation-retrieval-1.0.schema.json` in `opensoft/openChart-spec`, SHA-256 `9a5150a0d917edf8815c871e93731d06fb61613363b7cf094b8b29b1dda6b9d2`, as listed in this change's `contracts/SHA256SUMS`. HealthLinc and medXfactory implement it (MI-03).
 
 Each digest identifies its schema even after archival moves the file. openChart SHALL NOT implement against a handoff schema whose digest differs from the digest recorded here, until both changes record the same new digest. When that change's schema changes, this pin SHALL be updated in a governed revision of this change. The retrieval schema SHALL change only in a governed revision of this change that records its new digest, and a system that implements it SHALL record the same digest before it interoperates with openChart.
 
@@ -55,13 +55,18 @@ The handoff is reference-only (ER-05 in the openPractice change). openChart SHAL
 - **`healthlinc`:** from HealthLinc, for any conversation it holds: with its coach, a direct message to the doctor, or an administrative thread;
 - **`medxfactory`:** from medXfactory, for a conversation with medXfactory's medical AI.
 
-openChart SHALL send `conversation.retrieve`, naming the item's `handoff_id` and the offer's `conversation_ref`. The holder answers with `conversation.result`, or refuses with `message.ack` `rejected` and a code from the contract's error set. Every holder SHALL support retrieval. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in `capabilities.result`, in answer to openChart's `capabilities.request` or unprompted when they change. The latest declaration governs. openChart SHALL NOT send a message for a capability the holder has not declared (design call MD-22).
+openChart SHALL send `conversation.retrieve`, naming the item's `handoff_id`, the offer's `conversation_ref` and the item's current `urgency`. When the item's urgency rises to `priority` or `urgent` after a retrieval, openChart SHALL retrieve again with the new urgency. The holder answers with `conversation.result`, or refuses with `message.ack` `rejected` and a code from the contract's error set. Every holder SHALL support retrieval. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in `capabilities.result`, in answer to openChart's `capabilities.request` or unprompted when they change. The latest declaration governs. openChart SHALL NOT send a message for a capability the holder has not declared (design call MD-22).
 
-Each returned turn carries its `turn_id`, author type and source token, which openChart records per turn under MI-12. The result carries the patient's sharing-consent reference, `consent_ref`, which openChart records. The contract allows a holder, without requiring it, to return only the turns the patient confirmed, and to share at once the turns that triggered an urgent escalation, with the patient told. When a result reports withheld turns, openChart SHALL show the owner that the view is partial, with the count, and SHALL NOT present it as the whole conversation (design call MD-25).
+Each returned turn carries its `turn_id`, author type and source token, which openChart records per turn under MI-12. The result carries the patient's sharing-consent reference, `consent_ref`, and the urgency the holder applied, which openChart records. Every result SHALL carry at least one request turn: a turn marked `request_turn`, written by the patient or a representative, with non-empty text, that holds what they asked the doctor. For a `priority` or `urgent` item, the request turns SHALL always be shared on the basis `urgent_escalation`, with the patient told (`patient_told_at`); the patient's choice of what else to share never removes them. The retrieval schema enforces each of these rules. Beyond them, the contract allows a holder, without requiring it, to return only the turns the patient confirmed. When a result reports withheld turns, openChart SHALL show the owner that the view is partial, with the count, and SHALL NOT present it as the whole conversation (design call MD-25).
 
 The offer's `healthlinc_message_ref` is HealthLinc's reference for the patient's request. openChart SHALL keep it in the record (MI-12) and use it for split requests (MI-16), but SHALL NOT use it in place of `conversation_ref`. openChart MUST NOT request, accept or store message content from openPractice.
 
-When retrieval fails, openChart SHALL keep the item open and owned, keep retrying, and show the owner that the content is unavailable. A refusal, `consent_not_granted` included, and a result that fails the schema count as failed retrievals. The same applies when openChart has no retrieval configured for the source system, for example a `medxfactory` conversation at a practice that has not configured medXfactory retrieval (design call MD-12). openChart SHALL report `content_unavailable` to openPractice (MI-06): at the first failed retrieval for an `urgent` item, and when the retry policy is exhausted for any other item (design call MD-15). An item SHALL NOT close because its content is unavailable.
+A retrieval SHALL succeed only with a schema-valid `conversation.result` that answers it: the same `handoff_id` and `conversation_ref`, and the urgency openChart sent. Every other outcome SHALL be a failed retrieval (design call MD-29):
+- a refusal, `consent_not_granted` included, or no answer;
+- a result that fails the schema, which openChart refuses with `schema_invalid`. That includes an empty result, a result with no request turn, and a `priority` or `urgent` result whose request turns are not shared as `urgent_escalation` with `patient_told_at`;
+- a schema-valid result that does not answer the retrieve, which openChart refuses with `result_mismatch`.
+
+A result that withholds only turns other than the request turns is a successful but partial retrieval (design call MD-25). When retrieval fails, openChart SHALL keep the item open and owned, keep retrying, and show the owner that the content is unavailable. The same applies when openChart has no retrieval configured for the source system, for example a `medxfactory` conversation at a practice that has not configured medXfactory retrieval (design call MD-12). openChart SHALL report `content_unavailable` to openPractice (MI-06): at the first failed retrieval for an `urgent` or `priority` item, so that openPractice's fallback or tracked on-call alert runs at once, and when the retry policy is exhausted for a `routine` item (design call MD-15). An item SHALL NOT close because its content is unavailable.
 
 #### Scenario: The conversation is retrieved
 - **WHEN** openChart accepts an offer with `conversation_source` `healthlinc`, and HealthLinc answers `conversation.retrieve` for its `conversation_ref` with `conversation.result`
@@ -80,8 +85,24 @@ When retrieval fails, openChart SHALL keep the item open and owned, keep retryin
 - **THEN** the item stays open and owned, openChart reports `content_unavailable`, and it does not ask openPractice for the content
 
 #### Scenario: Failure: the holder withholds turns under the patient's consent
-- **WHEN** a `conversation.result` reports three withheld turns
-- **THEN** the owner sees that the view is partial, with the count, and the item stays open and owned
+- **WHEN** a `conversation.result` for a `routine` item carries the request turn and reports three withheld turns
+- **THEN** the retrieval succeeds as a partial one, and the owner sees the request turn and that the view is partial, with the count
+
+#### Scenario: Failure: an empty result
+- **WHEN** a holder answers `conversation.retrieve` with a `conversation.result` that holds no turns
+- **THEN** openChart refuses it with `schema_invalid`, treats the retrieval as failed, keeps the item open and owned, and reports `content_unavailable` under this requirement
+
+#### Scenario: Failure: a result lacks the request turn
+- **WHEN** a `priority` item's `conversation.result` holds turns, but none is marked `request_turn`
+- **THEN** openChart refuses it with `schema_invalid`, treats the retrieval as failed, and reports `content_unavailable` at once, so openPractice's tracked on-call alert runs
+
+#### Scenario: Failure: an urgent item with withheld turns
+- **WHEN** the patient's consent withholds turns from an `urgent` item's conversation
+- **THEN** the result still carries the request turn on the basis `urgent_escalation` with `patient_told_at`, and the owner sees it with the count of withheld turns. A result without them fails the schema, is a failed retrieval, and is reported at once as `content_unavailable`, so openPractice's fallback runs
+
+#### Scenario: Failure: a result answers a different retrieval
+- **WHEN** a schema-valid `conversation.result` names another `conversation_ref`, or a lower urgency than openChart sent
+- **THEN** openChart refuses it with `result_mismatch`, stores none of it, and treats the retrieval as failed
 
 #### Scenario: Failure: the holder refuses under the patient's consent
 - **WHEN** a holder refuses `conversation.retrieve` with `consent_not_granted`
@@ -315,8 +336,9 @@ The author types, the rule that a communication is never a fact of record, and t
 - the handoff references: `handoff_id`, `link_id` when present, `identity_state`, `healthlinc_message_ref`, `conversation_source`, `conversation_ref`, `reply_path_ref`, the origin and any split-group reference;
 - for an `unlinked` item, the `unlinked_identity` as received: `legal_name`, `birth_date` and `administrative_sex`. It is marked unverified, is never projected onto an `OC Patient`, and is never used to match (MI-17, MI-18);
 - every urgency change with its source, every owner change, every clock event, every acknowledgment, every status sent, every clinician urgency raise and clinical-need marker sent, and every reply delivery failure reported (MI-10, MI-11, MI-25);
-- for every retrieval, the `snapshot_ref`, the `consent_ref`, the count of withheld turns if any, and the retrieval time;
-- for every retrieved turn, keyed by its `turn_id`: its position, author type, source token and time, and, where present, its answer type and version, its approver or its `reply_id`;
+- for every retrieval, the `snapshot_ref`, the `consent_ref`, the urgency the holder applied, the count of withheld turns if any, `patient_told_at` where given, and the retrieval time; for a failed retrieval, its coded cause;
+- for every retrieved turn, keyed by its `turn_id`: its position, author type, source token, time, whether it is a request turn, and its sharing basis; and, where present, its answer type and version, its approver or its `reply_id`;
+- for an `ai` turn, where the holder gives them: the mode in force (`ai_mode`: `advice_only`, `limited_practice` or `full_practice`), the code of the disclosure shown to the patient (`disclosure_code`), the model reference (`model_ref`) and the advice-statement reference (`advice_statement_ref`) (design call MD-30);
 - for a conversation HealthLinc holds, also each turn's text as retrieved;
 - for a conversation medXfactory holds, no copy of any turn's text (MI-24, design call MD-27);
 - every reply, with the named clinician who sent it, its time and HealthLinc's acceptance.
@@ -370,7 +392,7 @@ A recorded communication MUST NOT be silently overwritten or deleted. A correcti
 - **THEN** openChart records the new content as a new version and keeps the version the clinician saw
 
 ### Requirement: MI-13 AI-authored and clinician-authored content are always distinguishable
-openChart SHALL keep AI-authored content distinguishable from clinician-authored content wherever it records, shows or delivers that content. It SHALL do so with the author types and source systems of the clinical communication record (MI-12). AI-authored content, and content of `unknown` authorship, MUST NOT be recorded, shown or delivered as clinician-authored. Only a named clinician's authenticated session can create `clinician` content. This change grants no AI drafting of clinical replies (design call MD-10). Any AI assistance in the inbox needs a separately governed change. A patient's or representative's turn SHALL never be shown as AI content. An answer in medXfactory's advice-only class (ruling 66) SHALL be labelled AI-authored and SHALL never be shown as clinician-reviewed; the medical director's sampled review of that class happens in medXfactory, not in openChart. A retrieved turn that claims clinician authorship without a matching `reply_id` SHALL be shown as `unknown` (MI-12).
+openChart SHALL keep AI-authored content distinguishable from clinician-authored content wherever it records, shows or delivers that content. It SHALL do so with the author types and source systems of the clinical communication record (MI-12). AI-authored content, and content of `unknown` authorship, MUST NOT be recorded, shown or delivered as clinician-authored. Only a named clinician's authenticated session can create `clinician` content. This change grants no AI drafting of clinical replies (design call MD-10). Any AI assistance in the inbox needs a separately governed change. A patient's or representative's turn SHALL never be shown as AI content. An answer in medXfactory's advice-only class (ruling 66) SHALL be labelled AI-authored and SHALL never be shown as clinician-reviewed; the medical director's sampled review of that class happens in medXfactory, not in openChart. A retrieved turn that claims clinician authorship without a matching `reply_id` SHALL be shown as `unknown` (MI-12). With each AI turn, openChart SHALL show the clinician the mode, disclosure, model and advice statement the holder gave, and SHALL show any the holder did not give as not stated. openChart SHALL never infer them, so an AI turn with no `ai_mode` is never shown as advice-only (design call MD-30).
 
 #### Scenario: Failure: medical-AI content could pass as a doctor's
 - **WHEN** an item shows a turn written by medXfactory's medical AI
@@ -387,6 +409,14 @@ openChart SHALL keep AI-authored content distinguishable from clinician-authored
 #### Scenario: A patient's turn in a medical-AI conversation
 - **WHEN** medXfactory returns a turn that the patient wrote in a conversation with its medical AI
 - **THEN** openChart shows it as the patient's own turn, never as AI content
+
+#### Scenario: An advice-only answer shows its disclosure
+- **WHEN** medXfactory returns an AI turn with `ai_mode` `advice_only`, a `disclosure_code`, a `model_ref` and an `advice_statement_ref`
+- **THEN** the clinician sees the turn labelled AI-authored, with the mode, the model, and the disclosure and statement under which it reached the patient
+
+#### Scenario: Failure: an AI turn carries no provenance fields
+- **WHEN** a holder returns an AI turn with none of the four AI-turn fields
+- **THEN** the clinician sees the turn labelled AI-authored, with its mode, disclosure, model and statement shown as not stated, and never as advice-only
 
 ### Requirement: MI-14 Patient-reported message text is never a diagnosis or a clinical fact
 Under MI-12, a clinical communication is never a diagnosis or a clinical fact of record. Message text from a patient or a representative SHALL remain visibly patient-reported. It SHALL NOT become a diagnosis, problem, order, prescription, encounter, intake statement or other clinical fact. This is consistent with the ratified `expanded-patient-intake` requirement "Intake does not confer clinician or autonomous authority": patient statements remain visibly patient-reported until an authorized clinical workflow records another assertion. Only a separately governed clinical workflow may record such an assertion. AI-authored content, from HealthLinc's coach or from medXfactory's medical AI, SHALL likewise not become a diagnosis or clinical fact through the inbox. A medical-AI exchange reaches the chart only under MI-24, and only as communication under MI-26.
@@ -563,7 +593,8 @@ The inbox SHALL be covered by contract tests, written first, that validate every
 - refusal of content fields and of unknown fields;
 - `conversation_source` and `conversation_ref`, including a namespace that does not match the source;
 - capability declaration, with `capabilities.request` and `capabilities.result`, and no message sent for an undeclared capability;
-- `consent_ref`, withheld turns shown as a partial view, turns shared for an urgent escalation, and a `consent_not_granted` refusal;
+- `consent_ref`; the required request turn, with an empty result and a result without a request turn treated as failed retrievals; for `priority` and `urgent` items, request turns shared as `urgent_escalation` with `patient_told_at`; withheld turns shown as a partial view; `result_mismatch`; and a `consent_not_granted` refusal;
+- the optional AI-turn fields `ai_mode`, `disclosure_code`, `model_ref` and `advice_statement_ref`, shown when given, shown as not stated when absent, and refused on non-AI turns;
 - every author type of MI-12, per turn by `turn_id`, with its source token, including `unknown`, `openpractice_agent` turns with an answer type or an approver, a clinician claim without a matching `reply_id`, patient turns never shown as AI content, and medical-AI content never filed through the inbox;
 - AI-authored orders, prescriptions and diagnoses in inbox items held as communication, with no clinical act created (MI-26);
 - `clinical_need.marker`: mark and withdraw under one `need_id`, the `valid_until` and `origin` rules, `related_handoff_id` for `urgent_escalation`, and the handling of `origin_not_verified`;

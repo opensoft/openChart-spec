@@ -12,7 +12,7 @@
   - ER-06 and ER-03 at the compared revision, against MI-18 and MI-10.
 
   Record both revisions and each digest pair. A mismatch blocks the handoff. When that change's schema changes, update MI-02's pin in a governed revision of this change.
-- [ ] 1.4 Record Brett Heap's disposition of tensions MT-3 to MT-10, MT-12, MT-15 and MT-16, and of design calls MD-1 to MD-28. MT-1, MT-2, MT-11 and MT-13 are resolved by the openPractice change's text as it stands at `0a82fc2`, and MT-14 by ruling 67; record that confirmation. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-5, MT-6 and MT-15, and `define-openpractice-boundary` for MT-3 (the follow-up the openPractice change's T-11 proposes). Otherwise this change yields. Record also that tensions AT-5, AT-6 and AT-7 of openChart-spec#4 are addressed here, by MI-26, by MI-12 with MD-28, and by MD-20.
+- [ ] 1.4 Record Brett Heap's disposition of tensions MT-3 to MT-10, MT-12, MT-15 and MT-16, and of design calls MD-1 to MD-30. MT-1, MT-2, MT-11 and MT-13 are resolved by the openPractice change's text as it stands at `0a82fc2`, and MT-14 by ruling 67; record that confirmation. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-5, MT-6 and MT-15, and `define-openpractice-boundary` for MT-3 (the follow-up the openPractice change's T-11 proposes). Otherwise this change yields. Record also that tensions AT-5, AT-6 and AT-7 of openChart-spec#4 are addressed here, by MI-26, by MI-12 with MD-28, and by MD-20.
 - [ ] 1.5 Run `sha256sum -c contracts/SHA256SUMS` in this change's directory, and confirm that the digest of `openchart-conversation-retrieval-1.0.schema.json` matches MI-02. Compare it with the digest that each implementing change records: the HealthLinc companion (H-1 to H-3) and the medXfactory companion (M-1). A mismatch blocks interoperation with that holder. Any change to the retrieval schema is a governed revision of this change that records the new digest in MI-02 and in `contracts/SHA256SUMS`.
 
 ## 2. Governance Prerequisites (Routed Open Questions)
@@ -48,7 +48,8 @@
   - no financial status is requested or stored, and openChart keeps no administrative queue;
   - AI-authored content is never shown as clinician-authored, and its source is named; a patient's turn is never shown as AI content; a clinician claim without a matching reply is shown as `unknown`;
   - no message is sent for a capability a holder has not declared;
-  - a view that the patient's consent leaves partial is shown as partial, with its count;
+  - every retrieval result carries the request turn; a priority or urgent item's request turns are shared with the patient told; a result without them is a failed retrieval, reported as `content_unavailable`; and a view that the patient's consent leaves partial is shown as partial, with its count;
+  - an AI turn's mode, disclosure, model and advice statement are shown when given, and shown as not stated when absent;
   - no medical-AI exchange is filed through the inbox;
   - an AI-authored order, prescription or diagnosis in an inbox item is held as communication, and creates no clinical act;
   - the inbox's inertness and MI-24's no-copy rule apply to inbox items only, never to an `ai_consult` record;
