@@ -12,13 +12,21 @@ Each grant version SHALL record:
 - the recorded legal and regulatory review for that mode (AG-05);
 - the review policy and, for the practice modes, the co-review window (AG-10);
 - the effective time, the expiry (AG-09) and the state: `active`, `paused`, `expired`, `revoked` or `superseded`;
-- a grant identifier and a version number.
+- a grant identifier and a version number. The versions of one grant SHALL be consecutive integers starting at 1: each new version takes its predecessor's number plus one, and no number is skipped or reused (design call AD-47).
 
-A grant version, once approved, SHALL NOT be edited. Every change SHALL create a new version that references its predecessor, with actor, reason and time.
+A grant version, once approved, SHALL NOT be edited. Every change to what a version records, other than its state, SHALL create a new version that references its predecessor, with actor, reason and time: a narrowing (AG-08) and a superseding approval (AG-09) each do. A pause, a resumption, an expiry or a revocation changes only the state of the version in force and creates no version.
 
 #### Scenario: Failure: a write claims more authority than the chart's record
 - **WHEN** a `consult.write` claims `full_practice` under a grant whose current version in openChart records `advice_only`
 - **THEN** openChart refuses it with reason `mode_mismatch` and stores no clinical content
+
+#### Scenario: Grant versions are consecutive
+- **WHEN** the medical director approves a grant, pauses and resumes it, narrows it, and later approves a superseding version
+- **THEN** the versions are numbered 1, 2 and 3: the pause and the resumption create no version, the narrowing creates version 2, and the superseding approval creates version 3
+
+#### Scenario: Failure: a version number would be skipped
+- **WHEN** an implementation tries to record version 4 of a grant whose latest version is 2
+- **THEN** the record is refused, and the next version of that grant can only be 3
 
 #### Scenario: Failure: someone edits an approved grant in place
 - **WHEN** a user tries to change the configuration version of an approved grant version

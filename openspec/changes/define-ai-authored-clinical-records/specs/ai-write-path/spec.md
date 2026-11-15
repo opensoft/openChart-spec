@@ -283,7 +283,9 @@ openChart SHALL answer every `grant.readback_request` with exactly one `grant.re
 - a `grant.readback` whose reason disagrees with the state of the grant it carries: `grant_paused` with a state other than `paused`, `grant_expired` with a state other than `expired`, or `grant_revoked` with a state other than `revoked`;
 - an `authority.notice` with a standing `change` (`suspended`, `cap_suspended`, `deregistered`, `suspension_lifted` or `no_medical_director`) that carries `new_mode` or `removed_allowlist_entry_ids`.
 
-`contracts/examples/conformance/` holds a schema-valid example of each, and openChart's contract tests SHALL show that it never emits one. These are known limits of the 1.0 schema, recorded for its next revision (design call AD-45).
+**What openChart always sends.** On every grant-change notice it sends (`paused`, `narrowed`, `resumed`, `expired`, `revoked` or `superseded`), openChart SHALL include `grant_version`: the version in force once the change applies, which for `narrowed` and `superseded` is the new version (AG-01; design call AD-47). The 1.0 schema requires `grant_id` and `configuration_version` on these notices, but not `grant_version`. Of the grant-change notices, only `narrowed` carries scope: it names the allowlist entries it removes in `removed_allowlist_entry_ids` and a lowered mode in `new_mode`; the other five carry none, and a superseding version's scope is the configuration version it records. A narrowing of a co-review window or of the reserved acts has no field in 1.0; openChart enforces it, and it concerns only the practice modes, which are off.
+
+`contracts/examples/conformance/` holds a schema-valid example that breaks each of these rules, and openChart's contract tests SHALL show that it never emits one. These are known limits of the 1.0 schema, recorded for its next revision (design calls AD-45 and AD-47).
 
 **The reader's rules.** A source that acts on these messages SHALL apply these rules (design call AD-45):
 1. A `grant.readback` or an `authority.notice` that contradicts itself, as the list above describes, is treated as not current.
