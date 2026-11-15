@@ -11,7 +11,7 @@
   - ER-06 and ER-03 at the compared revision, against MI-18 and MI-10.
 
   Record both revisions and each digest pair. A mismatch blocks the handoff. When that change's schema changes, update MI-02's pin in a governed revision of this change.
-- [ ] 1.4 Record Brett Heap's disposition of MT-1's residual, of tensions MT-3 to MT-10, MT-12, MT-14 and MT-15, and of design calls MD-1 to MD-21. MT-2, MT-11 and MT-13 are resolved by the openPractice change's text at `165aff0`; record that confirmation. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-1's residual, MT-5, MT-6 and MT-15; `define-openpractice-boundary` for MT-3 (the follow-up the openPractice change's T-11 proposes); and medXfactory's `define-patient-medical-ai-connection` for MT-14. Otherwise this change yields.
+- [ ] 1.4 Record Brett Heap's disposition of tensions MT-3 to MT-10, MT-12, MT-14 and MT-15, and of design calls MD-1 to MD-21. MT-1, MT-2, MT-11 and MT-13 are resolved by the openPractice change's text at `165aff0` and `6e411dc`; record that confirmation. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-5, MT-6 and MT-15; `define-openpractice-boundary` for MT-3 (the follow-up the openPractice change's T-11 proposes); and medXfactory's `define-patient-medical-ai-connection` for MT-14. Otherwise this change yields.
 
 ## 2. Governance Prerequisites (Routed Open Questions)
 
