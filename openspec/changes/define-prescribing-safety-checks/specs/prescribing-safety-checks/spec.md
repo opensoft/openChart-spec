@@ -5,13 +5,22 @@ Every prescribing-safety check SHALL take as inputs, for the patient:
 - the prescription version being checked;
 - every active clinician-confirmed allergy entry and medication list entry (SL-01, SL-02);
 - every other openChart prescription that is `pending_release` or `released`, so that a duplicate between two prescriptions not yet released is caught;
-- the latest accepted version of every active patient-reported allergy, medication and supplement statement, whether or not a clinician has reconciled it, reviewed it or marked it `clinician_verified` (design call PD-4).
+- the latest accepted version of every active patient-reported allergy, medication and supplement statement, whether or not a clinician has reconciled it, reviewed it or marked it `clinician_verified` (design call PD-4);
+- as inputs that can only raise an alert, every pending recommendation record under `define-clinical-acts-foundation` (not yet on main; AN-09) that proposes an allergy entry or a medication list entry, and any identified but unconfirmed information about an allergy added under its AN-01 (design call PD-23, PROPOSED).
 
-A patient-reported entry MUST NOT be ignored because no clinician has confirmed it. Every alert that arises from a patient-reported or unconfirmed input SHALL say so. A `draft` or `refuted` entry SHALL NOT suppress a patient-reported statement of the same substance. An entry is for the same substance as a statement when it was reconciled from that statement (SL-04) or carries the same code system and code.
+A patient-reported entry MUST NOT be ignored because no clinician has confirmed it. An alert that rests on a recommendation or on unconfirmed information SHALL be labelled as resting on an entry that is not an authorized decision. Such an input SHALL never be treated as a confirmed entry, and SHALL never suppress an alert or a warning or satisfy anything (owner ruling 80, clause 14). Every alert that arises from a patient-reported or unconfirmed input SHALL say so. A `draft` or `refuted` entry SHALL NOT suppress a patient-reported statement of the same substance. An entry is for the same substance as a statement when it was reconciled from that statement (SL-04) or carries the same code system and code.
 
 #### Scenario: A patient-reported allergy raises an alert
 - **WHEN** a clinician drafts a prescription whose ingredient matches an allergy that the patient reported at intake and no clinician has confirmed
 - **THEN** the check raises an allergy alert labelled as resting on a patient-reported allergy
+
+#### Scenario: A recommended allergy raises a labelled alert
+- **WHEN** a nurse without allergy-list scope records a penicillin allergy, which is kept as a recommendation, and a clinician then drafts a prescription for amoxicillin
+- **THEN** the check raises an allergy alert labelled as resting on an entry that is not an authorized decision
+
+#### Scenario: Failure: a recommendation would suppress an alert
+- **WHEN** a pending recommendation proposes marking a patient's confirmed penicillin allergy `refuted`, and a clinician drafts amoxicillin
+- **THEN** the confirmed allergy still raises its alert, and the recommendation suppresses nothing
 
 #### Scenario: Failure: two pending prescriptions duplicate each other
 - **WHEN** a clinician drafts a prescription that duplicates another prescription still `pending_release` for a co-signature
