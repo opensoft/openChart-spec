@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
-### Requirement: AA-01 Tier 2 is not buildable until the clinical-acts foundation is ratified, and until then no AI-authored act is created
-openChart has no clinician-authored encounters, orders, prescriptions, diagnoses or treatment plans. This capability specifies the authorship, authority, co-review and reversal layer for AI-authored clinical acts, and SHALL NOT be built until the required prerequisite change, the clinical-acts foundation (proposed id `define-clinical-acts-foundation`), is ratified, and its acts are built. A MINOR version of the contract SHALL then pin the foundation's content schemas for `act_content` (design call AD-17).
+### Requirement: AA-01 Tier 2 is specified but not in force: it needs the clinical-acts foundation and a future governed amendment, and until both no AI-authored act is created
+openChart has no clinician-authored encounters, orders, prescriptions, diagnoses or treatment plans. This capability specifies the authorship, authority, co-review and reversal layer for AI-authored clinical acts, and SHALL NOT be built or put in force until both of these hold: (a) the required prerequisite change, the clinical-acts foundation (`define-clinical-acts-foundation`, being drafted under ruling 72), is ratified and its acts are built; and (b) a future governed amendment, made after advice-only has run and counsel's review is in, puts Tier 2 in force (ruling 67). Under ruling 67 the ratified texts that bar an AI-authored prescription, diagnosis or order stand, and that amendment must address them (tensions AT-1 and AT-2). A MINOR version of the contract SHALL then pin the foundation's content schemas for `act_content` (design call AD-17).
 
 Until then, openChart SHALL refuse every `act.write` with reason `tier2_not_in_force`, ahead of every grant, mode and act check (AW-06 precedence), and SHALL create no order, prescription, diagnosis, treatment-plan change or other clinical act from AI-authored content, whatever mode, grant or authority it claims. This keeps `define-clinical-message-inbox` MI-26's hold in force in substance, even after this change is ratified (tension AT-5). Once the foundation exists, an act class or act type that it does not define SHALL be refused with reason `act_type_unsupported`.
 
@@ -9,12 +9,16 @@ Until then, openChart SHALL refuse every `act.write` with reason `tier2_not_in_f
 - **WHEN** an AI system sends a schema-valid `act.write` claiming `full_practice` before the clinical-acts foundation is built
 - **THEN** openChart refuses it with reason `tier2_not_in_force` and creates no clinical act
 
+#### Scenario: Failure: the foundation is built but no governed amendment exists
+- **WHEN** the clinical-acts foundation is ratified and built, no governed amendment has put Tier 2 in force, and an AI system sends a schema-valid `act.write` under a grant it claims
+- **THEN** openChart refuses it with reason `tier2_not_in_force` and creates no clinical act
+
 #### Scenario: Failure: a plan proposes building Tier 2 early
-- **WHEN** a plan proposes building AI-authored acts before the clinical-acts foundation is ratified
-- **THEN** the plan is out of scope, and the work waits for the foundation
+- **WHEN** a plan proposes building AI-authored acts before the clinical-acts foundation is ratified and a governed amendment puts Tier 2 in force
+- **THEN** the plan is out of scope, and the work waits for both
 
 ### Requirement: AA-02 The authorship layer applies to every clinical act type and keeps AI authorship distinguishable
-Every clinical act that openChart records SHALL carry an author kind: `clinician` for a named clinician's act, or `ai` for an act an external clinical AI system wrote under this capability. The layer SHALL apply in the same way to every act class the foundation defines (orders, prescriptions, diagnoses of record and treatment-plan changes) and SHALL NOT depend on the act's clinical content. An AI-authored act SHALL carry its source system, its model identifiers and versions, its evidence references and, where the source system states it, its knowledge basis, the consult it came from where there is one, and the authority it rested on (AA-12). It SHALL be shown as AI-authored on every surface (AW-09).
+Every clinical act that openChart records SHALL carry an author type: `clinician` for a named clinician's act, or `ai` for an act an external clinical AI system wrote under this capability. The layer SHALL apply in the same way to every act class the foundation defines (orders, prescriptions, diagnoses of record and treatment-plan changes) and SHALL NOT depend on the act's clinical content. An AI-authored act SHALL carry its source system, its model identifiers and versions, its evidence references and, where the source system states it, its knowledge basis, the consult it came from where there is one, and the authority it rested on (AA-12). It SHALL be shown as AI-authored on every surface (AW-09). Under ruling 72 the foundation accepts only `clinician`; author type `ai` on an act waits for the governed amendment of AA-01 (tension AT-10).
 
 #### Scenario: Failure: an AI act would be listed with clinician acts
 - **WHEN** a patient's medication list shows an accepted AI-authored prescription beside clinician-authored ones

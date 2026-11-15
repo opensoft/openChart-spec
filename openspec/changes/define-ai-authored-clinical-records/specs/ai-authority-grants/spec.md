@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: AG-01 openChart keeps its own record of the medical director's authority grant and checks every write against it
-openChart SHALL keep its own record of each authority grant the practice's medical director approves for an external clinical AI system, and SHALL check every write against that record (proposed decision 65, design call AD-1). openChart MUST NOT accept a write on the strength of the authority the write claims, or of any configuration held only by the AI system.
+openChart SHALL keep its own record of each authority grant the practice's medical director approves for an external clinical AI system, and SHALL check every write against that record (ruling 65, design call AD-1, binding). openChart MUST NOT accept a write on the strength of the authority the write claims, or of any configuration held only by the AI system.
 
 Each grant version SHALL record:
 - the practice and the source system it applies to;
@@ -36,17 +36,18 @@ openChart SHALL record one medical director for each practice: a named human wit
 - **THEN** activation is refused
 
 ### Requirement: AG-03 There are three modes, advice only is the default, and they are built in order
-A grant SHALL carry exactly one mode: `advice_only`, `limited_practice` or `full_practice` (ruling 59). A new grant SHALL default to `advice_only`. In `advice_only`, the AI system may inform, assess and recommend next steps; it may not prescribe, order, change a treatment plan or record a diagnosis of record (ruling 56). The modes SHALL be built in this order: `advice_only` first (Tier 1), then `limited_practice`, then `full_practice` (ruling 63). openChart SHALL NOT let a grant for a mode be approved on a deployment whose openChart lacks the build for that mode (design call AD-19).
+A grant SHALL carry exactly one mode: `advice_only`, `limited_practice` or `full_practice` (ruling 59). A new grant SHALL default to `advice_only`. In `advice_only`, the AI system gives a patient information, an assessment and next steps, with no diagnosis language and no treatment directives (ruling 66); it may not prescribe, order, change a treatment plan or record a diagnosis of record (ruling 56). `limited_practice` and `full_practice` stay specified but off: openChart SHALL NOT approve a grant for either until a future governed amendment puts that mode in force (ruling 67, AG-04 gate (d)). The modes SHALL be built in this order: `advice_only` first (Tier 1), then `limited_practice`, then `full_practice` (ruling 63). openChart SHALL NOT let a grant for a mode be approved on a deployment whose openChart lacks the build for that mode (design call AD-19).
 
 #### Scenario: Failure: full practice is requested before it is built
 - **WHEN** a medical director tries to approve a `full_practice` grant on an openChart deployment that has only the advice-only build
 - **THEN** the approval is refused with a coded reason
 
-### Requirement: AG-04 Each mode stays off until its three gates are met
-openChart SHALL NOT activate a grant for a mode until all of the following are recorded for that mode (ruling 58 and the gates the owner set on 2026-11-14):
+### Requirement: AG-04 Each mode stays off until its gates are met
+openChart SHALL NOT activate a grant for a mode until all of the following are recorded for that mode (ruling 58, the gates the owner set on 2026-11-14, and ruling 67):
 - **(a)** the medical director's approval of that mode's scope: for `advice_only`, the scope and the red-flag rules; for `limited_practice`, the allowlist; for `full_practice`, the full-practice grant;
 - **(b)** a legal and regulatory review covering that mode (AG-05);
-- **(c)** for `limited_practice` and `full_practice`, that openChart can accept an AI-authored order, prescription or diagnosis recorded with the authority it acted under: the clinical-acts foundation is ratified and built, and this change's Tier 2 is built for every act class in the grant's scope (AA-01).
+- **(c)** for `limited_practice` and `full_practice`, that openChart can accept an AI-authored order, prescription or diagnosis recorded with the authority it acted under: the clinical-acts foundation is ratified and built, and this change's Tier 2 is built for every act class in the grant's scope (AA-01);
+- **(d)** for `limited_practice` and `full_practice`, a future governed amendment, made after advice-only has run and counsel's review is in, that puts that mode in force (ruling 67). No such amendment exists; until one is ratified, neither practice mode can be approved.
 
 A legal review covering one mode SHALL NOT satisfy gate (b) for another.
 
@@ -57,6 +58,10 @@ A legal review covering one mode SHALL NOT satisfy gate (b) for another.
 #### Scenario: Failure: a practice mode before the foundation exists
 - **WHEN** a medical director tries to approve a `limited_practice` grant before the clinical-acts foundation is built
 - **THEN** the approval is refused for gate (c)
+
+#### Scenario: Failure: a practice mode before the governed amendment
+- **WHEN** a medical director tries to approve a `limited_practice` grant on a deployment where the foundation and Tier 2 are built and a legal review covering limited practice is recorded, but no governed amendment has put limited practice in force
+- **THEN** the approval is refused for gate (d)
 
 ### Requirement: AG-05 openChart records a reference to the legal and regulatory review for each mode, and states no legal rule itself
 openChart SHALL record, for each mode it may activate, a reference to a legal and regulatory review: an opaque locator and SHA-256 digest of the review document, the mode or modes it covers, the act classes and act types it addresses, the reviewer named in it, the person who recorded the reference (the medical director), the recording time, and its expiry or re-review date. For `full_practice` and `limited_practice` it SHALL also record which reserved acts the review cleared, if any (AA-05).

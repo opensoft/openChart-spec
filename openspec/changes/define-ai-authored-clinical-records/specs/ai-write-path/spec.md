@@ -17,9 +17,15 @@ The digest identifies the schema even after archival moves the file. openChart S
 ### Requirement: AW-02 Only a registered AI system's integration identity may write, for one source system and one practice
 openChart SHALL accept write-path messages only from an authenticated integration identity that is registered for exactly one external clinical AI system, identified by its `source_system` (issuer and namespace), and exactly one practice. The identity SHALL hold a dedicated write-path integration role that is narrower than `System Manager`, is named in planning, and is authorized for subject, tenant, purpose and role, as the ratified API requirement demands. Registering an AI system SHALL be an audited act by a named human. No AI system and no agent SHALL register, widen or re-scope an integration identity.
 
+The integration identity MAY be held by a relay that delivers one source system's writes and returns its receipts, as ruling 70 provides for the medical AI's records. The relay SHALL be registered for that one source system and practice, and each write SHALL still name the source system, not the relay. A source system's namespace SHALL be the source token that MI-12 of `define-clinical-message-inbox` uses for it, where MI-12 defines one. `healthlinc` and `openpractice_agent` SHALL NOT be write-path sources, and `openchart` SHALL NOT be a source namespace; the schema refuses all three (design call AD-30).
+
 #### Scenario: Failure: an unregistered caller writes
 - **WHEN** a caller without the write-path integration role sends a `consult.write`
 - **THEN** openChart refuses it with reason `unauthorized` and stores no clinical content
+
+#### Scenario: Failure: a write names HealthLinc as its source
+- **WHEN** a `consult.write` arrives whose `source_system` namespace is `healthlinc`
+- **THEN** openChart refuses it with reason `schema_invalid` and stores no clinical content
 
 #### Scenario: Failure: an identity claims another source system
 - **WHEN** an identity registered for one source system sends a write whose `source_system` names a different system or practice
@@ -109,7 +115,7 @@ Every `write.receipt` that is not returned synchronously, and every `act.status`
 - **THEN** the messages stay in the durable store and are delivered with their original `message_id` when the AI system returns, and no record changes state because of the outage
 
 ### Requirement: AW-09 AI authorship and the authority it rested on are shown wherever openChart shows an AI-authored record
-Wherever openChart shows an AI-authored record, to a clinician or to a patient, on mobile or workstation (ruling 35), it SHALL label the record as AI-authored and name its source system. For a clinician, the label SHALL include the mode in force, the grant and its version, and for an act the allowlist entry or full-practice grant and the co-review status. Every patient-facing display that openChart originates or releases, including one that a system it drives presents, SHALL say that the content was written by an AI system, not by a clinician, and SHALL state its review or co-review status without implying a clinician's prior sign-off. AI-authored content MUST NOT be presented as clinician-authored on any surface.
+Wherever openChart shows an AI-authored record, to a clinician or to a patient, on mobile or workstation (ruling 35), it SHALL label the record as AI-authored and name its source system. For a clinician, the label SHALL include the mode in force, the grant and its version, and for an act the allowlist entry or full-practice grant and the co-review status. Every patient-facing display that openChart originates or releases, including one that a system it drives presents, SHALL say that the content was written by an AI system, not by a clinician, and SHALL state its review or co-review status without implying a clinician's prior sign-off. AI-authored content MUST NOT be presented as clinician-authored on any surface. A consult record SHALL also carry the label of AC-04 (ruling 66).
 
 #### Scenario: Failure: a patient view would omit the AI label
 - **WHEN** a patient-facing view released by openChart would show an AI consult summary without the AI-authored label

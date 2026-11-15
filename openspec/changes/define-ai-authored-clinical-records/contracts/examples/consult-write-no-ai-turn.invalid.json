@@ -53,22 +53,22 @@
       {
         "turn_id": "SYN-TURN-0001",
         "seq": 1,
-        "author_kind": "patient",
+        "author_type": "patient",
         "at": "2026-11-14T09:00:00Z",
         "text": "SYN: I have had a mild headache for two days. Paracetamol helps a little."
       },
       {
         "turn_id": "SYN-TURN-0003",
         "seq": 3,
-        "author_kind": "patient",
+        "author_type": "patient",
         "at": "2026-11-14T09:01:05Z",
         "text": "SYN: No, none of those."
       }
     ],
-    "content_sha256": "5600b0f7bfe4c0ea85f63c5a518c7234c6056a9c295d4ed573c5cb4f305c9bcb"
+    "content_sha256": "1844e4530f60773c4e07fd239bd0f64445aa1bfacdecff8b1192c0030da9e635"
   },
   "summary": {
-    "text": "SYN: AI summary. Two-day mild headache without red-flag features; self-care advice and safety-netting given."
+    "text": "SYN: AI summary. Patient reports a two-day mild headache and no warning signs. General information and next steps given: seek emergency care if a warning sign appears; book an appointment if it lasts more than a week or worsens."
   },
   "evidence_refs": [
     {

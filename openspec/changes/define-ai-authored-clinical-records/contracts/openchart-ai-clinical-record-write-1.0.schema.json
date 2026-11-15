@@ -47,7 +47,7 @@
       "enum": ["operational", "scenario", "simulation"]
     },
     "sourceSystem": {
-      "description": "The external clinical AI system: its issuer and the namespace token under which openChart stores its patient references. Where the clinical communication record (define-clinical-message-inbox MI-12) defines a source token for the system, the namespace is that token (for example medxfactory). healthlinc (a coach that gives general information only) and openpractice_agent (an administrative agent with no clinical content) are never write-path sources.",
+      "description": "The external clinical AI system: its issuer and the namespace token under which openChart stores its patient references. Where the clinical communication record (define-clinical-message-inbox MI-12) defines a source token for the system, the namespace is that token (for example medxfactory). The tokens healthlinc and openpractice_agent are never write-path sources, and openchart is never a source namespace (design call AD-30).",
       "type": "object",
       "additionalProperties": false,
       "required": ["issuer", "namespace"],
@@ -89,7 +89,7 @@
       }
     },
     "conversationRef": {
-      "description": "The source system's reference to the conversation, so that an inbox item naming the same conversation can be associated with the consult record by reference.",
+      "description": "The source system's reference to the conversation, so that an inbox item naming the same conversation can be associated with the consult record by reference. This contract defines no conversation retrieval (owner ruling 69).",
       "type": "object",
       "additionalProperties": false,
       "required": ["issuer", "namespace", "value"],
@@ -205,7 +205,7 @@
       "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "context", "patient", "source_patient_ref", "consent_ref"]
     },
     "consultWrite": {
-      "description": "Tier 1. An external clinical AI system records one consult: the full exchange, the models, the evidence references and the authority it operated under. A consult record is AI-generated communication and never a diagnosis or a clinical fact of record.",
+      "description": "Tier 1. An external clinical AI system records one consult: the full exchange, the models, the evidence references and the authority it operated under. A consult record is AI-generated communication and never a diagnosis or a clinical fact of record. In advice_only mode (owner ruling 66) the AI content gives information, an assessment and next steps, with no diagnosis language and no treatment directives.",
       "type": "object",
       "additionalProperties": false,
       "allOf": [
