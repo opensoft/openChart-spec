@@ -1,0 +1,98 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "act_version",
+  "act_id": "SYN-ACT-ORD-0004",
+  "act_version": 1,
+  "act_class": "order",
+  "act_type": "laboratory_order",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "released",
+  "entry_class": "decision",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0001",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0001:v3"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "provenance": {
+    "received_at": "2026-11-15T10:00:00Z",
+    "source": {
+      "kind": "chart_entry",
+      "ref": "SYN-REC-0001"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-CLIN-0001",
+      "clinical_role": "clinician"
+    }
+  },
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
+    },
+    {
+      "event": "released",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
+    }
+  ],
+  "content": {
+    "order_category": "laboratory",
+    "text": "SYN synthetic laboratory panel, adopted with changes",
+    "priority": "urgent"
+  },
+  "adopted_from": {
+    "recommendation_id": "SYN-REC-0001"
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-CLIN-0001",
+      "signer_role": "clinician",
+      "authority_basis_ref": "SYN-GRANT-0001:v3",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "029a91e6639e547e7cf648055d979c164d9b7f171c3b8e7edf0ca754c41b203d",
+      "sign_off": {
+        "action": "sign",
+        "openwallet_id": "wal-practitioner-SYN-0001",
+        "licence_verification": {
+          "ref": "SYN-LICVER-0001",
+          "covers": "synthetic-licence-scope",
+          "verified_at": "2026-10-01T00:00:00Z"
+        },
+        "challenge_ref": "SYN-CHALLENGE-0001-1030",
+        "statement_sha256": "21cb52db092a875c28b78a058e16fdbe1ad6c6810e036387d4c8be5909631088",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
+        "provenance_sha256": "e8b0df2a0d4aec19575f7e543a59529da2ec4644a72564c58705d39a2b47c9ef",
+        "custody_model": "isolated_per_use_authorized",
+        "check": {
+          "result": "passed",
+          "checked_at": "2026-11-15T10:30:00Z"
+        }
+      }
+    }
+  ],
+  "held_for": {
+    "recommendation_id": "SYN-REC-0001"
+  }
+}

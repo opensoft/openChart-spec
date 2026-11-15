@@ -1,0 +1,120 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "act_version",
+  "act_id": "SYN-ACT-ORD-0007",
+  "act_version": 1,
+  "act_class": "order",
+  "act_type": "referral_order",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "discontinued",
+  "entry_class": "decision",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0001",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0001:v3"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "provenance": {
+    "received_at": "2026-11-15T10:00:00Z",
+    "source": {
+      "kind": "clinician_observation",
+      "ref": "SYN-ACT-ENC-0001"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-CLIN-0001",
+      "clinical_role": "clinician"
+    }
+  },
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
+    },
+    {
+      "event": "released",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
+    },
+    {
+      "event": "discontinued",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T15:00:00Z",
+      "reason_code": "no_longer_needed",
+      "attestation": {
+        "code": "synthetic-attestation-discontinue",
+        "version": "1"
+      },
+      "sign_off": {
+        "action": "discontinue",
+        "openwallet_id": "wal-practitioner-SYN-0001",
+        "licence_verification": {
+          "ref": "SYN-LICVER-0001",
+          "covers": "synthetic-licence-scope",
+          "verified_at": "2026-10-01T00:00:00Z"
+        },
+        "challenge_ref": "SYN-CHALLENGE-0001-1500",
+        "statement_sha256": "2c825c99a0a1bcd5095c8dd6a5d7d6b7ffd04a93216f468d2f531294f51514c8",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1500",
+        "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
+        "custody_model": "isolated_per_use_authorized",
+        "check": {
+          "result": "passed",
+          "checked_at": "2026-11-15T15:00:00Z"
+        }
+      }
+    }
+  ],
+  "content": {
+    "order_category": "referral",
+    "text": "SYN synthetic referral",
+    "priority": "routine"
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-CLIN-0001",
+      "signer_role": "clinician",
+      "authority_basis_ref": "SYN-GRANT-0001:v3",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "07ff69e7b2233467c670e3b3aa00ce5f2945530f4e6cef8a9cb5c473b30354b1",
+      "sign_off": {
+        "action": "enter_in_error",
+        "openwallet_id": "wal-practitioner-SYN-0001",
+        "licence_verification": {
+          "ref": "SYN-LICVER-0001",
+          "covers": "synthetic-licence-scope",
+          "verified_at": "2026-10-01T00:00:00Z"
+        },
+        "challenge_ref": "SYN-CHALLENGE-0001-1030",
+        "statement_sha256": "7ed072f0b98339400c9f43a6b69dded969229f63539bdf76ffdd20f566d2353c",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
+        "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
+        "custody_model": "isolated_per_use_authorized",
+        "check": {
+          "result": "passed",
+          "checked_at": "2026-11-15T10:30:00Z"
+        }
+      }
+    }
+  ]
+}

@@ -54,7 +54,7 @@
   ],
   "content": {
     "order_category": "imaging",
-    "text": "SYN synthetic imaging study, adopted on the draft",
+    "text": "SYN synthetic imaging study",
     "priority": "routine"
   },
   "adopted_from": {
@@ -71,7 +71,7 @@
         "version": "1"
       },
       "signed_at": "2026-11-15T10:30:00Z",
-      "content_sha256": "cbcf9c8953bf93a652eb91aa85acd2405f2f401c04051446ad3d6d4e477f73be",
+      "content_sha256": "aee91dc275c7c7892b12f57cd9d34483832c7fe40ae93cd3c1b330d5e77f3b47",
       "sign_off": {
         "action": "sign",
         "openwallet_id": "wal-practitioner-SYN-0001",
@@ -81,7 +81,7 @@
           "verified_at": "2026-10-01T00:00:00Z"
         },
         "challenge_ref": "SYN-CHALLENGE-0001-1030",
-        "statement_sha256": "3f735a4497e2ddb7ea2e6d8b9bfb25590cd6225a24dccc1d34db53ba25083bf4",
+        "statement_sha256": "38ee6a7c3d99f7204a7478ceb22a89fe750138e6f58a57eef2691d8dee702904",
         "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
         "provenance_sha256": "85094dac3742357424a885153ba328ec9d4de8302a8a46f69a3ca7ac6e1288cb",
         "custody_model": "isolated_per_use_authorized",

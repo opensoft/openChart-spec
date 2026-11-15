@@ -33,5 +33,9 @@
       "account_ref": "SYN-USER-NURSE-0001",
       "clinical_role": "nurse"
     }
+  },
+  "receipt": {
+    "code": "kept_as_information",
+    "sent_at": "2026-11-15T09:45:00Z"
   }
 }

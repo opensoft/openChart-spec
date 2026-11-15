@@ -3,6 +3,12 @@
 ### Requirement: RX-01 A prescription records the clinician's prescribing decision
 openChart SHALL record a prescription as an act of class `prescription`: the clinician's prescribing decision, with the medication as text and, optionally, a coding from a practice-supplied code set; a controlled-substance classification and its source (RX-03); dosage instructions as text and, optionally, a structured dose, route and frequency; and optionally a dispense quantity, refills, days of supply, whether substitution is allowed, an encounter, reason references to diagnoses of record and a deferred release time. Its lifecycle, release, amendment and discontinuation SHALL follow OR-02 and OR-03. Signing SHALL need prescription `sign` scope resting on a prescriber attestation in force (AU-03), and the prescribing-safety gate (RX-02).
 
+A prescription SHALL never be `completed` in this version. No dispense or administration record exists to show that it was carried out (RX-04), and a completion would take the drug out of the prescribing-safety checks without a sign-off. A prescription SHALL end only by a signed-off discontinuation (OR-02) or an entered-in-error mark (CA-06) (design call CD-58, PROPOSED; Open Question 21).
+
+#### Scenario: Failure: a prescription would be completed
+- **WHEN** a person with prescription `complete` scope, or a scheduled job, tries to mark a released prescription `completed`
+- **THEN** openChart refuses the transition, the prescription stays `released`, and it ends only by a signed-off discontinuation
+
 #### Scenario: A clinician drafts a prescription
 - **WHEN** a clinician with prescription `draft` scope records a prescription with medication text, classification and dosage instructions
 - **THEN** openChart stores a `draft` prescription with those fields
