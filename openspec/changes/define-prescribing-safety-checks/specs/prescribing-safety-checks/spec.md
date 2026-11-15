@@ -7,7 +7,7 @@ Every prescribing-safety check SHALL take as inputs, for the patient:
 - every other openChart prescription that is `pending_release` or `released`, so that a duplicate between two prescriptions not yet released is caught;
 - the latest accepted version of every active patient-reported allergy, medication and supplement statement, whether or not a clinician has reconciled it, reviewed it or marked it `clinician_verified` (design call PD-4).
 
-A patient-reported entry MUST NOT be ignored because no clinician has confirmed it. Every alert that arises from a patient-reported or unconfirmed input SHALL say so. A `draft` or `refuted` entry SHALL NOT suppress a patient-reported statement of the same substance.
+A patient-reported entry MUST NOT be ignored because no clinician has confirmed it. Every alert that arises from a patient-reported or unconfirmed input SHALL say so. A `draft` or `refuted` entry SHALL NOT suppress a patient-reported statement of the same substance. An entry is for the same substance as a statement when it was reconciled from that statement (SL-04) or carries the same code system and code.
 
 #### Scenario: A patient-reported allergy raises an alert
 - **WHEN** a clinician drafts a prescription whose ingredient matches an allergy that the patient reported at intake and no clinician has confirmed

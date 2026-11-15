@@ -8,7 +8,7 @@ These facts about what is built were checked at `opensoft/openChart-code` revisi
 - There is no clinician-confirmed allergy list, no medication list, no prescription, no drug knowledge and no check.
 
 **Related drafts, none on main:**
-- `define-clinical-acts-foundation` (openChart-spec#5, head `c9e3e7a`) specifies the prescription record (RX-01 to RX-04), its signing gate (RX-02), the act model (CA-01 to CA-15) and authority (AU-01 to AU-05). It names this change as required before any prescription is signed, with minimum contents (checked below).
+- `define-clinical-acts-foundation` (openChart-spec#5, head `dfb2100`) specifies the prescription record (RX-01 to RX-04), its signing gate (RX-02), the act model (CA-01 to CA-15) and authority (AU-01 to AU-06). It names this change as required before any prescription is signed, with minimum contents (checked below).
 - `define-ai-authored-clinical-records` (openChart-spec#4, read at `dbb1fc5` and in part at `6989780`) has a Tier 2 that would accept AI-authored prescriptions. PG-01 covers that acceptance, and it needs `open`.
 - `define-openpractice-boundary` (openChart-spec#2, `e7c3090`) has CF-03.
 
@@ -71,7 +71,7 @@ A check reads (PC-01, PD-4):
 - the other `pending_release` and `released` prescriptions, so a duplicate between two prescriptions not yet released is caught;
 - the latest accepted version of every active patient-reported allergy, medication and supplement statement, including those marked `clinician_verified`, because they remain patient-reported.
 
-A `draft` or `refuted` entry never hides a report of the same substance.
+A `draft` or `refuted` entry never hides a report of the same substance. An entry is for the same substance when it was reconciled from the statement or carries the same code system and code.
 
 Only codes go to the source. An uncoded or free-text entry is sent only when the source's verification records the agreement that counsel requires (PD-20); otherwise it stays local. Each of these raises an explicit warning that needs its own response (PC-02, PC-06):
 - uncoded or unresolvable input, including free text kept local;
@@ -108,7 +108,7 @@ Only codes go to the source. An uncoded or free-text entry is sent only when the
 | `interaction.lookup.request` / `.result` | both ways | `drug_drug`, `duplicate_therapy`, `drug_supplement` findings, graded; `kinds_checked` says what actually ran |
 | `adapter.error` | adapter → openChart | A coded error, never "no alerts" |
 
-Every result carries the source stamp (reference, version, effective date). Requests carry codes only, and normalized items go back as codes without labels. A code holds no whitespace, a code system is a URI, and openChart sends a coding only in a system the source declares (KA-06). An item's `free_text` is allowed only in a request that names the `free_text_agreement_ref` from the source's verification (PD-20). No message has a patient field, so patient identity cannot cross (KA-06, PD-14). `contracts/examples/` holds 25 synthetic fixtures, 11 that must validate and 14 that must fail. Among the failing ones is the reviewer's probe, patient words sent as a coding, each for one reason stated in `examples/expected-failures.json`. Every substance, class, code system and rule in them is synthetic.
+Every result carries the source stamp (reference, version, effective date). Requests carry codes only, and normalized items go back as codes without labels. A code holds no whitespace, a code system is a URI, and openChart sends a coding only in a system the source declares, with only the version recorded for its loaded code set (KA-06). An item's `free_text` is allowed only in a request that names the `free_text_agreement_ref` from the source's verification (PD-20). No message has a patient field, so patient identity cannot cross (KA-06, PD-14). `contracts/examples/` holds 25 synthetic fixtures, 11 that must validate and 14 that must fail. Among the failing ones is the reviewer's probe, patient words sent as a coding, each for one reason stated in `examples/expected-failures.json`. Every substance, class, code system and rule in them is synthetic.
 
 A practice's medication codings come from its own code sets (foundation CA-12). A source accepts the code systems it declares. A mismatch makes items uncheckable, and each such item raises PC-02's warning. Contract tests during verification (KA-03) expose a mismatch before go-live.
 
@@ -130,7 +130,7 @@ One decision is made per signature, co-signature and release attempt (PG-01, PD-
 
 **The outage path** (PG-02, ruling 76; mechanics PD-11 and PD-22):
 - only an author whose type is `clinician`, holding prescription `sign` scope (or `cosign` scope for a co-signature), may use it;
-- **local review, entry by entry:** openChart shows every PC-01 input that needs no source, one entry at a time: each confirmed allergy entry, each confirmed medication list entry, each other open prescription, each unreconciled patient-reported allergy, medication and supplement, and the "allergy status not recorded" warning. The clinician responds to each entry on its own, never one response for several, and the responses are stored as that step's outage-review check record;
+- **local review, entry by entry:** the review list is PC-01's input list, taken by reference and never narrowed, less the prescription itself. So every active patient-reported statement appears, whether or not it was reconciled, reviewed or marked `clinician_verified`. The list adds every `draft` or `refuted` entry for the same substance as a statement on it, and the "allergy status not recorded" warning. openChart shows one entry at a time. The clinician responds to each entry on its own, never one response for several, and the responses are stored as that step's outage-review check record;
 - the clinician records the statement that the checks were unavailable and that a manual review was done, with code `prescribing.checks_unavailable_manual_review`, on that step's check record. It is also the attestation of a signature or co-signature; a release has no signature;
 - only at signing is the prescription content's `checks_unavailable_at_signing` flag set, before the signature. At co-signature and release, the outage is recorded on the check record alone, and signed content never changes (foundation CA-05). The prescription is listed for the acting clinician and the medical director;
 - a deferred release with the source unavailable, and no clinician taking this path, stays `pending_release` with a work item (foundation RX-02);
@@ -148,7 +148,7 @@ A future AI author always needs `open`.
 ### 7. Order of building
 
 This change is one Spec Kit feature, the protocol's default (PD-16):
-1. It builds on foundation feature (1), clinical authority, and feature (2), the act model.
+1. It builds on foundation feature (1), clinical authority, and feature (2), encounter, note and signing, which carries the act model.
 2. Foundation feature (5), prescriptions, may start only after this change is ratified (ruling 74).
 3. This change's checks and gate are enabled before, or together with, foundation feature (5) in any deployment. Until then, RX-02 refuses every signature, co-signature and release (PG-05).
 
@@ -212,7 +212,7 @@ Each item goes beyond the rulings and is proposed, not ruled. Where a ruling is 
 | PD-11 | Outage-path mechanics beyond ruling 76: listing for the signer and the medical director, automatic re-check on return, and a work item that no timer closes. | PG-02 |
 | PD-12 | A stale source counts as unavailable, so the outage path applies; the authoring brief directs this, and the medical director is alerted. | KA-04, PG-02 |
 | PD-13 | The medical director records the legal and regulatory review, with the topics in PG-04. A lapse refuses every signature. | PG-04 |
-| PD-14 | Adapter requests carry codes only and no patient identity. The schema enforces closed objects, no label or patient fields, a code without whitespace, a URI code system and a token version. openChart enforces at runtime that a coding is sent only in a system the source declares. | KA-06 |
+| PD-14 | Adapter requests carry codes only and no patient identity. The schema enforces closed objects, no label or patient fields, a code without whitespace, a URI code system and a token version. openChart enforces at runtime that a coding is sent only in a system the source declares, and only with the version recorded for its loaded code set, because no schema pattern can tell a version from an identifier. | KA-06 |
 | PD-15 | Released prescriptions are not re-checked when the lists change, except outage-flagged prescriptions. That waits for a later change. | Non-Goals |
 | PD-16 | One Spec Kit feature, built after foundation features (1) and (2) and enabled before, or together with, foundation feature (5). | PG-05 |
 | PD-17 | A "reviewed, not added" record leaves the statement unchanged and still in the check inputs. | SL-04 |
@@ -220,7 +220,7 @@ Each item goes beyond the rulings and is proposed, not ruled. Where a ruling is 
 | PD-19 | The gate decision codes and their order are as tabulated in Decision 6. | PG-01 |
 | PD-20 | Free text (a patient's own wording, or any uncoded description) goes to a source only when the source's verification records `free_text_agreement_ref`, the agreement counsel requires (Open Question 9). Otherwise uncoded entries stay local as "could not be checked". | KA-03, KA-06, PC-02 |
 | PD-21 | Checks also run at co-signature and at release, each against the exact digest. The co-signer sees every earlier alert and override and answers new findings. A finding at release that was not answered before holds the prescription in `pending_release` and opens a work item; no timer releases it. A finding counts as already answered only for the same inputs and source version. | PC-04, PG-01; foundation RX-02 |
-| PD-22 | At an outage step, openChart shows every PC-01 input that needs no source, one entry at a time, and the clinician answers each entry on its own. The statement uses code `prescribing.checks_unavailable_manual_review` and is recorded on that step's check record; it is also the attestation of a signature or co-signature. Only the signing step sets the signed content flag `checks_unavailable_at_signing`; co-signature and release change no signed content. | PG-02, SL-03 |
+| PD-22 | At an outage step, the review list is PC-01's input list by reference, less the prescription itself, so every active patient-reported statement appears, reconciled or not. It adds every `draft` or `refuted` entry for the same substance and any missing allergy status. openChart shows one entry at a time, and the clinician answers each entry on its own. The statement uses code `prescribing.checks_unavailable_manual_review` and is recorded on that step's check record; it is also the attestation of a signature or co-signature. Only the signing step sets the signed content flag `checks_unavailable_at_signing`; co-signature and release change no signed content. | PG-02, SL-03 |
 
 ## Conflicts and tensions
 

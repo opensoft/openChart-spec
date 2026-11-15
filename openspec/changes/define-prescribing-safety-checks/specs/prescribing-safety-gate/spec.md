@@ -26,12 +26,10 @@ When the source is connected and verified but unavailable at that step (KA-04, K
 When the gate decision is `outage_path`, openChart SHALL let the step (signature, co-signature or release) complete only when all four of these hold (owner ruling 76; design call PD-22):
 - the acting clinician's author type is `clinician`;
 - the acting clinician holds prescription `sign` scope, or `cosign` scope for a co-signature;
-- **the local review is done, entry by entry.** openChart SHALL show every PC-01 input that needs no knowledge source, one entry at a time:
-  - each clinician-confirmed allergy entry;
-  - each clinician-confirmed medication list entry (SL-02);
-  - each other `pending_release` or `released` prescription;
-  - each unreconciled patient-reported allergy, medication and supplement statement;
-  - the "allergy status not recorded" warning, where it applies.
+- **the local review is done, entry by entry.** The review list SHALL be PC-01's input list, taken by reference, so that a change to PC-01 changes this list with it. It SHALL NOT be narrowed. openChart SHALL show, one entry at a time:
+  - every input that PC-01 lists for that step's check, except the prescription version being checked. So every active patient-reported allergy, medication and supplement statement appears, whether or not a clinician has reconciled it, reviewed it or marked it `clinician_verified`;
+  - every `draft` allergy entry or medication list entry, and every `refuted` allergy entry, for the same substance as a patient-reported statement on the list (PC-01), whatever its clinical status;
+  - the "allergy status not recorded" warning, where it applies (PC-02).
 
   The clinician SHALL respond to each entry on its own. No response SHALL cover more than one entry, and no entry SHALL be skipped. The entries and responses SHALL be stored as that step's outage-review check record (PC-07);
 - **the statement is recorded on that step's check record.** The clinician records the statement that the checks were unavailable and that a manual review was done, with the code `prescribing.checks_unavailable_manual_review`, on that step's outage-review check record. For a signature or co-signature, the same code SHALL also be that signature's attestation. A release has no signature, so for a release the check record names the acting clinician.
@@ -65,6 +63,10 @@ The work item SHALL stay open until a named clinician responds under PC-06. No t
 #### Scenario: Failure: a patient-reported allergy is skipped at outage signing
 - **WHEN** a clinician signs during an outage, and the patient has an unreconciled patient-reported allergy
 - **THEN** openChart shows that allergy, and refuses the signature until the clinician gives it its own response, which is stored in the outage-review check record
+
+#### Scenario: Failure: a reconciled penicillin report and its refuted entry are left out at outage signing
+- **WHEN** a patient reported a penicillin allergy at intake, a clinician reconciled that statement into an allergy entry that is `refuted` and `inactive`, and a clinician signs a prescription for amoxicillin during an outage
+- **THEN** openChart shows the patient's penicillin statement and the refuted entry, each as its own entry, and refuses the signature until the clinician gives each its own response, which is stored in the outage-review check record
 
 #### Scenario: Failure: the source is unavailable at a deferred release
 - **WHEN** a signed prescription reaches its release time while the source is unavailable, and no clinician completes the outage path
@@ -110,7 +112,7 @@ A passed re-review date SHALL make the decision `refused` with reason `legal_rev
 - **THEN** every prescription signature is refused with `legal_review_missing` until a new review is recorded
 
 ### Requirement: PG-05 Foundation feature (5) depends on this change's ratification, and this change builds on foundation features (1) and (2)
-`define-clinical-acts-foundation`'s feature (5), prescriptions, SHALL NOT start before this change is ratified (owner ruling 74). This change's feature SHALL build on that change's feature (1), clinical authority, and feature (2), the act model. Its checks and gate SHALL be enabled in a deployment before, or together with, foundation feature (5). Until they are, RX-02 SHALL refuse every prescription signature in that deployment.
+`define-clinical-acts-foundation`'s feature (5), prescriptions, SHALL NOT start before this change is ratified (owner ruling 74). This change's feature SHALL build on that change's feature (1), clinical authority, and feature (2), encounter, note and signing, which carries the act model. Its checks and gate SHALL be enabled in a deployment before, or together with, foundation feature (5). Until they are, RX-02 SHALL refuse every prescription signature in that deployment.
 
 #### Scenario: Prescriptions are built after ratification
 - **WHEN** this change is ratified and foundation features (1) and (2) have landed

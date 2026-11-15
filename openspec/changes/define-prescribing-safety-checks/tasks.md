@@ -14,7 +14,7 @@
 
 - [ ] 2.1 Open Question 1: adopt openChart's constitution through separate governance. Then perform a meaningful Constitution Check before planning. This gate blocks planning.
 - [ ] 2.2 Open Question 2: owner dispositions (task 1.4). This gate blocks ratification.
-- [ ] 2.3 `define-clinical-acts-foundation` is ratified, and its features (1), clinical authority, and (2), the act model, have landed. This gate blocks this change's build.
+- [ ] 2.3 `define-clinical-acts-foundation` is ratified, and its features (1), clinical authority, and (2), encounter, note and signing (the act model), have landed. This gate blocks this change's build.
 - [ ] 2.4 Open Questions 3 and 4: in each deployment, the medical director records the legal and regulatory review (PG-04), the source verification (KA-03) and the currency policy (KA-04). This gate blocks go-live in that deployment, not the build; until it is met, PG-01 refuses every signature.
 - [ ] 2.5 Open Questions 5 to 8 are routed as `design.md` states. Each fails closed meanwhile, so none blocks the build.
 
@@ -42,10 +42,11 @@
   - checks re-run at co-signature and release; the co-signer sees earlier overrides; a new finding at release holds the prescription; pending prescriptions are inputs;
   - every check record holds inputs, source and version, alerts and responses, and cannot be edited;
   - adapter failures never show "no alerts";
-  - no request carries patient identity or labels; a code never holds whitespace; a coding is sent only in a declared system; free text is never sent without the recorded agreement;
+  - no request carries patient identity or labels; a code never holds whitespace; a coding is sent only in a declared system, and only with its loaded code set's recorded version; free text is never sent without the recorded agreement;
   - every gate refusal reason is reachable;
   - with no verified source there is no outage path;
-  - the outage path accepts only a clinician who has answered every PC-01 input that needs no source, one entry at a time, and recorded the statement with code `prescribing.checks_unavailable_manual_review` on that step's check record; only signing sets the signed flag `checks_unavailable_at_signing`; co-signature and release change no signed content; a deferred release with the source unavailable stays `pending_release`; it re-checks on return;
+  - the outage path accepts only a clinician who has answered, one entry at a time, every PC-01 input except the prescription (every active patient-reported statement, reconciled or not), every `draft` or `refuted` entry for the same substance, and any missing allergy status, and recorded the statement with code `prescribing.checks_unavailable_manual_review` on that step's check record; only signing sets the signed flag `checks_unavailable_at_signing`; co-signature and release change no signed content; a deferred release with the source unavailable stays `pending_release`; it re-checks on return;
+  - the penicillin case of PG-02 shows both the reconciled statement and its refuted entry, tested with synthetic substitutes (KA-06);
   - no non-clinician author uses the outage path;
   - `System Manager` cannot bypass the gate;
   - a lapsed legal review refuses every signature;
