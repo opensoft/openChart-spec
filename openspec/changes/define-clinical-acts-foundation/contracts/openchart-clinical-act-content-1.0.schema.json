@@ -317,7 +317,11 @@
       "type": "string",
       "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
     },
-    "date": { "type": "string", "format": "date" },
+    "date": {
+      "description": "A calendar date, checked by pattern with month and day ranges so that every jsonschema version agrees, whether or not it asserts format. A day the month does not have is left to the verifier of CA-08.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+    },
     "issuer": {
       "description": "A deployment's configured, stable issuer identifier, unique across deployments and never derived from a host path.",
       "type": "string",
@@ -1092,6 +1096,39 @@
         }
       }
     },
+    "documentContent": {
+      "description": "The minimal closed shape for a document kept as a record of information, such as a summary, a letter or an imported record (AN-06; design call CD-65, PROPOSED): a title, a date, text, and attachments by reference and digest. It has no structured clinical field. Anything structured fails it and becomes a recommendation; a structured clinical format needs a shape published by its own path.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "date"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "date": { "description": "The date the document gives for itself.", "$ref": "#/$defs/date" },
+        "text": {
+          "description": "Plain text. Text never creates, counts as or authorizes a decision (CD-65).",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200000
+        },
+        "attachments": { "type": "array", "minItems": 1, "maxItems": 50, "items": {"$ref": "#/$defs/documentAttachment"} }
+      },
+      "anyOf": [
+        { "required": ["text"] },
+        { "required": ["attachments"] }
+      ]
+    },
+    "documentAttachment": {
+      "description": "A file attached to a document, by reference and SHA-256. It is opaque: openChart never parses it for clinical structure and never executes it, and accepts only media types that are only displayed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "sha256", "media_type"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/opaqueRef" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "media_type": { "enum": ["text/plain", "application/pdf", "image/png", "image/jpeg"] },
+        "title": { "type": "string", "minLength": 1, "maxLength": 500 }
+      }
+    },
     "diagnosisContent": {
       "type": "object",
       "additionalProperties": false,
@@ -1285,6 +1322,11 @@
           "then": {
             "properties": { "content": {"not": {"$ref": "#/$defs/clinicalNoteContent"}} }
           }
+        },
+        {
+          "description": "Content declared a document is a recommendation only when it is not document content (AN-06, CD-65).",
+          "if": { "properties": {"act_class": {"const": "document"}}, "required": ["act_class", "content"] },
+          "then": { "properties": {"content": {"not": {"$ref": "#/$defs/documentContent"}}} }
         }
       ]
     },
@@ -1435,7 +1477,7 @@
           }
         },
         {
-          "description": "Content declared as anything other than one of the five decision classes, whether a clinical note, another kind of record of information or a class this chart does not define, is a recommendation only because it did not validate as that kind's published shape, or no shape is published: it is entered with no_decision_authority (AN-06; design call CD-65).",
+          "description": "New content (action sign or new_version) declared as anything other than one of the five decision classes, whether a clinical note, a document, another kind of record of information or a class this chart does not define, is a recommendation only because it did not validate as that kind's published shape, or no shape is published: it is entered with no_decision_authority. A proposed action on an existing act, such as a co-signature or an entered-in-error mark on a note, names the authority it actually lacked (AN-06, AN-09; design call CD-65).",
           "if": {
             "properties": {
               "proposed": {
@@ -1444,9 +1486,10 @@
                     "not": {
                       "enum": ["encounter", "diagnosis_of_record", "procedure_performed", "order", "prescription"]
                     }
-                  }
+                  },
+                  "action": { "enum": ["sign", "new_version"] }
                 },
-                "required": ["act_class"]
+                "required": ["act_class", "action"]
               }
             },
             "required": ["proposed"]
@@ -1488,7 +1531,7 @@
       }
     },
     "informationRecord": {
-      "description": "A clinical note's content from a writer without the authority to sign it, kept as information under its writer's name (AN-14; design call CD-63, PROPOSED; Open Question 20). Its content validates as note content (clinicalNoteContent); content that does not is not kept here (AN-06, CD-65). It is not a decision and not a recommendation: it has no act status and no signature, never counts as a final note (EN-04), is never published, and is shown marked not signed off. Its writer is told at once (receipt).",
+      "description": "A record of information kept under its writer's name (AN-06, AN-14): a clinical note's content from a writer without the authority to sign it (act_class clinical_note; design call CD-63, ruling 187), or a document (act_class document; design call CD-65, PROPOSED). Its content validates as its kind's closed shape, clinicalNoteContent or documentContent; content that does not is not kept here. It is not a decision and not a recommendation: it has no act status and no signature, never counts as a final note (EN-04), is never published, and is shown marked not signed off. Its writer is told at once (receipt).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -1512,13 +1555,14 @@
         "patient": { "$ref": "#/$defs/openchartPatientRef" },
         "entry_class": { "const": "information" },
         "not_signed_off": { "const": true },
-        "act_class": { "const": "clinical_note" },
+        "act_class": {
+          "description": "The kind of record of information: a clinical note or a document.",
+          "enum": ["clinical_note", "document"]
+        },
         "act_type": { "$ref": "#/$defs/codeToken" },
         "content": {
-          "description": "The note's content. It validates as note content, so decision content cannot be kept as information (CD-65).",
-          "anyOf": [
-            { "$ref": "#/$defs/clinicalNoteContent" }
-          ]
+          "description": "The content, in its kind's closed shape, so decision content cannot be kept as information (CD-65).",
+          "type": "object"
         },
         "provenance": { "$ref": "#/$defs/provenance" },
         "receipt": {
@@ -1542,6 +1586,20 @@
           "description": "A writer whose submission_ref conflicted is told so in its receipt (AN-10).",
           "if": { "properties": {"provenance": {"required": ["submission_ref_conflict"]}}, "required": ["provenance"] },
           "then": { "properties": {"receipt": {"required": ["submission_ref_conflict"]}} }
+        },
+        {
+          "description": "A note's content validates as note content.",
+          "if": { "properties": {"act_class": {"const": "clinical_note"}}, "required": ["act_class"] },
+          "then": {
+            "properties": { "content": {"anyOf": [{"$ref": "#/$defs/clinicalNoteContent"}]} }
+          }
+        },
+        {
+          "description": "A document's content validates as the document shape.",
+          "if": { "properties": {"act_class": {"const": "document"}}, "required": ["act_class"] },
+          "then": {
+            "properties": { "content": {"anyOf": [{"$ref": "#/$defs/documentContent"}]} }
+          }
         }
       ]
     },

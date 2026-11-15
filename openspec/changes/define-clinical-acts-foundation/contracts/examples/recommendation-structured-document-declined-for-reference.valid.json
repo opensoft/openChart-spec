@@ -1,0 +1,65 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "recommendation",
+  "recommendation_id": "SYN-REC-0022",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "entry_class": "information",
+  "not_authorized_decision": true,
+  "missing_authority": [
+    "no_decision_authority",
+    "no_practitioner_sign_off"
+  ],
+  "decision_maker": {
+    "kind": "system",
+    "identity_basis": {
+      "basis": "verified_by_chart"
+    },
+    "system_id": "SYN-SYS-INTEG-02",
+    "operator_ref": "SYN-OPERATOR-01"
+  },
+  "proposed": {
+    "action": "sign",
+    "act_class": "document",
+    "act_type": "discharge_summary",
+    "content": {
+      "title": "SYN synthetic summary with structured medications",
+      "date": "2026-11-12",
+      "text": "SYN text",
+      "medications": [
+        {
+          "text": "Synthexamol 10 unit tablet (SYNTHETIC)"
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "received_at": "2026-11-15T16:55:00Z",
+    "source": {
+      "kind": "external_record",
+      "ref": "SYN-EXT-DOC-0102"
+    },
+    "added_by": {
+      "kind": "system",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "system_id": "SYN-SYS-INTEG-02",
+      "operator_ref": "SYN-OPERATOR-01"
+    }
+  },
+  "receipt": {
+    "code": "recorded_as_recommendation",
+    "sent_at": "2026-11-15T16:55:00Z"
+  },
+  "review": {
+    "state": "declined",
+    "decided_by_ref": "SYN-USER-CLIN-0001",
+    "decided_at": "2026-11-15T17:30:00Z",
+    "reason_code": "not_a_decision_kept_for_reference"
+  }
+}

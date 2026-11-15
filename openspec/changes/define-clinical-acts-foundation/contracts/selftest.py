@@ -24,8 +24,8 @@ Checks:
      - no challenge serves two sign-offs, within a record or across the
        valid fixture set, which stands in for one store (an identical
        copy, such as a co-signed event's, is one sign-off);
-     - every time is a real calendar time (the schema pattern checks
-       ranges only, so 30 February passes it);
+     - every time and every date is a real calendar time or date (the
+       schema patterns check ranges only, so 30 February passes them);
      - an act signed after a hold carries adopted_from, or its hold was
        released by decline before it was signed, and a draft carries
        held_for exactly while its last hold event is held;
@@ -36,7 +36,9 @@ Checks:
        status at signed_at is worked out from its lifecycle events), and
        never a recommendation;
      - an item released from quarantine is dated by its release:
-       first_received_at <= released_at <= received_at;
+       first_received_at <= released_at <= received_at, and a held item
+       ends once: no two records of the store carry the same
+       held_item_ref;
      - a signed act records a signed lifecycle event (reported, not a
        crash, when it is missing);
   8. every examples/*.integrity-invalid.json validates against the schema
@@ -88,6 +90,33 @@ def times(obj, path=""):
         yield path, obj
 
 
+DATE = re.compile(r"^([0-9]{4})-([0-9]{2})-([0-9]{2})$")
+
+
+def dates(obj, path=""):
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            yield from dates(v, f"{path}/{k}")
+    elif isinstance(obj, list):
+        for i, v in enumerate(obj):
+            yield from dates(v, f"{path}/{i}")
+    elif isinstance(obj, str) and DATE.match(obj):
+        yield path, obj
+
+
+def real_date(value):
+    try:
+        datetime.date(*(int(x) for x in DATE.match(value).groups()))
+    except ValueError:
+        return False
+    return True
+
+
+def identity(record):
+    return (record.get("record_kind"), record.get("act_id") or record.get("recommendation_id") or record.get("information_id"),
+            record.get("act_version"))
+
+
 def real_time(value):
     y, mo, d, h, mi, s = (int(x) for x in TIME.match(value).groups()[:6])
     try:
@@ -135,7 +164,13 @@ def parse(value):
 def verify(record, records=()):
     """The integrity verifier of CA-08 for one record. records is the set an encounter's manifest is recomputed from."""
     problems = [f"{path}: {value} is not a real calendar time" for path, value in times(record) if not real_time(value)]
+    problems += [f"{path}: {value} is not a real calendar date" for path, value in dates(record) if not real_date(value)]
     release = record.get("provenance", {}).get("released_from_quarantine")
+    if release:
+        for other in records:
+            rel2 = (other.get("provenance") or {}).get("released_from_quarantine")
+            if rel2 and rel2["held_item_ref"] == release["held_item_ref"] and identity(other) != identity(record):
+                problems.append(f"provenance/released_from_quarantine: held_item_ref {release['held_item_ref']} already ended in {identity(other)[1]}; a held item ends once")
     if release and all(real_time(v) for v in (release["first_received_at"], release["released_at"], record["provenance"]["received_at"])):
         first, released, received = (parse(v) for v in (release["first_received_at"], release["released_at"], record["provenance"]["received_at"]))
         if received < released:

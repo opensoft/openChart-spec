@@ -1,11 +1,17 @@
 ## ADDED Requirements
 
 ### Requirement: PB-01 This change is the clinical-encounter capability that replaces the no-billable-facts placeholder
-This change SHALL be the "separately governed openChart capability [that] records clinician-authored encounters, diagnoses and procedures" named by `define-openpractice-boundary` CF-06 (not yet on main). It does not edit that change. In a deployment where this change's encounter, diagnosis and procedure capabilities are built and enabled, and where `define-openpractice-boundary`'s clinical-fact publication surface is built, openChart SHALL report `billable_facts_supported: true` in its `capability.result` under `openpractice-ehr-clinical-facts/1.0`. In any other deployment, CF-06 SHALL keep applying: the capability result is false and every facts read returns `no_billable_facts`. Disabling this change's capabilities SHALL return the capability result to false at once (design call CD-24).
+This change SHALL be the "separately governed openChart capability [that] records clinician-authored encounters, diagnoses and procedures" named by `define-openpractice-boundary` CF-06 (not yet on main). It does not edit that change. In a deployment where this change's encounter, diagnosis and procedure capabilities are built and enabled, where `define-openpractice-boundary`'s clinical-fact publication surface is built, and where owner ruling 152's condition is met, openChart SHALL report `billable_facts_supported: true` in its `capability.result` under `openpractice-ehr-clinical-facts/1.0`. In any other deployment, CF-06 SHALL keep applying: the capability result is false and every facts read returns `no_billable_facts`. Disabling this change's capabilities SHALL return the capability result to false at once (design call CD-24).
+
+Ruling 152's condition is met when openWallet and openSig can do their part, so that a practitioner's sign-off under CA-04 can make a real decision. Until it is met, openChart records no real decision, so it has no signed diagnosis or procedure to publish: it SHALL publish no billable facts and SHALL report `billable_facts_supported: false`, every facts read SHALL return `no_billable_facts`, and openPractice's manual entry applies (`define-mvp-practice-foundation`, owner rulings 21 and 116). A sign-off checked against a stand-in never meets the condition (design calls CD-24 and CD-69, PROPOSED).
 
 #### Scenario: Both capabilities are present
 - **WHEN** a deployment has this change's diagnoses and procedures enabled and the boundary change's publication surface built
 - **THEN** openChart's `capability.result` reports `billable_facts_supported: true`
+
+#### Scenario: Failure: openWallet and openSig cannot yet do their part
+- **WHEN** a deployment has this change's diagnoses and procedures enabled and the boundary change's publication surface built, but ruling 152's condition is not met
+- **THEN** the capability result is false, every facts read returns `no_billable_facts`, nothing is published, and openPractice enters charges manually
 
 #### Scenario: Failure: the boundary surface exists but this capability is disabled
 - **WHEN** a deployment has the publication surface but this change's diagnoses and procedures are disabled

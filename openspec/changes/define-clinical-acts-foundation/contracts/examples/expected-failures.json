@@ -147,9 +147,21 @@
     "expect_in_error": "'recommendation_ref' is a required property",
     "reason": "a hold names the recommendation the draft is held for (AN-14)"
   },
+  "held-item-released-twice.integrity-invalid.json": {
+    "expect_in_error": "held_item_ref",
+    "reason": "a held item ends once; a second addition released from the same held item"
+  },
   "hold-released-without-reason.invalid.json": {
     "expect_in_error": "'reason_code' is a required property",
     "reason": "a hold is released only by adoption or by decline, and says which (AN-14)"
+  },
+  "information-document-structured-attachment.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "a document's attachment is only displayed; a structured clinical format needs a shape from its own path (AN-06, CD-65)"
+  },
+  "information-document-with-order-field.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "the document shape has no structured field, so order content cannot be kept as a document (AN-06, CD-65)"
   },
   "information-with-order-content-from-ai-relay.invalid.json": {
     "expect_in_error": "not valid under any of the given schemas",
@@ -254,6 +266,10 @@
   "recommendation-decision-maker-not-identified.invalid.json": {
     "expect_in_error": "decision_maker/identity_basis/basis",
     "reason": "a recommendation's decision maker is never a party that is not identified; the carrying writer is (AN-08, CD-66)"
+  },
+  "recommendation-holding-document-content.invalid.json": {
+    "expect_in_error": "proposed/content",
+    "reason": "content that fits the document shape is information, never a not-an-authorized-decision recommendation (AN-06, CD-65)"
   },
   "recommendation-holding-note-content.invalid.json": {
     "expect_in_error": "proposed/content",

@@ -23,7 +23,8 @@
   },
   "proposed": {
     "action": "sign",
-    "act_class": "document_summary",
+    "act_class": "document",
+    "act_type": "discharge_summary",
     "content": {
       "order_kind": "laboratory",
       "panel_text": "SYN synthetic panel, exactly as the AI system gave it",
