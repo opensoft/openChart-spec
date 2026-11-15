@@ -45,7 +45,7 @@ Reads SHALL return only the fields the canonical schema defines. openChart MUST 
 ### Requirement: CF-04 Corrections and retractions are published as new versions
 openChart SHALL publish a corrected fact as a new version that references the version it supersedes, and a retraction as an explicit entered-in-error notification. It MUST NOT silently overwrite a published fact.
 
-A published diagnosis that is later refuted SHALL be retracted (ruling 87). Retractions SHALL be delivered whatever the link state, under CF-01's exception (ruling 88). A retraction reason code is to be added to `openpractice-ehr-clinical-facts` by the follow-up change of ruling 93 (ruling 89). Until this change re-pins to that revision, a retraction carries no reason code.
+A published diagnosis that is later refuted SHALL be retracted (ruling 87). Retractions SHALL be delivered whatever the link state, under CF-01's exception (ruling 88). A retraction reason code is to be added to `openpractice-ehr-clinical-facts/1.0` itself, while 1.0 is still unratified, by the follow-up change of ruling 93 (ruling 89). Until this change re-pins to that revision, a retraction carries no reason code.
 
 #### Scenario: A diagnosis is corrected after publication
 - **WHEN** a clinician corrects a published diagnosis
