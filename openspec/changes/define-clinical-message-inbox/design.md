@@ -277,9 +277,9 @@ Fourteen are recorded. MT-11 and MT-13 were resolved by the re-pin to the openPr
 | MT-13 | The schema first pinned had no message for a clinician's continuity decision (ruling 50) or clinically-needed marker. | **Resolved by the re-pin.** At `097278c` the schema defines `clinical_need.marker` (openPractice ER-18), and MI-25 sends it. |
 | MT-14 | Ruling 59 lets the medical director set medXfactory's AI to limited or full practice, under gates that medXfactory's change owns. openChart cannot record an AI-authored clinical act until `define-ai-authored-clinical-records` is ratified. A practice could therefore configure a mode in medXfactory whose acts openChart holds only as communication. | MI-26 fails closed. Owner item: medXfactory's gates should refuse limited and full practice for an openChart deployment until `define-ai-authored-clinical-records` is ratified. |
 
-## Required companion changes (not drafted)
+## Required companion changes (being drafted elsewhere)
 
-Each is stated at contract level only. Nothing here describes HealthLinc's or medXfactory's internals.
+None is drafted in this change. Each is stated at contract level only. Nothing here describes HealthLinc's or medXfactory's internals.
 
 **HealthLinc.** The openPractice change names this companion as `opensoft/HealthLinc` change `define-practice-gateway-integration`.
 

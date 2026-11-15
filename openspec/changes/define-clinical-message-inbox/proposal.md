@@ -41,17 +41,17 @@ This change specifies openChart's half of the handoff contract. It reuses every 
 
 None. The ratified `expanded-patient-intake` requirements are cited and left unchanged.
 
-## Required companion changes (not drafted)
+## Required companion changes (being drafted elsewhere)
 
-Both are stated at contract level in `design.md`, and neither is drafted here.
+Both are stated at contract level in `design.md`. Neither is drafted in this change; each is being drafted in its own repository (rulings 47 to 49 and 55).
 
-- **HealthLinc (H-1 to H-5):**
+- **HealthLinc, `opensoft/HealthLinc` change `define-practice-gateway-integration` (H-1 to H-5):**
   - conversation retrieval by reference, with an author type on every turn;
   - reply delivery against the reply-path reference, honoring coded channel restrictions;
   - a split-and-resubmit request for mixed items;
   - emergency guidance that stays in the app, whatever openChart's or openPractice's availability;
   - no clinical messaging where no route exists.
-- **medXfactory (M-1, M-2):**
+- **medXfactory, `MedxSoft/medXfactory` (M-1, M-2; see `design.md` for the change ids):**
   - conversation retrieval by reference for medical-AI conversations, with the source named;
   - its governed path for recording medical-AI exchanges in the chart (ruling 53), never through openPractice.
 
@@ -75,7 +75,7 @@ This change states nothing else about either change's content.
 - **Dependencies:**
   - This branch is stacked on the draft change `define-openpractice-boundary`, and cites PL-01 to PL-16 and CF-02, CF-05 and CF-06. This change can be ratified only with or after it.
   - `opensoft/openPractice-spec` change `define-patient-gateway-and-escalation` (PR #6, not yet on main) owns the handoff contract and schema, pinned here at revision `097278c`.
-  - The HealthLinc and medXfactory companion changes are required and are not drafted.
+  - The HealthLinc and medXfactory companion changes are required. They are being drafted in their own repositories, and none is on main.
 - **Governance:** openChart's constitution is still the unfilled template. A Constitution Check, and with it the plan phase, needs a constitution adopted through separate governance first.
 - **Safety:** synthetic fixtures only; no PHI in logs or notifications; no clinical or autonomous decision by any agent or rule; no billing or financial data.
 - **Tensions:** fourteen are recorded in `design.md` as MT-1 to MT-14. MT-11 and MT-13 were resolved by the re-pin to `097278c`. The other twelve are conflicts or mismatches with the openPractice change, with `define-openpractice-boundary` and with medXfactory's mode framework, and one of them is a possible conflict with ratified openChart text (MT-10). Each of the twelve needs the owner's disposition.
