@@ -65,7 +65,15 @@
     "receipt": "recorded_as_recommendation",
     "code": "tier2_not_in_force",
     "under_tier2": "act_type_unsupported",
-    "note": "declared a note, but its content is not the foundation's note content, so it is a recommendation with no_decision_authority; note content would be recorded_as_information (the foundation's AN-06 and CD-65; ruling 187; AD-68)"
+    "note": "declared a note, but its content is not the foundation's note content, so it is a recommendation with no_decision_authority; note content would be kept_as_information (the foundation's AN-06 and CD-65; ruling 187; AD-68)"
+  },
+  "act-write-note-content.valid.json": {
+    "receipt": "kept_as_information",
+    "note": "declared a note, and its content validates as the foundation's note content: information that only records who wrote it, kept as the foundation's information record, marked not signed off (ruling 187; the foundation's AN-06 and AN-14; AD-68)"
+  },
+  "act-write-document-content.valid.json": {
+    "receipt": "kept_as_information",
+    "note": "declared a document, and its content validates as the foundation's document shape: kept as the foundation's information record (the foundation's AN-06 and CD-65; AD-68)"
   },
   "act-write-discontinue-with-target.valid.json": {
     "receipt": "recorded_as_recommendation",

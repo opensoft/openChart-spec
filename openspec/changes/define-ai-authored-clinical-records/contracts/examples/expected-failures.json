@@ -197,6 +197,10 @@
     "expect_in_error": "quarantine_cause 'grant_expired' is not one of ['openwallet_id_missing', 'openwallet_id_not_covered', 'source_system_not_covered']",
     "reason": "held.ended is only for a write held outside the chart, with a held cause (AD-65)"
   },
+  "held-ended-released-consult-as-information.invalid.json": {
+    "expect_in_error": "released_record_state 'information' is not one of ['recorded', 'quarantined']",
+    "reason": "a released consult is recorded or quarantined in the chart, never information (AC-11, AD-65)"
+  },
   "held-ended-released-without-new-record.invalid.json": {
     "expect_in_error": "'released_record_ref' is a required property",
     "reason": "a release names the record the held write became (AD-65)"
@@ -250,8 +254,12 @@
     "reason": "in 1.0 no readback says an act took effect (ruling 157; m5)"
   },
   "record-readback-released-act-as-recorded.invalid.json": {
-    "expect_in_error": "released_record_state 'recommendation' was expected",
-    "reason": "a released act becomes a recommendation, never a recorded act (AD-65)"
+    "expect_in_error": "released_record_state 'recorded' is not one of ['recommendation', 'information']",
+    "reason": "a released act becomes a recommendation or information, never a recorded act (AD-65)"
+  },
+  "record-readback-released-consult-as-information.invalid.json": {
+    "expect_in_error": "released_record_state 'information' is not one of ['recorded', 'quarantined']",
+    "reason": "a released consult is recorded or quarantined in the chart, never information (AC-11, AD-65)"
   },
   "record-readback-released-without-new-record.invalid.json": {
     "expect_in_error": "'released_record_ref' is a required property",
@@ -291,7 +299,7 @@
   },
   "write-receipt-information-for-consult.invalid.json": {
     "expect_in_error": "write_kind 'act' was expected",
-    "reason": "only an act.write declared clinical_note with note content is recorded as information; a consult record is MI-12's record (AC-04, AD-68)"
+    "reason": "only an act.write declared clinical_note or document whose content validates as that kind's shape is kept as information; a consult record is MI-12's record (AC-04, AD-68)"
   },
   "write-receipt-notice-with-submission-conflict.invalid.json": {
     "expect_in_error": "[3, 'allOf', 0, 'then', 'not']",

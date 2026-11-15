@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-ai-clinical-record-write:1.0",
   "title": "openchart-ai-clinical-record-write 1.0",
-  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which no 1.x receiver accepts as an act: under owner ruling 157 an AI only ever makes recommendations until a practitioner signs, so in 1.0 no receipt, readback or other message says an act took effect. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Under owner ruling 80, every write names its writer (added_by), the AI on whose behalf it was written, by its openWallet ID with the model and model version that produced the content, and any system between them (on_behalf_of), and where its information came from (source). Missing authority never refuses a write: an act.write that fails an authority check is recorded in full as a recommendation that has no effect, kept as a recommendation record of openchart-clinical-act-content/1.0 (SHA-256 fa629e0087e0001d143d661707b78fe3579642d7faddc5ba7529c965b69277c6, owned by define-clinical-acts-foundation, as of its head e9ba497), and answered write.receipt recorded_as_recommendation with that contract's missing_authority codes and this contract's own code in path_reason; a consult.write that fails a grant check, or carries no consent reference, is quarantined in the chart (write.receipt quarantined, with quarantine_cause). A write from an identified, registered writer whose AI has no openWallet ID, or one the writer's registration does not cover, or that names a source system the registration does not cover, is held in quarantine outside the chart and never refused (owner ruling 194); the source learns how a held write ended from held.ended and from a readback. Only content the chart cannot read at all is refused (owner ruling 188): a write is refused, and stores no clinical content, only when its writer cannot be identified, is not registered, is suspended or writes for another practice, when it is malformed (a missing or unreadable identity, patient, provenance or content object, or a broken envelope) or declared test data, or when its patient cannot be matched. Every other field of a write is a declaration whose absence takes the outcome its description states, never a refusal. A repeat is answered with the first result; a repeat of a record's identifiers with different content is kept as a new record flagged submission_ref_conflict, and a reused message_id with different content is processed as a new message flagged message_id_conflict. Every rule holds whether or not a validator asserts format: timestamps and UUIDs are checked by pattern only, the timestamp pattern being the clinical-acts foundation's own, and openChart refuses as malformed a timestamp that names a day its month does not have. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices, status messages and readbacks carry identifiers, digests and codes only, never clinical content; record.readback lets the writing source system confirm what openChart stored. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
+  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which no 1.x receiver accepts as an act: under owner ruling 157 an AI only ever makes recommendations until a practitioner signs, so in 1.0 no receipt, readback or other message says an act took effect. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Under owner ruling 80, every write names its writer (added_by), the AI on whose behalf it was written, by its openWallet ID with the model and model version that produced the content, and any system between them (on_behalf_of), and where its information came from (source). Missing authority never refuses a write: an act.write that fails an authority check is recorded in full as a recommendation that has no effect, kept as a recommendation record of openchart-clinical-act-content/1.0 (SHA-256 73a0d983afc571ae3395779be0576d06b4eb2237117d60409e45e41f7374b3dc, owned by define-clinical-acts-foundation, as of its head d9a9c63), and answered write.receipt recorded_as_recommendation with that contract's missing_authority codes and this contract's own code in path_reason; a consult.write that fails a grant check, or carries no consent reference, is quarantined in the chart (write.receipt quarantined, with quarantine_cause). A write from an identified, registered writer whose AI has no openWallet ID, or one the writer's registration does not cover, or that names a source system the registration does not cover, is held in quarantine outside the chart and never refused (owner ruling 194); the source learns how a held write ended from held.ended and from a readback. Only content the chart cannot read at all is refused (owner ruling 188): a write is refused, and stores no clinical content, only when its writer cannot be identified, is not registered, is suspended or writes for another practice, when it is malformed (a missing or unreadable identity, patient, provenance or content object, or a broken envelope) or declared test data, or when its patient cannot be matched. Every other field of a write is a declaration whose absence takes the outcome its description states, never a refusal. A repeat is answered with the first result; a repeat of a record's identifiers with different content is kept as a new record flagged submission_ref_conflict, and a reused message_id with different content is processed as a new message flagged message_id_conflict. Every rule holds whether or not a validator asserts format: timestamps and UUIDs are checked by pattern only, the timestamp pattern being the clinical-acts foundation's own, and openChart refuses as malformed a timestamp that names a day its month does not have. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices, status messages and readbacks carry identifiers, digests and codes only, never clinical content; record.readback lets the writing source system confirm what openChart stored. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
   "oneOf": [
     { "$ref": "#/$defs/consultWrite" },
     { "$ref": "#/$defs/actWrite" },
@@ -204,7 +204,7 @@
       "enum": ["cited_sources", "model_knowledge", "mixed"]
     },
     "attachmentRef": {
-      "description": "An attachment by reference and digest. It is opaque: openChart never parses or imports it, and only displays it. Its media type is one that is only displayed, so no structured content, such as an order in a clinical data format, can travel in a consult record (AC-04).",
+      "description": "An attachment by reference and digest. It is opaque: openChart never parses or imports it, and only displays it. Its media type is one that is only displayed, the four that the foundation's documentAttachment admits (define-clinical-acts-foundation AN-06; its design call CD-65), so no structured content, such as an order in a clinical data format, can travel in a consult record (AC-04).",
       "type": "object",
       "additionalProperties": false,
       "required": ["ref", "media_type", "sha256"],
@@ -673,7 +673,7 @@
       ]
     },
     "missingAuthority": {
-      "description": "The closed list of missing-authority codes that every reader uses, as the clinical-acts foundation defines it (define-clinical-acts-foundation AN-09; openchart-clinical-act-content/1.0, SHA-256 fa629e0087e0001d143d661707b78fe3579642d7faddc5ba7529c965b69277c6, $defs/missingAuthority).",
+      "description": "The closed list of missing-authority codes that every reader uses, as the clinical-acts foundation defines it (define-clinical-acts-foundation AN-09; openchart-clinical-act-content/1.0, SHA-256 73a0d983afc571ae3395779be0576d06b4eb2237117d60409e45e41f7374b3dc, $defs/missingAuthority).",
       "enum": [
         "no_grant_in_force",
         "no_decision_authority",
@@ -793,7 +793,7 @@
       }
     },
     "writeReceipt": {
-      "description": "openChart's answer to every write and every authority notice it receives. accepted and duplicate carry record_ref. recorded_as_information answers an act.write declared clinical_note whose content is note content, kept as the foundation's information record. recorded_as_recommendation answers an act.write that failed an authority check: openChart recorded it in full as a recommendation that has no effect, record_ref is the recommendation's identifier, missing_authority carries the foundation's codes and path_reason this contract's code for the first check it failed (owner ruling 80; define-clinical-acts-foundation AN-09 and AN-10). quarantined answers a consult.write that failed a grant check, which openChart kept as quarantined AI communication, never accepted, or a write held because its AI is not identified; quarantine_cause names why, and quarantined is this path's held_in_quarantine. duplicate answers an identical repeat with the first result: first_result, the first record_ref and its codes. submission_ref_conflict tells the writer that its write repeated an earlier write's identifiers with different content and was kept as a new record; message_id_conflict, that it reused a message_id with different content. refused carries a reason and no record_ref, and a refused write stores no clinical content. In 1.0 no receipt says that an act took effect: an act is never accepted, nor a duplicate of an accepted act, and no receipt carries a co-review due time (owner ruling 157); the Tier 2 MINOR version adds them.",
+      "description": "openChart's answer to every write and every authority notice it receives. accepted and duplicate carry record_ref. kept_as_information answers an act.write declared clinical_note or document whose content validates as the foundation's note content or document shape, kept as the foundation's information record, whose receipt code it is (define-clinical-acts-foundation AN-06 and AN-14). recorded_as_recommendation answers an act.write that failed an authority check: openChart recorded it in full as a recommendation that has no effect, record_ref is the recommendation's identifier, missing_authority carries the foundation's codes and path_reason this contract's code for the first check it failed (owner ruling 80; define-clinical-acts-foundation AN-09 and AN-10). quarantined answers a consult.write that failed a grant check, which openChart kept as quarantined AI communication, never accepted, or a write held because its AI is not identified; quarantine_cause names why, and quarantined is this path's held_in_quarantine. duplicate answers an identical repeat with the first result: first_result, the first record_ref and its codes. submission_ref_conflict tells the writer that its write repeated an earlier write's identifiers with different content and was kept as a new record; message_id_conflict, that it reused a message_id with different content. refused carries a reason and no record_ref, and a refused write stores no clinical content. In 1.0 no receipt says that an act took effect: an act is never accepted, nor a duplicate of an accepted act, and no receipt carries a co-review due time (owner ruling 157); the Tier 2 MINOR version adds them.",
       "type": "object",
       "additionalProperties": false,
       "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "write_kind", "result", "received_at"],
@@ -805,10 +805,10 @@
         "sent_at": { "$ref": "#/$defs/timestamp" },
         "in_reply_to": { "$ref": "#/$defs/uuid" },
         "write_kind": { "enum": ["consult", "act", "authority_notice"] },
-        "result": { "enum": ["accepted", "duplicate", "recorded_as_recommendation", "recorded_as_information", "quarantined", "refused"] },
+        "result": { "enum": ["accepted", "duplicate", "recorded_as_recommendation", "kept_as_information", "quarantined", "refused"] },
         "first_result": {
           "description": "For a duplicate only: the result the first submission received (define-clinical-acts-foundation AN-10).",
-          "enum": ["accepted", "recorded_as_recommendation", "recorded_as_information", "quarantined"]
+          "enum": ["accepted", "recorded_as_recommendation", "kept_as_information", "quarantined"]
         },
         "submission_ref_conflict": { "$ref": "#/$defs/submissionRefConflict" },
         "message_id_conflict": { "$ref": "#/$defs/messageIdConflict" },
@@ -858,8 +858,8 @@
           }
         },
         {
-          "description": "recorded_as_information answers an act.write declared clinical_note whose content validates as the foundation's note content: information that only records who wrote it, kept as the foundation's information record, marked not signed off (owner ruling 187; define-clinical-acts-foundation AN-06 and AN-14; design call AD-68).",
-          "if": { "properties": { "result": { "const": "recorded_as_information" } }, "required": ["result"] },
+          "description": "kept_as_information, the foundation's receipt code for a record of information, answers an act.write declared clinical_note or document whose content validates as the foundation's note content (clinicalNoteContent) or document shape (documentContent): information that only records who wrote it, kept as the foundation's information record, marked not signed off (owner ruling 187; define-clinical-acts-foundation AN-06 and AN-14, its design calls CD-63 and CD-65; design call AD-68).",
+          "if": { "properties": { "result": { "const": "kept_as_information" } }, "required": ["result"] },
           "then": {
             "required": ["record_ref"],
             "properties": { "write_kind": { "const": "act" } },
@@ -889,7 +889,7 @@
                 "then": { "properties": { "write_kind": { "const": "act" } }, "allOf": [{ "$ref": "#/$defs/recommendationCodes" }], "not": { "required": ["quarantine_cause"] } }
               },
               {
-                "if": { "properties": { "first_result": { "const": "recorded_as_information" } }, "required": ["first_result"] },
+                "if": { "properties": { "first_result": { "const": "kept_as_information" } }, "required": ["first_result"] },
                 "then": { "properties": { "write_kind": { "const": "act" } }, "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }] } }
               },
               {
@@ -970,7 +970,7 @@
       }
     },
     "readbackResult": {
-      "description": "openChart's answer to a readback request: the stored record's identifiers, its stored content digest, when openChart received it, the grant version it was checked against and its current state, as codes and digests only. For a consult, stored_content_sha256 is recomputed from the stored turns exactly as exchange.content_sha256 is defined; for an act, it is the SHA-256 of the RFC 8785 canonical JSON serialization of the stored act_content. A recommendation (record_state recommendation, with the foundation's missing_authority codes and this contract's path_reason) and a consult quarantined in the chart (record_state quarantined, with its inChartCause) are found but never accepted; neither reports a review status, and each carries grant_checked only where a grant was checked. A held write is found in one of four states, each with its heldCause: held while it is held; released, with the reference and state of the record it became; recorded_by_clinician; or dismissed, with the reason (design call AD-65). A record kept from a write that repeated an earlier write's identifiers with different content carries submission_ref_conflict, and one kept from a message that reused a message_id with different content carries message_id_conflict. An act.write kept as the foundation's information record, because it declared clinical_note and its content validates as note content, is found in state information. In 1.0 no readback says that an act took effect: an act is only ever a recommendation, information or a held write, and the states and review statuses of an accepted act are left to the Tier 2 MINOR version (owner ruling 157). A readback is not an interoperability read: it returns no record, only identifiers, digests and codes, to the writing source.",
+      "description": "openChart's answer to a readback request: the stored record's identifiers, its stored content digest, when openChart received it, the grant version it was checked against and its current state, as codes and digests only. For a consult, stored_content_sha256 is recomputed from the stored turns exactly as exchange.content_sha256 is defined; for an act, it is the SHA-256 of the RFC 8785 canonical JSON serialization of the stored act_content. A recommendation (record_state recommendation, with the foundation's missing_authority codes and this contract's path_reason) and a consult quarantined in the chart (record_state quarantined, with its inChartCause) are found but never accepted; neither reports a review status, and each carries grant_checked only where a grant was checked. A held write is found in one of four states, each with its heldCause: held while it is held; released, with the reference and state of the record it became; recorded_by_clinician; or dismissed, with the reason (design call AD-65). A record kept from a write that repeated an earlier write's identifiers with different content carries submission_ref_conflict, and one kept from a message that reused a message_id with different content carries message_id_conflict. An act.write kept as the foundation's information record, because it declared clinical_note or document and its content validates as that kind's shape, is found in state information, and a held act released as information reports released_record_state information. In 1.0 no readback says that an act took effect: an act is only ever a recommendation, information or a held write, and the states and review statuses of an accepted act are left to the Tier 2 MINOR version (owner ruling 157). A readback is not an interoperability read: it returns no record, only identifiers, digests and codes, to the writing source.",
       "type": "object",
       "additionalProperties": false,
       "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "write_kind", "record_ref", "result", "read_at"],
@@ -1004,7 +1004,7 @@
         "path_reason": { "$ref": "#/$defs/pathReason" },
         "quarantine_cause": { "$ref": "#/$defs/quarantineCause" },
         "released_record_ref": { "$ref": "#/$defs/opaqueRef" },
-        "released_record_state": { "enum": ["recorded", "quarantined", "recommendation"] },
+        "released_record_state": { "enum": ["recorded", "quarantined", "recommendation", "information"] },
         "dismissal_reason": { "$ref": "#/$defs/dismissalReason" },
         "submission_ref_conflict": { "$ref": "#/$defs/submissionRefConflict" },
         "message_id_conflict": { "$ref": "#/$defs/messageIdConflict" },
@@ -1063,7 +1063,7 @@
           },
           {
             "if": { "properties": { "record_state": { "const": "released" }, "write_kind": { "const": "act" } }, "required": ["record_state", "write_kind"] },
-            "then": { "properties": { "released_record_state": { "const": "recommendation" } } }
+            "then": { "properties": { "released_record_state": { "enum": ["recommendation", "information"] } } }
           },
           {
             "if": { "properties": { "record_state": { "const": "released" }, "write_kind": { "const": "consult" } }, "required": ["record_state", "write_kind"] },
@@ -1099,7 +1099,7 @@
       }
     },
     "heldEnded": {
-      "description": "openChart tells the writing source how a write it held in quarantine ended, once, when it ends (an ending is final): released into the chart, with the reference and state of the record it became; recorded by a clinician in a record of their own; or dismissed, with the reason. It carries identifiers and codes only, is delivered durably and answered with message.ack (design call AD-65).",
+      "description": "openChart tells the writing source how a write it held in quarantine ended, once, when it ends (an ending is final): released into the chart, with the reference and state of the record it became (a consult is recorded or quarantined in the chart, an act a recommendation or information); recorded by a clinician in a record of their own; or dismissed, with the reason. It carries identifiers and codes only, is delivered durably and answered with message.ack (design call AD-65).",
       "type": "object",
       "additionalProperties": false,
       "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "write_kind", "record_ref", "source_record_id", "source_record_version", "quarantine_cause", "ending", "at"],
@@ -1118,7 +1118,7 @@
         "quarantine_cause": { "$ref": "#/$defs/heldCause" },
         "ending": { "enum": ["released", "recorded_by_clinician", "dismissed"] },
         "released_record_ref": { "$ref": "#/$defs/opaqueRef" },
-        "released_record_state": { "enum": ["recorded", "quarantined", "recommendation"] },
+        "released_record_state": { "enum": ["recorded", "quarantined", "recommendation", "information"] },
         "dismissal_reason": { "$ref": "#/$defs/dismissalReason" },
         "at": { "$ref": "#/$defs/timestamp" }
       },
@@ -1130,7 +1130,7 @@
         },
         {
           "if": { "properties": { "ending": { "const": "released" }, "write_kind": { "const": "act" } }, "required": ["ending", "write_kind"] },
-          "then": { "properties": { "released_record_state": { "const": "recommendation" } } }
+          "then": { "properties": { "released_record_state": { "enum": ["recommendation", "information"] } } }
         },
         {
           "if": { "properties": { "ending": { "const": "released" }, "write_kind": { "const": "consult" } }, "required": ["ending", "write_kind"] },
