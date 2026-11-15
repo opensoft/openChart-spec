@@ -1,0 +1,16 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "authority.notice",
+  "message_id": "4b1d2e3f-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
+  "sent_at": "2026-11-15T08:00:00Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "direction": "from_openchart",
+  "change": "suspension_lifted",
+  "effective_at": "2026-11-15T08:00:00Z",
+  "new_mode": "full_practice"
+}

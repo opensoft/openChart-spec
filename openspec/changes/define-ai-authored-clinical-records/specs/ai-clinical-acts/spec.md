@@ -125,11 +125,19 @@ When the medical director narrows or pauses a grant, or a reduction applies unde
 ### Requirement: AA-12 Every AI act states the authority it rested on, and refused attempts are visible to the patient's doctor
 Every accepted AI-authored act SHALL store, and show to clinicians, the authority it rested on: the grant and its version, the mode, the configuration version, the allowlist entry and its protocol (limited practice) or the full-practice grant (full practice), the approving medical director, the legal review reference, any reserved-act clearance relied on, and the co-review status. The patient-facing display SHALL state, in plain words, that an AI system made the act under the practice's authority and whether a clinician has co-reviewed it (AW-09).
 
-Every refused `act.write` SHALL be listed for the patient's responsible clinician, or the medical director where none is recorded, as a refused AI act attempt: its act class, its reason code, the time and any linked consult. It SHALL hold no act content (AW-06). This is how "anything not listed goes to the human doctor" (ruling 60) reaches openChart; the AI system also routes the patient to a human clinician by its own path (tension AT-9).
+A refused `act.write` SHALL be listed for the patient's responsible clinician, or the medical director where none is recorded, as a refused AI act attempt, only where AW-06 would list it: its `context` is `operational`, it comes from a registered identity that is active, cap-suspended or manually suspended, and its patient resolves through an existing link. The listing shows the act class, the reason code, the time and any linked consult, and holds no act content (AW-06). These listings fall under AW-13's per-source ceiling and digest, as urgent listings do (design call AD-46). Every other refused `act.write` keeps its refusal record, with identifiers and a coded cause, and is not listed. This is how "anything not listed goes to the human doctor" (ruling 60) reaches openChart; the AI system also routes the patient to a human clinician by its own path (tension AT-9).
 
 #### Scenario: Failure: an act would be stored without its authority
 - **WHEN** an implementation tries to store an accepted AI-authored act without its grant version or legal review reference
 - **THEN** the store is refused, and the act is not accepted
+
+#### Scenario: Failure: a scenario act and a deregistered source's act are refused
+- **WHEN** openChart refuses a `scenario` `act.write`, and an `act.write` from a deregistered identity
+- **THEN** each keeps its refusal record, with identifiers and a coded cause, and neither is listed for any clinician
+
+#### Scenario: Failure: a source floods refused act attempts
+- **WHEN** a source's eleventh refused `act.write` in 60 minutes is refused, with no lower ceiling set
+- **THEN** it goes into that source's digest under AW-13, and is not listed one by one
 
 #### Scenario: Failure: an act outside the allowlist is refused
 - **WHEN** openChart refuses an AI act with reason `allowlist_entry_unknown`

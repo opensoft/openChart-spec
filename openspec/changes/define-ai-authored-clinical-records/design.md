@@ -134,7 +134,9 @@ Tier 1 is the only tier in scope to build (rulings 66 and 67).
 
 The refusal reasons are closed, and AW-06 fixes the order in which they are checked: `schema_invalid`, `unsupported_major_version`, `unauthorized`, `non_operational_context`, `patient_link_unknown`, `patient_link_mismatch`, `patient_link_in_review`, `no_current_grant`, `grant_paused`, `grant_expired`, `grant_revoked`, `grant_mismatch`, `mode_mismatch`, `mode_not_permitted`, `allowlist_entry_unknown`, `allowlist_entry_mismatch`, `conditions_unverified`, `reserved_act_refused`, `emergency_management_refused`, `approver_mismatch`, `legal_review_mismatch`, `targets_clinician_record`, `act_type_unsupported`, `tier2_not_in_force`, `conflicting_duplicate`, `content_digest_mismatch` and `notice_would_widen`.
 
-`contracts/examples/` holds 48 synthetic fixtures: 19 that must validate and 29 that must fail, each for one stated reason. They are part of the contract-test suite (AW-11).
+`contracts/examples/` holds 50 synthetic fixtures: 21 that must validate and 29 that must fail, each for one stated reason. `contracts/examples/conformance/` holds 4 more, each valid against the schema but a message openChart never sends (AW-14, AD-45). They are part of the contract-test suite (AW-11).
+
+**Known limits of the 1.0 schema.** The schema admits three contradictory shapes that AW-14's conformance rules exclude: a readback with `no_grant` that carries a grant; a readback whose reason disagrees with its grant's state, such as `grant_paused` with state `active`; and a standing notice that carries `new_mode` or `removed_allowlist_entry_ids`, such as `suspension_lifted` with `new_mode` `full_practice`. The next revision of the schema should exclude them. Doing so changes the digest, so this round leaves the 1.0 bytes unchanged (AD-45).
 
 ### 3. openChart's own record of authority (ruling 65)
 
@@ -188,6 +190,29 @@ A write resolves the patient only through an existing `OC Patient External Ident
 ### 12. Labels
 
 Every display of an AI-authored record, to a clinician or a patient, labels it AI-authored and states its review or co-review status without implying a prior sign-off (AW-09). Every act shows the authority it rested on (AA-12). A consult record also carries the ruling-66 label: information, assessment and next steps only, not a diagnosis and not a treatment instruction (AC-04).
+
+### 13. What the grant readback reports (AW-14, AD-44)
+
+The readback says `grant_current` only if a well-formed consult within the grant's mode and scope would pass the grant checks now. Each check below is cross-checked against the write refusal, the readback answer and the notice sent.
+
+| Check | Write refusal | Readback answer | Notice to the source |
+|---|---|---|---|
+| No AU-01 designation in force (AG-02) | `no_current_grant`; a consult is quarantined (AC-11) | `grant_not_current`, `no_medical_director` | `no_medical_director`; restoration shows in the readback, and no notice is sent |
+| No grant version in force for the time (none exists, or none has taken effect) | `no_current_grant` | `grant_not_current`, `no_grant`, no grant attached | None while none has existed; a grant that ends sends its own value below |
+| The grant is `paused` (AG-08) | `grant_paused` | `grant_not_current`, `grant_paused`, grant in state `paused` | `paused`; `resumed` restores |
+| The grant has passed its expiry (AG-09) | `grant_expired` | `grant_not_current`, `grant_expired`, grant in state `expired` | `expired`; a new version, sent as `superseded`, restores |
+| The legal review the grant relies on has passed its expiry (AG-05, AG-09) | `grant_expired` | `grant_not_current`, `grant_expired`, grant in state `expired` | `expired`; a current review and a new version, sent as `superseded`, restore |
+| The grant is `revoked` | `grant_revoked` | `grant_not_current`, `grant_revoked`, grant in state `revoked` | `revoked` |
+| The write names another grant version, configuration version or source authority reference | `grant_mismatch` | Depends on the write. The readback carries the version in force, so the source can match it | `superseded` or `narrowed` when the version changes |
+| The write's mode differs from the grant's | `mode_mismatch` | Depends on the write. The readback carries the mode | `narrowed`, with `new_mode`, when the mode is lowered |
+| The write is not permitted in the mode | `mode_not_permitted` | Depends on the write (an act under `advice_only`) | None |
+| A named approver or legal review differs | `approver_mismatch`, `legal_review_mismatch` | Depends on the write | None |
+| Scope removed by a narrowing (AG-08) | The reason of the check the write fails | The narrowed version in force | `narrowed` |
+| Manual suspension (AW-13), not a grant check | `unauthorized` at step 2 | `unauthorized` | `suspended`; `suspension_lifted` and then a `grant_current` readback restore |
+| Cap suspension (AW-13), not a grant check | `unauthorized` at step 2 for a non-urgent consult; an urgent consult is quarantined | The grant answer, with `source_status` `cap_suspended` | `cap_suspended`; `suspension_lifted` |
+| Deregistration (AW-13), not a grant check | `unauthorized` | `unauthorized` | `deregistered`, the last notice |
+
+The readback reports the present. A consult is still judged against the grant in force at its `ended_at` (AC-09), so the readback bounds new work and is not a verdict on consults that have already ended.
 
 ## What the recorded legal and regulatory review must cover
 
@@ -315,6 +340,9 @@ Each item goes beyond the rulings and is proposed, not ruled, except AD-1, which
 | AD-41 | Every reduction, removal or restoration of a source's standing is announced with a true `authority.notice` value added for it: `suspended`, `cap_suspended`, `deregistered` (the last notice), `suspension_lifted` and `no_medical_director`. These values come only from openChart, and carry the grant identifier and configuration version where a grant exists. openChart owns a 15-minute notice clock: an unacknowledged notice alerts the medical director, and the administrative role without content, and re-alerts every 15 minutes, while openChart keeps refusing or quarantining by its own records. The value is proposed for the owner to confirm. | AW-08, AW-13, AG-02 |
 | AD-42 | A source bounds its own exposure with a content-free grant readback, `grant.readback_request` and `grant.readback`, added to the 1.0 contract. A manually suspended or deregistered source gets `unauthorized`; otherwise the answer is `grant_current` or `grant_not_current` with its reason, plus `source_status`. Interim versions of an open consult were not added: the readback needs no content. | AW-14 |
 | AD-43 | Urgent listing of a refusal applies only to an operational write from a registered identity that is active, cap-suspended or manually suspended; never from a deregistered or unregistered caller or a scenario or simulation context. The flags stay on every refusal record. Per source, urgent listings beyond a policy ceiling of at most 10 per rolling 60 minutes are collapsed into one hourly digest for the medical director. Consults quarantined with the emergency indicator or `red_flag`, at most 10 per rolling 24 hours, raise an alarm that prompts, and does not perform, a manual suspension. **Residual:** a patient given emergency guidance by a deregistered or unregistered source is not listed, because openChart cannot trust such a caller and listing would be unbounded; that source must hand the patient off itself. The values are proposed for the owner to confirm. | AW-06, AW-13 |
+| AD-44 | The grant readback is computed at read time from every grant check that does not depend on a write's content: an AU-01 designation, a grant version in force, its pause, its expiry, the expiry of the legal review it relies on, and its revocation. It says `grant_current` only if a well-formed consult within the grant's mode and scope would pass the grant checks now. A lapsed legal review sets the grant to `expired` and sends `expired`, and only a new version relying on a current review restores it, announced as `superseded`. §13 cross-checks each check. | AW-14, AG-05, AG-06, AG-09 |
+| AD-45 | Three self-contradictory shapes that the 1.0 schema admits are excluded by conformance rules on what openChart sends, with schema-valid examples in `contracts/examples/conformance/`, and recorded as known limits for the next schema revision; the 1.0 digest is unchanged. A reader treats a self-contradictory message as not current, never lets a readback read before a notice took effect override it, and widens only on a grant change that says so. | AW-14 |
+| AD-46 | The notice clock stops re-alerting when the medical director or the administrative role acknowledges the alert, with a record; for a `deregistered` notice, retrying stops too. One content-free alert is raised when a source keeps writing after acknowledging `suspended` or `deregistered`, or sends a non-urgent consult after acknowledging `cap_suspended`. The urgent-listing digest is sent at the first overflow and hourly after that; with no medical director it goes per patient, without content, to AC-11's fallback recipients. AA-12's listing of refused acts follows AW-06's scope and AW-13's ceiling. The values are proposed for the owner to confirm. | AW-08, AW-13, AA-12 |
 
 ## Conflicts and tensions
 
@@ -344,6 +372,8 @@ Thirteen are recorded. The Disposition column gives the owner's disposition wher
 - **[An unsafe answer reaches a patient]** → Ruling 57 accepts delivery without sign-off; the review sample, the built-in triggers and the `unsafe` alert are the safety net.
 - **[Advice content strays into diagnosis or treatment]** → The source system's own control and declaration, the built-in triggers, the sample and the reviewer's breach finding (AD-31). Whatever the text says, the record is never a fact of record.
 - **[A deregistered source's patient goes unlisted]** → Accepted residual (AD-43): a deregistered or unregistered caller cannot raise urgent listings; that source must hand off itself.
+- **[A source keeps advising under a lapsed legal review]** → The readback is computed from every grant check that does not depend on a write's content, and a lapsed review sends `expired` (AD-44).
+- **[A stale or contradictory message widens a source]** → Conformance rules on what openChart sends, and reader's rules that treat a contradiction as not current and order readbacks after notices (AD-45).
 - **[Co-review backlog]** → Escalation to the medical director, who can narrow or pause.
 - **[Two records of authority drift]** → The configuration version must match exactly; drift refuses writes rather than accepting them.
 - **[Tier 1 waits on the inbox]** → AD-3; the alternative is a standalone record capability.
@@ -352,7 +382,7 @@ Thirteen are recorded. The Disposition column gives the owner's disposition wher
 
 ## Migration Plan
 
-1. Validate strictly. Brett Heap disposes the open tensions (AT-5 to AT-8, AT-10 to AT-13 and the residual reading under AT-1) and AD-2 to AD-43, stamps `Ratified by` and sets `Status: ratified`. `define-clinical-message-inbox` is ratified first or together (AD-3).
+1. Validate strictly. Brett Heap disposes the open tensions (AT-5 to AT-8, AT-10 to AT-13 and the residual reading under AT-1) and AD-2 to AD-46, stamps `Ratified by` and sets `Status: ratified`. `define-clinical-message-inbox` is ratified first or together (AD-3).
 2. Adopt openChart's constitution through separate governance.
 3. After openChart-spec#5's feature (1), with its clinical roles and authority, has landed, create the single Spec Kit feature from the assembly root, starting with Tier 1: the write-path role, the consult review grant, the quarantine of consults refused at the grant checks, the grant record for `advice_only`, the legal-review record, the review policy, the consult record and its review, and refusal of every `act.write` with `tier2_not_in_force`. Contract tests run against an AI-system double alongside the standalone regression suite.
 4. Enable advice-only for a practice only when its gates are recorded (AG-04).
@@ -364,7 +394,7 @@ Thirteen are recorded. The Disposition column gives the owner's disposition wher
 Each question is routed in `tasks.md` §2 to the gate it blocks.
 
 1. **Constitution adoption.** openChart's constitution is the unfilled template. This blocks planning.
-2. **Owner dispositions** of the open tensions (AT-5 to AT-8, AT-10 to AT-13 and the residual reading under AT-1) and of AD-2 to AD-43. AD-1 is ruled (ruling 65). These block ratification.
+2. **Owner dispositions** of the open tensions (AT-5 to AT-8, AT-10 to AT-13 and the residual reading under AT-1) and of AD-2 to AD-46. AD-1 is ruled (ruling 65). These block ratification.
 3. **The clinical-acts foundation.** Answered by ruling 72: another author drafted it as openChart-spec#5. Tier 1 needs its feature (1); Tier 2 also needs a future governed amendment (ruling 67).
 4. **The responsible clinician.** openChart records no care team today. Which change defines a patient's responsible clinician? Meanwhile, AD-12's fallback to the medical director applies.
 5. **The AI system's patient link.** Is it registered through the ratified external-identifier path, or through a governed link contract like PL-02's? Meanwhile, AD-23 applies.

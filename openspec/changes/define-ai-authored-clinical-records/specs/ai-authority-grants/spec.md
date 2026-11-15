@@ -82,7 +82,7 @@ openChart SHALL NOT encode any legal or regulatory rule as fact. The topics the 
 
 #### Scenario: Failure: the legal review has expired
 - **WHEN** the legal review a grant relies on passes its expiry
-- **THEN** the grant stops accepting writes with reason `grant_expired` until a current review is recorded and the medical director approves a new version
+- **THEN** openChart sets the grant to `expired`, refuses writes with reason `grant_expired`, sends an `authority.notice` with `change` `expired`, and answers a grant readback `grant_not_current` with `grant_expired`, until a current review is recorded and the medical director approves a new version (AG-09)
 
 ### Requirement: AG-06 Every write is checked against the current grant, and anything missing, expired, paused, narrowed or mismatched fails closed
 For every `consult.write` and `act.write`, openChart SHALL find the grant for the write's practice and source system, and SHALL refuse the write when any of these holds, checking in the order of this table after the earlier steps of AW-06's precedence (for an `act.write`, `tier2_not_in_force` comes first):
@@ -98,7 +98,7 @@ For every `consult.write` and `act.write`, openChart SHALL find the grant for th
 | The write is not permitted in the grant's mode | `mode_not_permitted` |
 | A named approver or legal review differs from the grant's | `approver_mismatch`, `legal_review_mismatch` |
 
-A narrowing (AG-08) SHALL count: a write that relies on scope removed by a narrowing is refused. openChart SHALL record which grant version it checked in the receipt.
+A narrowing (AG-08) SHALL count: a write that relies on scope removed by a narrowing is refused. openChart SHALL record which grant version it checked in the receipt. Every check in this table that does not depend on what a write contains is also what the grant readback reports (AW-14; design call AD-44).
 
 #### Scenario: Failure: the configuration version does not match
 - **WHEN** a write names the current grant version but a configuration version the grant does not record
@@ -135,11 +135,19 @@ openChart SHALL also apply at once an `authority.notice` from the AI system whos
 - **THEN** openChart refuses it with reason `notice_would_widen` and the grant is unchanged
 
 ### Requirement: AG-09 Grants and legal reviews expire, and nothing renews itself
-Every grant version and every recorded legal review SHALL carry an expiry or re-review date set by the medical director (design call AD-10). On expiry the grant SHALL stop accepting writes. No grant, review or allowlist entry SHALL renew, extend or reactivate itself. Only a new version approved by the medical director SHALL restore it.
+Every grant version and every recorded legal review SHALL carry an expiry or re-review date set by the medical director (design call AD-10). When a grant version, or the legal review it relies on, reaches its expiry, the grant SHALL stop accepting writes, its state SHALL become `expired`, and openChart SHALL send an `authority.notice` with `change` `expired` (AW-08) and answer the grant readback `grant_not_current` with `grant_expired` (AW-14; design call AD-44). No grant, review or allowlist entry SHALL renew, extend or reactivate itself, and recording a current legal review does not restore an expired version. Only a new version approved by the medical director, relying on a current legal review, SHALL restore it; openChart then sends `superseded` naming that version, and the readback answers `grant_current`.
 
 #### Scenario: Failure: a grant reaches its expiry
 - **WHEN** an active grant reaches its expiry with no new version approved
 - **THEN** openChart refuses later writes with reason `grant_expired` and sends an `authority.notice` with `change` `expired`
+
+#### Scenario: Failure: the legal review reaches its re-review date
+- **WHEN** the legal review an active grant relies on reaches its re-review date, while the grant's own expiry is months away
+- **THEN** openChart sets the grant to `expired`, sends an `authority.notice` with `change` `expired`, refuses later writes with `grant_expired`, and answers a grant readback `grant_not_current` with `grant_expired`
+
+#### Scenario: The medical director restores a grant after its legal review lapsed
+- **WHEN** a current legal review is recorded, and the medical director approves a new grant version that relies on it
+- **THEN** openChart sends an `authority.notice` with `change` `superseded` naming the new version, and a grant readback answers `grant_current` with that version
 
 ### Requirement: AG-10 A grant carries its review policy and, for the practice modes, its co-review window
 A grant version SHALL NOT be approved without a review policy version that the medical director sets: the review sample rate and the always-review categories for consults (AC-07), and the review window for consults selected for review (AC-08). A grant version for `limited_practice` or `full_practice` SHALL NOT be approved without a co-review window for every act class in its scope (AA-07). No agent SHALL set or change either.
