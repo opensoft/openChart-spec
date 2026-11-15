@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: PG-01 One gate decision governs every prescription signature, co-signature and release
-openChart SHALL decide exactly one gate decision, with a coded reason, for each attempt to sign a prescription or a new version of one, to co-sign it, or to release it from `pending_release`. An attempt that `define-clinical-acts-foundation` enters as a recommendation, because its authority check failed, gets no gate decision: authority is checked first, and what becomes a recommendation is never gated (its AN-09 and AN-14). Once a governed amendment puts `define-ai-authored-clinical-records` Tier 2 in force, it SHALL also decide one for each acceptance of an AI-authored prescription, which SHALL need `open` (PG-02; tension PT-4). `define-clinical-acts-foundation` RX-02 (not yet on main) SHALL rely on this decision (owner rulings 74 and 78). The decision SHALL be `open` only when all of these hold:
+openChart SHALL decide exactly one gate decision, with a coded reason, for each attempt to sign a prescription or a new version of one, to co-sign it, or to release it from `pending_release`. An attempt that `define-clinical-acts-foundation` enters as a recommendation, because its authority check failed, gets no gate decision: authority is checked first, and what becomes a recommendation is never gated (its AN-09 and AN-14). An attempt that never reaches the gate, because its sign-off failed in a way the author can cure by trying again, gets no gate decision either. In that change, the rest of the sign-off is checked after authority and before any gate, and such a failure leaves the draft open with nothing taking effect: openWallet or openSig cannot be reached, the attestation did not verify, re-authentication failed, the key's custody does not evidence that the holder acted, or a check that openWallet or openSig does not yet specify cannot be made (its CA-04 and AN-14). While openWallet and openSig specify nothing, that is every attempt. The next attempt that reaches the gate gets its own decision. Once a governed amendment puts `define-ai-authored-clinical-records` Tier 2 in force, it SHALL also decide one for each acceptance of an AI-authored prescription, which SHALL need `open` (PG-02; tension PT-4). `define-clinical-acts-foundation` RX-02 (not yet on main) SHALL rely on this decision (owner rulings 74 and 78). The decision SHALL be `open` only when all of these hold:
 - this capability is built and enabled in the deployment;
 - the prescription's controlled-substance classification (`define-clinical-acts-foundation` RX-03) is neither `controlled` nor `unknown` (owner ruling 83);
 - a recorded legal and regulatory review is in force (PG-04);
@@ -28,6 +28,10 @@ A recommendation record of `define-clinical-acts-foundation` (not yet on main; A
 #### Scenario: Failure: a recommended prescription would count
 - **WHEN** a nurse without prescription `sign` scope submits a prescription for amoxicillin, which openChart enters as a recommendation, and a clinician then drafts a prescription for amoxicillin for the same patient
 - **THEN** the recommendation gets no gate decision, is not listed as a `pending_release` or `released` prescription in the duplicate-therapy check, and the clinician's prescription is gated on its own
+
+#### Scenario: Failure: an attempt stopped before the gate would get a gate decision
+- **WHEN** a clinician with prescription `sign` scope tries to sign a draft prescription, and the sign-off fails because openSig cannot be reached
+- **THEN** no gate decision is recorded for that attempt, the prescription stays a draft, and a later attempt that reaches the gate gets its own decision
 
 #### Scenario: Failure: a controlled or unknown classification
 - **WHEN** a clinician tries to sign a prescription classified `unknown`, whether the source is verified and current with a completed check, or unavailable
