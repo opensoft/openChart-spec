@@ -32,7 +32,7 @@ Until `define-prescribing-safety-checks` is ratified, the gate SHALL NOT be met 
 - **THEN** openChart refuses the change, and the gate still applies to every signature
 
 ### Requirement: RX-03 Every prescription carries a controlled-substance classification, and unknown counts as controlled
-Every prescription SHALL carry a controlled-substance classification (`controlled`, `not_controlled` or `unknown`) and its source (`practice_code_set` or `clinician_entry`). openChart SHALL NOT determine a classification itself, and SHALL treat `unknown` as `controlled` under every rule that reads the classification. Until the owner decides through a governed change, openChart SHALL refuse to sign a prescription classified `controlled` or `unknown` (design call CD-20). openChart asserts no rule about controlled-substance prescribing.
+Every prescription SHALL carry a controlled-substance classification (`controlled`, `not_controlled` or `unknown`) and its source (`practice_code_set` or `clinician_entry`). openChart SHALL NOT determine a classification itself, and SHALL treat `unknown` as `controlled` under every rule that reads the classification. openChart SHALL refuse to sign a prescription classified `controlled` or `unknown` (owner ruling 83, which `define-prescribing-safety-checks` also carries in its gate; design call CD-20), until a later governed change decides otherwise. openChart asserts no rule about controlled-substance prescribing.
 
 #### Scenario: A practice code set supplies the classification
 - **WHEN** a clinician selects a medication whose practice-supplied code-set entry marks it not controlled
