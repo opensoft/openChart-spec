@@ -74,7 +74,7 @@ None. The ratified `expanded-patient-intake` requirements are cited and left unc
 
 ## Required later changes
 
-- **`define-prescribing-safety-checks`** (REQUIRED before any prescription can be signed; ruling 74; being drafted under ruling 75). Its minimum contents are listed in `design.md` under "Required later change: prescribing-safety checks". Feature (4) depends on its ratification.
+- **`define-prescribing-safety-checks`** (REQUIRED before any prescription can be signed; ruling 74; being drafted under ruling 75). Its minimum contents are listed in `design.md` under "Required later change: prescribing-safety checks". Feature (5), prescriptions, depends on its ratification.
 - Electronic transmission of prescriptions and controlled-substance electronic prescribing, as a later governed change that needs vendor and regulatory verification (ruling 73).
 - Results ingestion; care plans and treatment-plan records; immunizations; clinical decision support beyond the prescribing-safety checks; order transmission (ruling 73; `design.md` "Non-Goals").
 
