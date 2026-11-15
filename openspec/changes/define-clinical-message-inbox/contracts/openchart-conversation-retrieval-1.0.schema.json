@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-conversation-retrieval:1.0",
   "title": "openchart-conversation-retrieval 1.0",
-  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token, and an ai turn may carry its mode, disclosure code, model reference and advice-statement reference. The result carries the patient's sharing-consent reference and always at least one request turn. For a priority or urgent item the request turns are always shared on the urgent_escalation basis with the patient told; a holder may withhold other turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
+  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token, and an ai turn may carry its mode, disclosure code, model reference, advice-statement reference and emergency-guidance codes. A result may name the earlier conversation it began from, which openChart never retrieves on its own. The result carries the patient's sharing-consent reference and always at least one request turn. For a priority or urgent item the request turns are always shared on the urgent_escalation basis with the patient told; a holder may withhold other turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
   "oneOf": [
     {
       "$ref": "#/$defs/capabilitiesRequest"
@@ -261,6 +261,16 @@
         "full_practice"
       ]
     },
+    "emergencyGuidanceCode": {
+      "description": "A neutral code for a kind of emergency guidance an ai turn gave. It asserts no medical specifics. A value is added only in a MINOR version.",
+      "enum": [
+        "call_emergency_services",
+        "go_to_emergency_department",
+        "contact_crisis_line",
+        "contact_poison_control",
+        "seek_urgent_care"
+      ]
+    },
     "turn": {
       "description": "One turn of the conversation, keyed by turn_id, with its author type and source.",
       "type": "object",
@@ -337,6 +347,15 @@
           "description": "Optional, ai turns only: the holder's reference to the version of the advice statement shown with the turn, for example a not-medical-advice statement.",
           "$ref": "#/$defs/opaqueRef"
         },
+        "emergency_guidance": {
+          "description": "Optional, ai turns only: the kinds of emergency guidance the turn gave, as codes. It never replaces the turn's text, which must be non-empty. A code is added only in a MINOR version.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/emergencyGuidanceCode"
+          }
+        },
         "content": {
           "$ref": "#/$defs/textContent"
         }
@@ -406,8 +425,31 @@
                   "required": [
                     "advice_statement_ref"
                   ]
+                },
+                {
+                  "required": [
+                    "emergency_guidance"
+                  ]
                 }
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "emergency_guidance"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "properties": {
+                  "text": {
+                    "minLength": 1
+                  }
+                }
+              }
             }
           }
         },
@@ -792,6 +834,10 @@
             },
             "ehr_patient": {
               "$ref": "#/$defs/ehrPatientRef"
+            },
+            "origin_conversation_ref": {
+              "description": "Optional. The earlier conversation this one began from, at the same holder or another. openChart never retrieves it on its own; reading it is a separate retrieval from the holder it names, under that holder's consent rules.",
+              "$ref": "#/$defs/conversationRef"
             }
           },
           "allOf": [
