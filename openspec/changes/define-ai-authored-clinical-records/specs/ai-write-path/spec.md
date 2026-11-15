@@ -90,7 +90,7 @@ When more than one refusal reason applies, openChart SHALL check in this order a
 6. `patient_link_unknown`, `patient_link_mismatch`, `patient_link_in_review`;
 7. for an `act.write`: `tier2_not_in_force`, then `act_type_unsupported` (AA-01);
 8. the grant checks, in the order of AG-06's table;
-9. for an `act.write`: `emergency_management_refused`, `reserved_act_refused`, `targets_clinician_record`, `allowlist_entry_unknown`, `allowlist_entry_mismatch`, `conditions_unverified`.
+9. for an `act.write`: `emergency_management_refused`, `reserved_act_refused`, `targets_clinician_record`, `allowlist_entry_unknown`, `allowlist_entry_mismatch`, `conditions_unverified`, then, for a prescription, `prescribing_gate_not_open` (AA-03), a reason that the MINOR version putting Tier 2 in force adds.
 
 For an `authority.notice`, steps 1 to 3 apply, then `notice_would_widen`. Whatever reason a refused `act.write` carries, a set emergency indicator SHALL make its refusal record urgent for the patient's responsible clinician and the medical director (AA-06).
 

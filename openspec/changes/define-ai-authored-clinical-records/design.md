@@ -20,7 +20,7 @@ Brett Heap's rulings are tabulated below. **Rulings are not ratification.** This
 
 ## Owner rulings (2026-11-14 and 2026-11-15)
 
-Rows 35 to 64 have the source **Brett Heap, 2026-11-14, authoring session.** Rows 65 to 72 have the source **Brett Heap, 2026-11-15, decisions accepted in the alignment round.** The numbering is shared with the openPractice and inbox changes; a number absent here was not relayed to this change. The rulings name medXfactory as the system that holds the clinical medical AI. This change's requirements are neutral: they speak of "an external clinical AI system", and name medXfactory only as a cross-reference.
+Rows 35 to 64 have the source **Brett Heap, 2026-11-14, authoring session.** Rows 65 to 72 have the source **Brett Heap, 2026-11-15, decisions accepted in the alignment round.** The numbering is shared with the openPractice and inbox changes; a number absent here was not relayed to this change. Rows 73, 74 and 76 have the same date and source and are recorded in openChart-spec#5 (`define-clinical-acts-foundation`); this change cites them from there. The rulings name medXfactory as the system that holds the clinical medical AI. This change's requirements are neutral: they speak of "an external clinical AI system", and name medXfactory only as a cross-reference.
 
 | # | Ruling | Governs |
 |---|---|---|
@@ -42,6 +42,9 @@ Rows 35 to 64 have the source **Brett Heap, 2026-11-14, authoring session.** Row
 | 69 | openChart owns one neutral conversation-retrieval contract, `openchart-conversation-retrieval/1.0`, published by `define-clinical-message-inbox` (openChart-spec#3). | AC-01: this change defines no conversation retrieval |
 | 70 | The medical AI's records reach openChart through MedxEHR, which relays them with receipts. medXfactory does not write to openChart directly. | AW-02, AW-12; AD-30 |
 | 72 | The clinical-acts foundation is being drafted now by another author, as `define-clinical-acts-foundation` (branch `change/define-clinical-acts-foundation`, base `main`). It accepts only `clinician` as author type and provides the signing and co-signature model that Tier 2 builds on. | AA-01, AA-02; required prerequisite; AT-10 |
+| 73 | The foundation's scope is encounters, clinical notes, diagnoses, procedures, orders, prescriptions, and authorship, signing and amendment. Left for later changes: results ingestion, care plans and treatment-plan records, immunizations, clinical decision support, and electronic transmission of prescriptions to pharmacies. | AA-01 (`treatment_plan_change`); prerequisite items 3 and 5 |
+| 74 | The prescription record is specified in the foundation, but the prescription feature is not buildable until allergy and interaction checking is specified. A prescription cannot be signed in any deployment where that gate is not met. | AA-03 |
+| 76 | For `define-prescribing-safety-checks`: when the knowledge source is unavailable at signing, a clinician may sign only with a recorded statement that checks were unavailable and that a manual review was done. The prescription is flagged and re-checked when the source returns. A non-clinician author, including any future AI author, can never use that path. | AA-03 |
 
 **The gates (same session).** Each mode stays off until (a) the medical director has approved that mode's scope, (b) a legal and regulatory review covering that mode is recorded, and (c) for limited and full practice, the chart can accept an AI-authored order, prescription or diagnosis recorded with the authority it acted under. Item (c) is what this change specifies. Ruling 67 adds (d) for the two practice modes: a future governed amendment, made after advice-only has run and counsel's review is in, that puts the mode in force. AG-04 encodes all four.
 
@@ -65,7 +68,7 @@ These names are used identically in this change and in `MedxSoft/MedxEHR-spec` c
 | allowlist entry | One limited-practice entry, `allowlist_entry_id`, with its act type, conditions and `protocol_ref`. |
 | recorded legal and regulatory review | The review covering a mode, referenced by `legal_review_ref` (AG-05). |
 | medical director | The practice's medical director as openChart-spec#5 AU-01 designates it, the single definition in openChart; referenced by `approver_ref` (AG-02). |
-| consult review grant | The grant a named clinician must hold to record a consult review, recorded by the medical director under openChart-spec#5 AU-02's rules (AG-11). |
+| consult review grant | The openChart-spec#5 AU-02 grant of action `review` over record class `ai_consult_record`; a named clinician must hold it to record a consult review (AG-11). |
 | consult record | Tier 1: one AI consult, written by `consult.write`, on MI-12's clinical communication record with origin `ai_consult` (AC-01). Never a diagnosis or a clinical fact of record, and labelled as AC-04 states. |
 | quarantined consult | A consult refused at the grant checks and kept as AI communication labelled "delivered without a current grant": always reviewed, never accepted, never a clinical fact (AC-11). |
 | AI-authored clinical act | Tier 2: an `order`, `prescription`, `diagnosis_of_record` or `treatment_plan_change`, written by `act.write` (AA-01). |
@@ -151,7 +154,7 @@ Only the medical director, as openChart-spec#5 AU-01 designates, approves, widen
 | An AI-authored act accepted under a current practice-mode grant | An act of record with author type `ai`, its authority stated, pending co-review (AA-02, AA-12) | Only once Tier 2 is in force, which ruling 67 defers to a future governed amendment |
 | A refused AI act | A refusal record with identifiers and codes only (AW-06, AA-12) | No |
 | A consult refused at the grant checks | Quarantined AI communication, labelled "delivered without a current grant", always reviewed and listed for the responsible clinician (AC-11) | No |
-| A clinician's amendment or countermand | A clinician-authored act | Yes |
+| A clinician's amendment, or a countermand to `discontinued` or `cancelled` | A clinician-authored record | Yes |
 
 ### 6. The Tier 1 consult record and the inbox
 
@@ -169,11 +172,11 @@ An act is accepted only under a current practice-mode grant that it matches in e
 
 ### 9. Co-review and reversal (ruling 62)
 
-Every accepted act enters the co-review queue at once with a due time from the grant's window (AA-07). A named clinician holding `cosign` scope for the act class under openChart-spec#5 AU-02 confirms, amends or voids it (AD-20). openChart-spec#5 CA-07 defines a co-signature model of its own, and the two converge on CA-07 at the Tier 2 amendment (tension AT-11). An overdue item escalates to the medical director and is never closed by a timer (AA-08). A clinician can void or countermand an AI act; nothing is deleted, and corrections are new dated records (AA-09). An AI act never modifies, discontinues or supersedes clinician-authored content (AA-10, AD-8). Co-review would build on the foundation's signing and co-signature model (ruling 72); that mapping belongs to the future governed amendment.
+Every accepted act enters the co-review queue at once with a due time from the grant's window (AA-07). A named clinician holding `cosign` scope for the act class under openChart-spec#5 AU-02 confirms, amends or voids it (AD-20). openChart-spec#5 CA-07 defines a co-signature model of its own, and the two converge on CA-07 at the Tier 2 amendment (tension AT-11). A void is the foundation's `entered_in_error` and a countermand its `discontinued` (or `cancelled` while `pending_release`). An AI prescription is accepted only on an `open` prescribing-safety gate decision for its exact content, never on the outage path (AA-03; openChart-spec#6 PG-01, ruling 76). An overdue item escalates to the medical director and is never closed by a timer (AA-08). A clinician can void or countermand an AI act; nothing is deleted, and corrections are new dated records (AA-09). An AI act never modifies, discontinues or supersedes clinician-authored content (AA-10, AD-8). Co-review would build on the foundation's signing and co-signature model (ruling 72); that mapping belongs to the future governed amendment.
 
 ### 10. Narrowing and pause
 
-A narrowing or pause applies at once (AG-08). Pending AI acts that the grant no longer covers are held and handed to a named clinician, or cancelled by the medical director, and never executed on the AI's authority (AA-11, AD-9). "Pending" is defined by the foundation's act lifecycle.
+A narrowing or pause applies at once (AG-08). Pending AI acts that the grant no longer covers are held and handed to a named clinician, or cancelled by the medical director, and never released on the AI's authority (AA-11, AD-9). "Pending" is the foundation's `pending_release`: signed but not yet in force (its CT-7).
 
 ### 11. Identity, context and standalone operation
 
@@ -205,17 +208,19 @@ This change states no legal or regulatory rule. For each mode, the review that t
 **`define-clinical-acts-foundation`. Required; drafted (ruling 72)** by another author as openChart-spec#5, branch `change/define-clinical-acts-foundation`, not yet ratified. This change does not edit it. Its feature (1), with the clinical roles and authority of AU-01 to AU-05, is also a prerequisite of Tier 1 (AG-02, AG-11). Tier 2 is not buildable, and neither practice mode can be enabled, until it is ratified and built and a future governed amendment puts Tier 2 in force (ruling 67). It is also the clinical-encounter capability that `define-openpractice-boundary` Open Question 2 waits for. Ruling 72 says it accepts only `clinician` as author type and provides the signing and co-signature model that Tier 2 builds on. What this change needs of it:
 
 1. **Clinician encounters**, with participants, period and status.
-2. **Orders** (for example laboratory, imaging, referral and procedure), with a lifecycle that distinguishes draft, signed, pending release, released or executed, completed, discontinued or countermanded, and voided.
-3. **Prescriptions**, with the same lifecycle plus dispense or transmission states, and a medication classification that marks controlled substances.
+2. **Orders** (for example laboratory, imaging, referral and procedure), with the foundation's closed lifecycle `draft`, `pending_release`, `released`, `completed`, `discontinued`, `cancelled` and `entered_in_error` (CA-03, OR-02). Signing is an event and a signature (CA-04), not a status (its CT-7).
+3. **Prescriptions**, with the same lifecycle and a classification that marks controlled substances (RX-01, RX-03). This change asks for no dispense or transmission state: the foundation reserves `transmission_status`, fixed at `none_recorded` in 1.x (RX-04), and dispense and transmission wait for a later e-prescribing change (its CT-8).
 4. **Diagnoses of record** (problem list and encounter diagnoses), with verification status, kept distinct from patient-reported conditions.
-5. **Treatment plans**, versioned, where each change is a new dated record.
+5. **Treatment plans**, versioned, where each change is a new dated record. Not in the foundation: ruling 73 leaves treatment-plan records to a later change, which is a prerequisite of the `treatment_plan_change` act class (its CT-6; AA-01).
 6. **Authorship on every act:** an author type, and clinician signing and co-signature (ruling 72). The foundation accepts only `clinician`; author type `ai`, and the authority-basis reference that Tier 2 fills, wait for the future governed amendment (tension AT-10).
 7. **An act-type registry:** act classes and act types as data, with flags for reserved acts and emergency management, which allowlist entries and AA-05 and AA-06 use.
 8. **Roles:** clinician, nurse and medical director, with scope per act class. openChart-spec#5 provides them in AU-01 and AU-02, which this change cites as the single definition (AG-02, AG-11).
-9. **Amendment, void and countermand** as new dated records; nothing edited in place or deleted.
+9. **Amendment, entered-in-error marks and discontinuation** as new dated records (CA-05, CA-06, OR-02); nothing edited in place or deleted.
 10. **Content schemas** for each act class, published so that a MINOR version of `openchart-ai-clinical-record-write` can pin them for `act_content`.
 11. **Reconciliation with the ratified intake text** that tension AT-1 records, because clinician orders created through an API meet the same sentence.
 12. **Billing interplay** with CF-02 and CF-06 of `define-openpractice-boundary`.
+
+openChart-spec#5 maps each item in its own minimum-contents table: item 3 is provided in part (its CT-8) and item 5 is not provided (its CT-6). **Further prerequisites for parts of Tier 2:** a later treatment-plan change for `treatment_plan_change` (ruling 73), and `define-prescribing-safety-checks` (openChart-spec#6), with its gate `open`, for any AI prescription (ruling 74; AA-03).
 
 ## Consistency with ratified `expanded-patient-intake` requirements
 
@@ -230,6 +235,17 @@ This change states no legal or regulatory rule. For each mode, the review that t
 | Intake confers no clinician or autonomous authority | Tier 1 never creates an act (AC-04, AC-05). Tier 2 would create AI-authored acts through an API; under ruling 67 the text stands and Tier 2 stays refused. **Tensions AT-1 and AT-2, disposed by ruling 67.** |
 
 **Two conflicts with ratified openChart text are recorded, as AT-1 and AT-2. Ruling 67 disposes both: the ratified text stands, and Tier 2 stays refused.** No other conflict with ratified text was found.
+
+## Consistency with `define-clinical-acts-foundation` and `define-prescribing-safety-checks`
+
+| Their item | Relation |
+|---|---|
+| openChart-spec#5 AU-01, AU-02 | The single definitions of the medical director and of role grants; AG-02 and AG-11 cite them (its CT-9) |
+| #5 CT-6 (treatment plans) | AA-01: `treatment_plan_change` is refused with `act_type_unsupported`, and the later treatment-plan change is a prerequisite of that act class |
+| #5 CT-7 (status names) | Prerequisite items 2 and 9, AA-07, AA-09 and AA-11 use `pending_release`, `released`, `discontinued`, `cancelled` and `entered_in_error`, with signing as an event. The contract's Tier 2-only codes are mapped in AD-34 |
+| #5 CT-8 (dispense and transmission) | Item 3 asks for no such state; `transmission_status` stays `none_recorded` in 1.x (RX-04) until the later e-prescribing change |
+| #5 CA-07 | Tension AT-11 |
+| openChart-spec#6 PG-01, PG-02 (its PT-4) | AA-03: an AI prescription is accepted only on an `open` gate decision for its exact content, never on the outage path (ruling 76) |
 
 ## Consistency with `define-clinical-message-inbox` and `define-openpractice-boundary`
 
@@ -284,8 +300,10 @@ Each item goes beyond the rulings and is proposed, not ruled, except AD-1, which
 | AD-29 | When several refusal reasons apply, openChart reports the first in a fixed precedence (AW-06): `tier2_not_in_force` comes before every grant, mode and act check, so a Tier 1 deployment answers every act write the same way. Idempotency is scoped to the authenticated practice and source system (AW-05). A set emergency indicator makes any refused act's record urgent, whatever its reason. | AW-05, AW-06 |
 | AD-30 | A source system's namespace is the source token MI-12 uses for it where MI-12 defines one (for example `medxfactory`). `healthlinc` and `openpractice_agent` are never write-path sources, and `openchart` is never a source namespace; the schema refuses all three. MI-12 records that HealthLinc's coach gives general health information only (rulings 51 and 54), and ruling 53 keeps the medical AI's exchanges away from openPractice. A relay may hold the integration identity for one source system (ruling 70); the write names the source system, not the relay. A source whose owner has ruled that it writes only through a relay is registered relay-only: openChart registers only its relay's identity and refuses a direct one. Ruling 70 is such a ruling. | AW-02 |
 | AD-31 | openChart enforces ruling 66 without parsing, classifying or rewriting consult text. It relies on the source system's own advice-scope control and its `advice_scope_breach` declaration, on the built-in triggers and the sample, and on the reviewer's breach finding, which alerts the medical director at once. In contract 1.0 the finding stays in openChart, and `consult.reviewed` carries only the outcome code. Whatever the text says, a consult record is never a diagnosis or a clinical fact of record. | AC-04, AC-05, AC-08 |
-| AD-32 | A consult review grant follows openChart-spec#5 AU-02's rules. It is recorded only by the AU-01 medical director, for a named person holding the `clinician` role, rests on a credential attestation (AU-03), has an interval and a version, and is checked at the moment of review (AU-04). Nurses may not review AI consults until the owner says otherwise. Whether it is an AU-02 grant with a new scope or a sibling record is settled with openChart-spec#5 (AT-12). | AG-11, AC-08 |
+| AD-32 | The consult review grant is the openChart-spec#5 AU-02 grant of action `review` over record class `ai_consult_record`, which is not an act class and creates no act; that change's author is adding the scope (AT-12). Only a holder with the `clinician` role may review; nurses may not review AI consults until the owner says otherwise. | AG-11, AC-08 |
 | AD-33 | Quarantine covers a consult refused at any grant check (AW-06 step 8), mismatches included, because in every such case the answer reached the patient. A consult refused earlier (schema, identity, replay, context, digest or patient link) is not quarantined, because its source, content or patient cannot be relied on. The receipt stays `refused` with no `record_ref`, so the AI system never counts the consult as accepted, and no readback or `consult.reviewed` discloses it. | AC-11, AW-06 |
+| AD-34 | The 1.0 contract's Tier 2-only codes keep their names: `act.status` `voided`, `countermanded` and `co_review_voided`, and readback `record_state` `voided` and `countermanded`. They are never sent while Tier 2 is refused. They correspond to the foundation's `entered_in_error`, and to `discontinued` (or `cancelled` for an act still `pending_release`), as its CT-7 maps them. The MINOR version that puts Tier 2 in force adds the foundation's names. Changing 1.0 now would change a digest that two companions pin. | AA-07, AA-09 |
+| AD-35 | An AI prescription that the prescribing-safety gate does not open is refused with `prescribing_gate_not_open`, a reason the Tier 2 MINOR version adds. An `outage_path` decision counts as refused for an AI author (ruling 76). | AA-03, AW-06 |
 
 ## Conflicts and tensions
 
@@ -303,8 +321,8 @@ Twelve are recorded. The Disposition column gives the owner's disposition where 
 | AT-8 | `define-openpractice-boundary` (draft) CF-02 marks a fact billable only when it comes from clinician-authored documentation that is final and signed. An AI-authored diagnosis of record would therefore never be billable. | **Open, deferred with Tier 2.** Nothing in Tier 1 is billable, and CF-06 is unchanged. |
 | AT-9 | Ruling 60: "Anything not listed goes to the human doctor." openChart can show the refused attempt to the patient's doctor (AA-12), but the patient's need reaches the doctor only if the AI system routes the patient to the human-doctor path (HealthLinc, openPractice, the inbox). | **Deferred with the practice modes (ruling 67).** It arises only for practice-mode acts. The AI system's change still owns the routing. |
 | AT-10 | Ruling 72: the clinical-acts foundation accepts only `clinician` as author type. Tier 2 (AA-02, AA-12) records acts with author type `ai` and an authority basis. | **Open, deferred with Tier 2.** No conflict while Tier 2 is refused. The future governed amendment that would put Tier 2 in force must also amend the foundation to admit `ai` acts, or withdraw Tier 2. This change does not edit the foundation. |
-| AT-11 | Two co-review models. This change's AA-07 and AA-08 queue AI acts for co-review with the outcomes confirm, amend and void. openChart-spec#5 CA-07 defines a co-signature requirement on any act version: modes `before_effect` and `after_the_fact`, a co-signer with `cosign` scope, and the outcomes `cosigned`, an amendment or an entered-in-error mark. It names this change's authority grant as the source it intends for ruling 62's co-review. | **Open, deferred with Tier 2.** No conflict while Tier 2 is refused. The Tier 2 amendment converges on openChart-spec#5's CA-07 co-signature model: the grant becomes a CA-07 source, AA-07's confirm and amend map to `cosigned` and a CA-05 amendment, and AA-08's escalation is CA-07's. Whether AA-07's void maps to a CA-06 entered-in-error mark or to a discontinuation is decided then. |
-| AT-12 | openChart-spec#5 AU-02 grants authority per act class, for the actions `draft`, `sign`, `cosign`, `complete` and `discontinue`. A consult review is not an act, and AU-02 defines no grant for it, yet Tier 1 needs one (AG-11). | **Open, cross-change.** AG-11 follows AU-02's rules and fields, and fails closed meanwhile. openChart-spec#5 should add a consult-review scope to AU-02, or the owner accepts AG-11's grant as a sibling record. Either way there is one medical director (AU-01) and one grant model. |
+| AT-11 | Two co-review models. This change's AA-07 and AA-08 queue AI acts for co-review with the outcomes confirm, amend and void. openChart-spec#5 CA-07 defines a co-signature requirement on any act version: modes `before_effect` and `after_the_fact`, a co-signer with `cosign` scope, and the outcomes `cosigned`, an amendment or an entered-in-error mark. It names this change's authority grant as the source it intends for ruling 62's co-review. | **Open, deferred with Tier 2.** No conflict while Tier 2 is refused. The Tier 2 amendment converges on openChart-spec#5's CA-07 co-signature model: the grant becomes a CA-07 source, AA-07's confirm and amend map to `cosigned` and a CA-05 amendment, and AA-08's escalation is CA-07's. AA-07's void is CA-06's `entered_in_error`, as the foundation's CT-7 mapping proposes. |
+| AT-12 | openChart-spec#5 AU-02 grants authority per act class, for the actions `draft`, `sign`, `cosign`, `complete` and `discontinue`. A consult review is not an act, yet Tier 1 needs a grant for it (AG-11). | **Resolved, pending openChart-spec#5.** Its author is adding to AU-02 the scope action `review` over record class `ai_consult_record`, which is not an act class and creates no act. AG-11 is that grant and defines no grant model of its own. Until #5 publishes the scope, AG-11 fails closed and no consult review can be recorded; if #5 does not adopt it, this tension reopens. |
 
 ## Risks / Trade-offs
 
@@ -321,11 +339,11 @@ Twelve are recorded. The Disposition column gives the owner's disposition where 
 
 ## Migration Plan
 
-1. Validate strictly. Brett Heap disposes the open tensions (AT-5 to AT-8, AT-10 to AT-12 and the residual reading under AT-1) and AD-2 to AD-33, stamps `Ratified by` and sets `Status: ratified`. `define-clinical-message-inbox` is ratified first or together (AD-3).
+1. Validate strictly. Brett Heap disposes the open tensions (AT-5 to AT-8, AT-10 to AT-12 and the residual reading under AT-1) and AD-2 to AD-35, stamps `Ratified by` and sets `Status: ratified`. `define-clinical-message-inbox` is ratified first or together (AD-3).
 2. Adopt openChart's constitution through separate governance.
 3. After openChart-spec#5's feature (1), with its clinical roles and authority, has landed, create the single Spec Kit feature from the assembly root, starting with Tier 1: the write-path role, the consult review grant, the quarantine of consults refused at the grant checks, the grant record for `advice_only`, the legal-review record, the review policy, the consult record and its review, and refusal of every `act.write` with `tier2_not_in_force`. Contract tests run against an AI-system double alongside the standalone regression suite.
 4. Enable advice-only for a practice only when its gates are recorded (AG-04).
-5. Only after `define-clinical-acts-foundation` is ratified and built, and a future governed amendment under ruling 67 puts Tier 2 in force: a governed revision of this change pins the foundation's content schemas in a MINOR contract version, then Tier 2 is built for limited practice, then for full practice (ruling 63).
+5. Only after `define-clinical-acts-foundation` is ratified and built, and a future governed amendment under ruling 67 puts Tier 2 in force (with, for prescriptions, `define-prescribing-safety-checks` ratified and its gate built, and, for treatment-plan changes, the later treatment-plan change): a governed revision of this change pins the foundation's content schemas in a MINOR contract version, then Tier 2 is built for limited practice, then for full practice (ruling 63).
 6. Rollback: the medical director pauses the grant; the write path is disabled; open co-review items stay owned until they close; no record is deleted.
 
 ## Open Questions
@@ -333,7 +351,7 @@ Twelve are recorded. The Disposition column gives the owner's disposition where 
 Each question is routed in `tasks.md` §2 to the gate it blocks.
 
 1. **Constitution adoption.** openChart's constitution is the unfilled template. This blocks planning.
-2. **Owner dispositions** of the open tensions (AT-5 to AT-8, AT-10 to AT-12 and the residual reading under AT-1) and of AD-2 to AD-33. AD-1 is ruled (ruling 65). These block ratification.
+2. **Owner dispositions** of the open tensions (AT-5 to AT-8, AT-10 to AT-12 and the residual reading under AT-1) and of AD-2 to AD-35. AD-1 is ruled (ruling 65). These block ratification.
 3. **The clinical-acts foundation.** Answered by ruling 72: another author drafted it as openChart-spec#5. Tier 1 needs its feature (1); Tier 2 also needs a future governed amendment (ruling 67).
 4. **The responsible clinician.** openChart records no care team today. Which change defines a patient's responsible clinician? Meanwhile, AD-12's fallback to the medical director applies.
 5. **The AI system's patient link.** Is it registered through the ratified external-identifier path, or through a governed link contract like PL-02's? Meanwhile, AD-23 applies.

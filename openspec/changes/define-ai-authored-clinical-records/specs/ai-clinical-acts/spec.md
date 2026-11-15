@@ -3,7 +3,7 @@
 ### Requirement: AA-01 Tier 2 is specified but not in force: it needs the clinical-acts foundation and a future governed amendment, and until both no AI-authored act is created
 openChart has no clinician-authored encounters, orders, prescriptions, diagnoses or treatment plans. This capability specifies the authorship, authority, co-review and reversal layer for AI-authored clinical acts, and SHALL NOT be built or put in force until both of these hold: (a) the required prerequisite change, the clinical-acts foundation (`define-clinical-acts-foundation`, openChart-spec#5, drafted under ruling 72), is ratified and its acts are built; and (b) a future governed amendment, made after advice-only has run and counsel's review is in, puts Tier 2 in force (ruling 67). Under ruling 67 the ratified texts that bar an AI-authored prescription, diagnosis or order stand, and that amendment must address them (tensions AT-1 and AT-2). A MINOR version of the contract SHALL then pin the foundation's content schemas for `act_content` (design call AD-17).
 
-Until then, openChart SHALL refuse every `act.write` with reason `tier2_not_in_force`, ahead of every grant, mode and act check (AW-06 precedence), and SHALL create no order, prescription, diagnosis, treatment-plan change or other clinical act from AI-authored content, whatever mode, grant or authority it claims. This keeps `define-clinical-message-inbox` MI-26's hold in force in substance, even after this change is ratified (tension AT-5). Once the foundation exists, an act class or act type that it does not define SHALL be refused with reason `act_type_unsupported`.
+Until then, openChart SHALL refuse every `act.write` with reason `tier2_not_in_force`, ahead of every grant, mode and act check (AW-06 precedence), and SHALL create no order, prescription, diagnosis, treatment-plan change or other clinical act from AI-authored content, whatever mode, grant or authority it claims. This keeps `define-clinical-message-inbox` MI-26's hold in force in substance, even after this change is ratified (tension AT-5). Once the foundation exists, an act class or act type that it does not define SHALL be refused with reason `act_type_unsupported`. The foundation defines no treatment-plan record (ruling 73; its tension CT-6), so `treatment_plan_change` SHALL be refused with `act_type_unsupported` until a later treatment-plan change, a prerequisite of that act class, is ratified and built and the Tier 2 amendment covers it.
 
 #### Scenario: Failure: an act write arrives before the foundation exists
 - **WHEN** an AI system sends a schema-valid `act.write` claiming `full_practice` before the clinical-acts foundation is built
@@ -12,6 +12,10 @@ Until then, openChart SHALL refuse every `act.write` with reason `tier2_not_in_f
 #### Scenario: Failure: the foundation is built but no governed amendment exists
 - **WHEN** the clinical-acts foundation is ratified and built, no governed amendment has put Tier 2 in force, and an AI system sends a schema-valid `act.write` under a grant it claims
 - **THEN** openChart refuses it with reason `tier2_not_in_force` and creates no clinical act
+
+#### Scenario: Failure: a treatment-plan change arrives with no treatment-plan record
+- **WHEN** Tier 2 is in force over the foundation, no treatment-plan change has been ratified, and an AI system writes a `treatment_plan_change` act
+- **THEN** openChart refuses it with reason `act_type_unsupported` and creates no act
 
 #### Scenario: Failure: a plan proposes building Tier 2 early
 - **WHEN** a plan proposes building AI-authored acts before the clinical-acts foundation is ratified and a governed amendment puts Tier 2 in force
@@ -27,9 +31,19 @@ Every clinical act that openChart records SHALL carry an author type: `clinician
 ### Requirement: AA-03 An AI-authored act is accepted only under a current practice-mode grant
 openChart SHALL accept an `act.write` only when the grant in force at receipt is `active`, is a `limited_practice` or `full_practice` grant, and names the practice, the mode, the configuration version, the allowlist entry (limited practice) or the full-practice grant (full practice), the approving medical director and the recorded legal review for that mode; and when the write matches every one of them (AG-06). An act made before a pause, narrowing or expiry but received after it SHALL be refused (design call AD-5); the AI system routes the patient to a human clinician.
 
+For a `prescription` act, openChart SHALL also call the prescribing-safety gate of `define-prescribing-safety-checks` (openChart-spec#6, not yet on main), its PG-01, for the exact content being accepted, and SHALL accept the act only when the decision is `open`, which needs a check completed against the digest of that content. A decision of `outage_path` SHALL be treated as refused: an AI author never uses the outage path (ruling 76; that change's PG-02). The co-review and the release of an accepted AI prescription are prescription steps under the foundation's RX-02, and call the gate again. A gate decision that is not `open` SHALL refuse the act with reason `prescribing_gate_not_open`, which the MINOR version that puts Tier 2 in force adds to the contract (design call AD-35). No 1.x receiver accepts an act before then (AA-01).
+
 #### Scenario: Failure: an act arrives after the grant was narrowed
 - **WHEN** the medical director removes allowlist entry `SYN-ALLOW-0007`, and an act naming that entry arrives afterwards
 - **THEN** openChart refuses it with reason `grant_mismatch`, or `allowlist_entry_unknown` when it names the new grant version, and creates no act
+
+#### Scenario: Failure: an AI prescription meets the outage path
+- **WHEN** Tier 2 is in force, an AI system writes a prescription under a grant it matches in every field, and the prescribing-safety gate decision for it is `outage_path` because the knowledge source is unavailable
+- **THEN** openChart refuses the act with reason `prescribing_gate_not_open`, creates no prescription, and lists the refused attempt for the patient's doctor (AA-12)
+
+#### Scenario: Failure: the gate's check covered different content
+- **WHEN** an AI prescription arrives whose content digest differs from the digest that the completed prescribing-safety check covered
+- **THEN** the gate decision is not `open`, and openChart refuses the act with reason `prescribing_gate_not_open`
 
 #### Scenario: Failure: the act names a different legal review
 - **WHEN** an act write names a legal review other than the one the grant records
@@ -68,7 +82,7 @@ An AI never manages an emergency, in any mode (ruling 61). openChart SHALL refus
 Every AI-authored act that openChart accepts SHALL enter a co-review queue in openChart at once, with a due time equal to its acceptance time plus the co-review window the grant sets for its act class (ruling 62). openChart SHALL return the due time in the receipt. A named clinician holding `cosign` scope for that act class under `define-clinical-acts-foundation` AU-02 SHALL co-review it (design call AD-20), and SHALL record one outcome. These outcomes converge on that change's CA-07 co-signature model at the Tier 2 amendment (tension AT-11):
 - **confirm:** the act stands, attributed to the AI under its authority, with the co-review recorded;
 - **amend:** the clinician records a new, dated, clinician-authored act that visibly supersedes the AI act;
-- **void:** the AI act is marked voided, with a reason, and stops having effect (AA-09).
+- **void:** the AI act is marked `entered_in_error` (foundation CA-06), with a reason, and stops having effect (AA-09).
 
 No AI system and no agent SHALL co-review, and the AI that wrote the act SHALL NOT confirm it. openChart SHALL report each outcome to the AI system as an `act.status`.
 
@@ -81,18 +95,18 @@ No AI system and no agent SHALL co-review, and the AI that wrote the act SHALL N
 - **THEN** the action is refused and the act stays in the queue
 
 ### Requirement: AA-08 An overdue co-review escalates to the medical director and is never closed by default
-When an AI-authored act's co-review is not recorded by its due time, openChart SHALL escalate it to the medical director at once, SHALL make the medical director its co-reviewer, SHALL keep re-alerting until a clinician records an outcome, and SHALL send `act.status` `co_review_overdue_escalated`. An overdue act SHALL NOT be confirmed, voided, dropped or closed by any timer or default.
+When an AI-authored act's co-review is not recorded by its due time, openChart SHALL escalate it to the medical director at once, SHALL make the medical director its co-reviewer, SHALL keep re-alerting until a clinician records an outcome, and SHALL send `act.status` `co_review_overdue_escalated`. An overdue act SHALL NOT be confirmed, marked `entered_in_error`, dropped or closed by any timer or default.
 
 #### Scenario: Failure: nobody co-reviews an AI prescription in time
 - **WHEN** an accepted AI-authored prescription's co-review window passes with no outcome
 - **THEN** openChart escalates it to the medical director, keeps re-alerting, and the act stays in the queue unconfirmed
 
 ### Requirement: AA-09 A clinician can void or countermand an AI act, and corrections are new dated records
-A named clinician SHALL be able to void an AI-authored act, which marks it voided with actor, reason and time, or countermand it, which records a new, dated, clinician-authored act that stops it from then on. No AI-authored act or its history SHALL be deleted or edited in place. Every correction SHALL be a new dated record that references what it corrects. The patient-facing display SHALL show the voided or countermanded state (AW-09). openChart SHALL send the matching `act.status`.
+A named clinician SHALL be able to void an AI-authored act, which marks it `entered_in_error` with actor, reason and time (foundation CA-06), or countermand it. A countermand moves a `released` act to `discontinued` by a signed discontinuation, and a `pending_release` act to `cancelled` (foundation CA-03, OR-02); either way it stops the act from then on. No AI-authored act or its history SHALL be deleted or edited in place. Every correction SHALL be a new dated record that references what it corrects. The patient-facing display SHALL show the `entered_in_error`, `discontinued` or `cancelled` status (AW-09). openChart SHALL send the matching `act.status`.
 
 #### Scenario: Failure: someone tries to delete an AI act
 - **WHEN** a user tries to delete an accepted AI-authored order
-- **THEN** the deletion is refused, and only a void or a countermand, each recorded as a new dated record, can stop it
+- **THEN** the deletion is refused, and only an `entered_in_error` mark or a countermand to `discontinued` or `cancelled`, each a new dated record, can stop it
 
 ### Requirement: AA-10 An AI act never overwrites or supersedes clinician-authored content
 openChart SHALL refuse an `act.write` that would modify, discontinue, replace or supersede a clinician-authored record, with reason `targets_clinician_record`, and SHALL route it to the patient's doctor as a refused attempt (AA-12). This is stricter than barring a silent supersession: in contract version 1.0 an AI act may not supersede clinician-authored content at all (design call AD-8). An AI act MAY supersede only an earlier AI-authored act by the same source system, and only visibly, as a new dated record that references it. A treatment-plan change by an AI SHALL be a new dated record that references the plan it changes, and SHALL NOT alter a clinician-authored plan.
@@ -101,12 +115,12 @@ openChart SHALL refuse an `act.write` that would modify, discontinue, replace or
 - **WHEN** an AI act names a clinician-authored prescription as its target record
 - **THEN** openChart refuses it with reason `targets_clinician_record`, the clinician's prescription is unchanged, and the patient's doctor sees the refused attempt
 
-### Requirement: AA-11 On narrowing or pause, pending AI acts are held for a clinician or cancelled, never executed
-When the medical director narrows or pauses a grant, or a reduction applies under AG-08, openChart SHALL at once stop every pending AI-authored act whose basis the grant no longer covers. A pending act is one the foundation's lifecycle shows as accepted but not yet released or executed. Each such act SHALL be held and handed to a named clinician, who adopts it as a new clinician-authored act or cancels it (design call AD-9). The medical director MAY cancel it instead. It SHALL NOT be executed on the AI's authority. openChart SHALL send `act.status` `handed_to_clinician` or `cancelled_on_narrowing`. Acts already executed SHALL stay in co-review (AA-07).
+### Requirement: AA-11 On narrowing or pause, pending AI acts are held for a clinician or cancelled, never released
+When the medical director narrows or pauses a grant, or a reduction applies under AG-08, openChart SHALL at once stop every pending AI-authored act whose basis the grant no longer covers. A pending act is one in the foundation's `pending_release` status: signed but not yet in force (CA-03, OR-02; its tension CT-7). Each such act SHALL be held and handed to a named clinician, who adopts it as a new clinician-authored act or cancels it (design call AD-9). The medical director MAY cancel it instead. It SHALL NOT be released on the AI's authority. openChart SHALL send `act.status` `handed_to_clinician` or `cancelled_on_narrowing`. Acts already `released` SHALL stay in co-review (AA-07).
 
-#### Scenario: Failure: a pause arrives while an AI prescription awaits transmission
-- **WHEN** the medical director pauses a grant while an accepted AI-authored prescription has not yet been released for transmission
-- **THEN** the prescription is not released, is handed to a named clinician, and openChart sends `act.status` `handed_to_clinician`
+#### Scenario: Failure: a pause arrives while an AI prescription is `pending_release`
+- **WHEN** the medical director pauses a grant while an accepted AI-authored prescription is still `pending_release`
+- **THEN** the prescription is not released, stays `pending_release` until a named clinician adopts or cancels it, is handed to that clinician, and openChart sends `act.status` `handed_to_clinician`
 
 ### Requirement: AA-12 Every AI act states the authority it rested on, and refused attempts are visible to the patient's doctor
 Every accepted AI-authored act SHALL store, and show to clinicians, the authority it rested on: the grant and its version, the mode, the configuration version, the allowlist entry and its protocol (limited practice) or the full-practice grant (full practice), the approving medical director, the legal review reference, any reserved-act clearance relied on, and the co-review status. The patient-facing display SHALL state, in plain words, that an AI system made the act under the practice's authority and whether a clinician has co-reviewed it (AW-09).
