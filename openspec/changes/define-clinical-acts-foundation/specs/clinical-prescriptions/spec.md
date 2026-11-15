@@ -15,7 +15,7 @@ openChart SHALL record a prescription as an act of class `prescription`: the cli
 openChart SHALL refuse to sign a prescription or a new version of one, to record its co-signature, and to release it from `pending_release`, including at a deferred release time, unless the prescribing-safety gate is met for that step at that moment (owner ruling 74; design call CD-30). At co-signature the co-signer SHALL see the alerts and overrides recorded so far. A release that is refused SHALL leave the prescription `pending_release` and open a work item for its signer, or for the medical director where the signer cannot act. No timer SHALL release it. The gate SHALL be met only when all three of these hold:
 - `define-prescribing-safety-checks` (not yet on main) is ratified;
 - its checking capability is built and enabled in that deployment;
-- the signing satisfies that change's signing-time conditions. Under its owner rulings 76 to 78 these include a connected, licensed or verified knowledge source and a completed check, with a recorded clinician-only path when the source is unavailable at signing.
+- the step (signature, co-signature or release) satisfies that change's conditions for that step. Under its owner rulings 76 to 78 these include a connected, licensed or verified knowledge source and a completed check, with a recorded clinician-only path when the source is unavailable at that step.
 
 Until `define-prescribing-safety-checks` is ratified, the gate SHALL NOT be met in any deployment. No setting, role, grant, co-signature or override in this change SHALL bypass the gate, and a refused signature SHALL leave the prescription `draft`, with the refusal recorded with a coded reason.
 

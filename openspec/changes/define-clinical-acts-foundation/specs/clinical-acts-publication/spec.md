@@ -20,7 +20,7 @@ An authorized `facts.result` read SHALL be served only on an `active` link. It S
 - **Procedure:** each final procedure, with identifier, version, coding, quantity where documented, performed time, performer reference and encounter reference;
 - **documentation_final:** `final: true`, with the signer reference and signing time of the encounter version's signature (EN-04).
 
-Every coding SHALL carry the code system and code only, never the version or display (CF-01, FD-11). Practitioner, location and resource references SHALL be opaque and carry no name. openPractice receives references, never copies of notes or other content (openPractice EB-13, EB-16). A read for an encounter that is not `final`, `amended` or `entered_in_error` SHALL return `no_billable_facts` (design call CD-24).
+Every coding SHALL carry the code system and code only, never the version or display (CF-01, FD-11). Practitioner, location and resource references SHALL be opaque and carry no name. openPractice receives references, never copies of notes or other content (openPractice EB-13, EB-16). A read for an encounter that is not `final` or `amended`, or that has been withdrawn under PB-03, SHALL return `no_billable_facts` (design call CD-24).
 
 #### Scenario: A linked patient's encounter is finalized
 - **WHEN** a clinician signs a final encounter with one confirmed encounter diagnosis and one procedure for a patient with an active `openpractice` link
@@ -44,10 +44,9 @@ Every coding SHALL carry the code system and code only, never the version or dis
 
 ### Requirement: PB-03 Every correction or retraction of a published fact is queued, whatever the link state, and delivered forward-only
 openChart SHALL write each of the following to the durable outbound store, in the same transaction as its cause, whatever the state of the patient's `openpractice` link (`active`, `identity_review`, `revoked` or `superseded`) (design call CD-35). Each item applies once the encounter or fact named in it has been published.
-- **A published encounter is amended (EN-05):** `clinical_fact.corrected`, with resource references to the new Encounter version and to every new or new-version published Condition and Procedure, and `supersedes` references to the versions they replace.
-- **A published diagnosis is amended to a status other than `confirmed`, or marked entered in error, or a published procedure is marked entered in error:** `clinical_fact.entered_in_error` with that resource's reference. This is CA-M3's retraction (CD-33).
-- **A published encounter is marked entered in error:** `clinical_fact.entered_in_error` with the Encounter reference and the reference of every published Condition and Procedure on it. A read SHALL then return the encounter with status `entered-in-error`, no conditions, no procedures and `documentation_final.final` false.
-- **A restricted act (CA-15) is added to an encounter that has already been published:** `clinical_fact.entered_in_error` with the Encounter reference and every published Condition and Procedure on it (design call CD-36). Nothing more SHALL be published for that encounter, and every later read SHALL return `no_billable_facts`.
+- **A published encounter is amended (EN-05) and can still be published:** `clinical_fact.corrected`, with resource references to the new Encounter version and to every new or new-version publishable Condition and Procedure, and `supersedes` references to the versions they replace.
+- **A published Condition or Procedure is withdrawn:** its latest version could no longer be published under PB-02 and PB-04. Examples: a diagnosis amended away from `confirmed` (CD-33), amended to the `problem_list` role, or amended to a coding the canonical schema cannot represent; or a diagnosis or procedure marked entered in error. openChart SHALL send `clinical_fact.entered_in_error` with that resource's reference.
+- **A published encounter is withdrawn:** its latest version could no longer be published, because it is marked entered in error, carries a restricted act (CA-15), or holds a fact the canonical schema cannot represent. openChart SHALL send `clinical_fact.entered_in_error` with the Encounter reference and the reference of every published Condition and Procedure on it (design call CD-36). Nothing more SHALL be published for that encounter. Every later read SHALL return `no_billable_facts`, the same read whatever the reason, so that a read never reveals a restricted act.
 
 openChart SHALL deliver queued messages in the order of their causes, each with its original `message_id`:
 - **`active` link:** at once.
@@ -72,13 +71,17 @@ openChart MUST NOT silently overwrite a published fact or reuse a published vers
 - **WHEN** a clinician adds a restricted diagnosis to an encounter whose facts were already published
 - **THEN** openChart sends `clinical_fact.entered_in_error` for the Encounter and every published Condition and Procedure, and publishes nothing more for that encounter
 
+#### Scenario: Failure: a published diagnosis is moved to the problem list
+- **WHEN** a clinician amends a published encounter diagnosis to the `problem_list` role
+- **THEN** openChart sends `clinical_fact.entered_in_error` for that Condition, and later reads omit it
+
 #### Scenario: Failure: a published diagnosis is later refuted
 - **WHEN** a clinician amends a published, confirmed encounter diagnosis to `refuted`
 - **THEN** openChart sends `clinical_fact.entered_in_error` for that Condition, and later reads omit it
 
 #### Scenario: Failure: a published encounter is voided
 - **WHEN** a clinician marks a published encounter entered in error
-- **THEN** openChart sends `clinical_fact.entered_in_error` naming the encounter and its published facts, and a read returns status `entered-in-error` with no conditions or procedures
+- **THEN** openChart sends `clinical_fact.entered_in_error` naming the encounter and its published facts, and a later read returns `no_billable_facts`, exactly as it would for an encounter withdrawn because of a restricted act
 
 ### Requirement: PB-04 Only final, confirmed, clinician-signed encounter facts are ever published
 openChart SHALL NOT publish under `openpractice-ehr-clinical-facts/1.0` any of these:
