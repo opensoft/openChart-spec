@@ -11,6 +11,8 @@ openChart SHALL decide exactly one gate decision, with a coded reason, for each 
 
 A prescription classified `controlled` or `unknown` SHALL get `refused` with reason `controlled_classification_not_permitted`, the foundation's own reason code, at every step and whatever the source's state. It SHALL never get `outage_path` (owner ruling 83). When the source is connected and verified but unavailable at that step (KA-04, KA-05), and not past its staleness limit (KA-04), the decision SHALL be `outage_path`, governed by PG-02. In every other case it SHALL be `refused`, with one of these reasons: `controlled_classification_not_permitted`, `capability_disabled`, `legal_review_missing`, `no_verified_source`, `currency_policy_missing`, `source_stale_beyond_limit`, `check_not_completed`, `check_stale` or `alerts_unanswered`.
 
+A recommendation record of `define-clinical-acts-foundation` (not yet on main; AN-09, owner ruling 80) SHALL never be a signature, co-signature, release or acceptance of a prescription. It SHALL never receive `open` or `outage_path`, and SHALL never satisfy this gate. It SHALL never count as a `pending_release` or `released` prescription in PC-01, as a prescription in SL-02, or as an allergy entry or medication list entry in SL-01 or SL-02. A prescription comes from a recommendation only when a clinician adopts it as a new prescription of their own (AN-11), and that prescription meets this gate like any other.
+
 #### Scenario: Every condition holds
 - **WHEN** a clinician signs a prescription after a completed signing-time check, with every alert answered, in a deployment with a verified, current source and a recorded review
 - **THEN** the gate decision is `open`, and RX-02 lets the signature complete
@@ -22,6 +24,10 @@ A prescription classified `controlled` or `unknown` SHALL get `refused` with rea
 #### Scenario: Failure: an alert is unanswered
 - **WHEN** a clinician tries to sign with a `high` alert unanswered
 - **THEN** the gate decision is `refused` with reason `alerts_unanswered`
+
+#### Scenario: Failure: a recommended prescription would count
+- **WHEN** a nurse without prescription `sign` scope submits a prescription for amoxicillin, which openChart enters as a recommendation, and a clinician then drafts a prescription for amoxicillin for the same patient
+- **THEN** the recommendation gets no gate decision, is not listed as a `pending_release` or `released` prescription in the duplicate-therapy check, and the clinician's prescription is gated on its own
 
 #### Scenario: Failure: a controlled or unknown classification
 - **WHEN** a clinician tries to sign a prescription classified `unknown`, whether the source is verified and current with a completed check, or unavailable
@@ -47,7 +53,7 @@ openChart SHALL then:
 
 When the source is unavailable at a deferred release time and no clinician completes this path, the prescription SHALL stay `pending_release` with a work item for its signer, as `define-clinical-acts-foundation` RX-02 requires. No timer SHALL release it.
 
-The work item SHALL stay open until a named clinician responds under PC-06. No timer or default SHALL close it. A non-clinician author SHALL never use this path. That includes any future AI author under `define-ai-authored-clinical-records` (not yet on main), which always needs an `open` decision.
+The work item SHALL stay open until a named clinician responds under PC-06. No timer or default SHALL close it. A non-clinician author SHALL never use this path. That includes any future AI author under `define-ai-authored-clinical-records` (not yet on main), which always needs an `open` decision. What such an author submits SHALL take no effect, and SHALL be entered as a recommendation under `define-clinical-acts-foundation` AN-09, never refused for missing authority (owner ruling 80, clause 18).
 
 #### Scenario: A clinician signs during an outage
 - **WHEN** the verified source is unreachable at signing, and a clinician responds to each local entry and records the statement
@@ -79,7 +85,7 @@ The work item SHALL stay open until a named clinician responds under PC-06. No t
 
 #### Scenario: Failure: an AI author meets an outage
 - **WHEN** an AI-authored prescription arrives under a future Tier 2 while the source is unavailable
-- **THEN** it is refused, because only a clinician may use the outage path
+- **THEN** it does not take effect, because only a clinician may use the outage path, and openChart enters it as a recommendation under `define-clinical-acts-foundation` AN-09 instead of refusing it
 
 #### Scenario: Failure: the re-check finds a critical alert
 - **WHEN** the re-check of a flagged prescription finds a `critical` allergy alert
