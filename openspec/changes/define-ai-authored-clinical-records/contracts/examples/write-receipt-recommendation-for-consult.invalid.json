@@ -1,0 +1,13 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "write.receipt",
+  "message_id": "c3d9fa0b-d2e3-4f45-a6b7-8c9daebfc0d7",
+  "sent_at": "2026-11-14T10:00:01Z",
+  "in_reply_to": "1c7a3b4f-0d2e-4f60-9b8c-2d3e4f5a6b72",
+  "write_kind": "consult",
+  "result": "recorded_as_recommendation",
+  "record_ref": "OC-AIR-00001",
+  "missing_authority": "tier2_not_in_force",
+  "received_at": "2026-11-14T10:00:01Z"
+}

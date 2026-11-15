@@ -13,5 +13,5 @@
     "grant_version": 3
   },
   "received_at": "2026-11-14T09:02:01Z",
-  "reason": "grant_mismatch"
+  "reason": "patient_link_unknown"
 }

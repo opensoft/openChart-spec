@@ -20,7 +20,7 @@ A grant version, once approved, SHALL NOT be edited. Every change to what a vers
 
 #### Scenario: Failure: a write claims more authority than the chart's record
 - **WHEN** a `consult.write` claims `full_practice` under a grant whose current version in openChart records `advice_only`
-- **THEN** openChart refuses it with reason `mode_mismatch` and stores no clinical content
+- **THEN** openChart does not accept it: it keeps the consult as quarantined AI communication with `quarantine_cause` `mode_mismatch` and answers `quarantined` (AC-11)
 
 #### Scenario: Grant versions are consecutive
 - **WHEN** the medical director approves a grant, pauses and resumes it, narrows it, and later approves a superseding version
@@ -39,7 +39,7 @@ A grant version, once approved, SHALL NOT be edited. Every change to what a vers
 - **THEN** the edit is refused, and only a new version approved by the medical director can carry the change
 
 ### Requirement: AG-02 Only the practice's medical director, as the clinical-acts foundation designates, approves or changes a grant
-The medical director SHALL be the one that `define-clinical-acts-foundation` (openChart-spec#5, not yet on main) designates under its AU-01, which is the single definition of the practice's medical director in openChart, including the clinical role and any attestation AU-01 requires. This change defines no designation of its own (design call AD-24). Only that person, while the AU-01 designation is in force, SHALL approve a grant version, widen it, resume it, record its legal review reference, set its review policy and co-review window, or record a consult review grant (AG-11). The medical director, and any reduction under AG-08, MAY narrow or pause it. No AI system, agent, integration identity or other role, `System Manager` included, SHALL approve, widen or resume a grant. Where no AU-01 designation is in force, no grant SHALL be approved and the write path SHALL accept nothing: no grant counts as current, every write that reaches the grant checks is refused with `no_current_grant`, and a consult write refused there is quarantined under AC-11, with AC-11's fallback recipients. When the AU-01 designation lapses or ends, openChart SHALL send every registered source of the practice an `authority.notice` with `change` `no_medical_director` (AW-13).
+The medical director SHALL be the one that `define-clinical-acts-foundation` (openChart-spec#5, not yet on main) designates under its AU-01, which is the single definition of the practice's medical director in openChart, including the clinical role and any attestation AU-01 requires. This change defines no designation of its own (design call AD-24). Only that person, while the AU-01 designation is in force, SHALL approve a grant version, widen it, resume it, record its legal review reference, set its review policy and co-review window, or record a consult review grant (AG-11). The medical director, and any reduction under AG-08, MAY narrow or pause it. No AI system, agent, integration identity or other role, `System Manager` included, SHALL approve, widen or resume a grant. Where no AU-01 designation is in force, no grant SHALL be approved and the write path SHALL accept nothing: no grant counts as current, and every write that reaches the grant checks fails them with `no_current_grant`: a consult is quarantined under AC-11, with AC-11's fallback recipients, and an act is recorded as a recommendation under AW-16. When the AU-01 designation lapses or ends, openChart SHALL send every registered source of the practice an `authority.notice` with `change` `no_medical_director` (AW-13).
 
 #### Scenario: Failure: an AI agent tries to approve a grant
 - **WHEN** an AI agent, or the AI system's integration identity, tries to approve or widen a grant
@@ -51,7 +51,7 @@ The medical director SHALL be the one that `define-clinical-acts-foundation` (op
 
 #### Scenario: Failure: the medical director's designation lapses
 - **WHEN** the AU-01 designation ends because its licensure attestation lapses
-- **THEN** every registered source of the practice receives an `authority.notice` with `change` `no_medical_director`, and its later consults are refused with `no_current_grant` and quarantined
+- **THEN** every registered source of the practice receives an `authority.notice` with `change` `no_medical_director`, and its later consults are quarantined with `quarantine_cause` `no_current_grant`
 
 #### Scenario: Failure: the practice has no medical director recorded
 - **WHEN** an administrator tries to activate a grant for a practice with no medical director recorded
@@ -96,12 +96,12 @@ openChart SHALL NOT encode any legal or regulatory rule as fact. The topics the 
 
 #### Scenario: Failure: the legal review has expired
 - **WHEN** the legal review a grant relies on passes its expiry
-- **THEN** openChart appends an `expired` state event to the grant version, refuses writes with reason `grant_expired`, sends an `authority.notice` with `change` `expired`, and answers a grant readback `grant_not_current` with `grant_expired`, until a current review is recorded and the medical director approves a new version (AG-09)
+- **THEN** openChart appends an `expired` state event to the grant version, accepts no write, quarantining consults and recording acts as recommendations with `grant_expired`, sends an `authority.notice` with `change` `expired`, and answers a grant readback `grant_not_current` with `grant_expired`, until a current review is recorded and the medical director approves a new version (AG-09)
 
 ### Requirement: AG-06 Every write is checked against the current grant, and anything missing, expired, paused, narrowed or mismatched fails closed
-For every `consult.write` and `act.write`, openChart SHALL find the grant for the write's practice and source system, and SHALL refuse the write when any of these holds, checking in the order of this table after the earlier steps of AW-06's precedence (for an `act.write`, `tier2_not_in_force` comes first):
+For every `consult.write` and `act.write`, openChart SHALL find the grant for the write's practice and source system, and SHALL NOT accept the write when any of these holds, checking in the order of this table after the earlier steps of AW-06's precedence (for an `act.write`, `tier2_not_in_force` comes first). A consult is then kept as quarantined AI communication (AC-11) and an act recorded as a recommendation (AW-16), each carrying the table's code. Failing closed means that such a write is never accepted; it never means that the write is refused, because missing authority is never a reason to refuse an addition (ruling 80, clause 18).
 
-| Condition | Reason |
+| Condition | Code |
 |---|---|
 | No grant exists, or none is `active` for the time AC-09 or AA-03 sets | `no_current_grant` |
 | The grant is `paused` | `grant_paused` |
@@ -112,24 +112,24 @@ For every `consult.write` and `act.write`, openChart SHALL find the grant for th
 | The write is not permitted in the grant's mode | `mode_not_permitted` |
 | A named approver or legal review differs from the grant's | `approver_mismatch`, `legal_review_mismatch` |
 
-A narrowing (AG-08) SHALL count: a write that relies on scope removed by a narrowing is refused. openChart SHALL record which grant version it checked in the receipt. Every check in this table that does not depend on what a write contains is also what the grant readback reports (AW-14; design call AD-44).
+A narrowing (AG-08) SHALL count: a write that relies on scope removed by a narrowing is not accepted. openChart SHALL record which grant version it checked in the receipt. Every check in this table that does not depend on what a write contains is also what the grant readback reports (AW-14; design call AD-44).
 
 #### Scenario: Failure: the configuration version does not match
 - **WHEN** a write names the current grant version but a configuration version the grant does not record
-- **THEN** openChart refuses it with reason `grant_mismatch` and stores no clinical content
+- **THEN** openChart does not accept it: a consult is kept as quarantined AI communication, and an act recorded as a recommendation, each with `grant_mismatch`
 
 #### Scenario: Failure: an advice-only grant receives an act
 - **WHEN** an `act.write` arrives for a practice whose grant is `advice_only`, on a deployment where Tier 2 is in force
-- **THEN** openChart refuses it with reason `mode_not_permitted`
+- **THEN** openChart records it as a recommendation with `missing_authority` `mode_not_permitted`
 
 ### Requirement: AG-07 Limited practice is an allowlist the medical director approves, and anything not listed goes to the human doctor
 A `limited_practice` grant SHALL carry an allowlist (ruling 60). Each entry SHALL record an entry identifier, one act type with its act class, its conditions, and the standing order or protocol behind it, by reference. An entry MAY mark conditions that openChart can check from chart data; those are re-checked on each write (AA-04, design call AD-16). The medical director approves the allowlist as part of the grant version.
 
-Anything not on the allowlist SHALL be refused with reason `allowlist_entry_unknown`, and the refusal SHALL be shown to the patient's doctor as an act that the AI system was not allowed to make (AA-12). A reserved act (AA-05) SHALL NOT be bound to an allowlist entry unless the grant's legal review cleared it.
+Anything not on the allowlist SHALL NOT be accepted: it is recorded as a recommendation with `missing_authority` `allowlist_entry_unknown`, and listed, with its content, for the patient's doctor as an act that the AI system was not allowed to make (AA-12, AW-16). A reserved act (AA-05) SHALL NOT be bound to an allowlist entry unless the grant's legal review cleared it.
 
 #### Scenario: Failure: an act type not on the allowlist
 - **WHEN** an AI system writes an act whose act type matches no entry on the current allowlist
-- **THEN** openChart refuses it with reason `allowlist_entry_unknown`, and the patient's doctor sees the refused attempt
+- **THEN** openChart records it as a recommendation with `missing_authority` `allowlist_entry_unknown`, and the patient's doctor sees it with its content
 
 #### Scenario: Failure: an entry names a reserved act without clearance
 - **WHEN** a medical director tries to add controlled-substance prescribing to an allowlist whose legal review does not clear it
@@ -142,7 +142,7 @@ openChart SHALL also apply at once an `authority.notice` from the AI system whos
 
 #### Scenario: Failure: a pause arrives from the AI system
 - **WHEN** the AI system sends an `authority.notice` with `change` `paused` for an active grant
-- **THEN** openChart pauses the grant at once, refuses later writes with reason `grant_paused`, and shows the medical director the pending reduction
+- **THEN** openChart pauses the grant at once, accepts no later write, quarantining consults and recording acts as recommendations with `grant_paused`, and shows the medical director the pending reduction
 
 #### Scenario: Failure: a notice tries to widen authority
 - **WHEN** a notice from the AI system would add an allowlist entry or raise the mode
@@ -153,11 +153,11 @@ Every grant version and every recorded legal review SHALL carry an expiry or re-
 
 #### Scenario: Failure: a grant reaches its expiry
 - **WHEN** an active grant reaches its expiry with no new version approved
-- **THEN** openChart refuses later writes with reason `grant_expired` and sends an `authority.notice` with `change` `expired`
+- **THEN** openChart accepts no later write, quarantining consults and recording acts as recommendations with `grant_expired`, and sends an `authority.notice` with `change` `expired`
 
 #### Scenario: Failure: the legal review reaches its re-review date
 - **WHEN** the legal review an active grant relies on reaches its re-review date, while the grant's own expiry is months away
-- **THEN** openChart appends an `expired` state event to the grant version, sends an `authority.notice` with `change` `expired`, refuses later writes with `grant_expired`, and answers a grant readback `grant_not_current` with `grant_expired`
+- **THEN** openChart appends an `expired` state event to the grant version, sends an `authority.notice` with `change` `expired`, accepts no later write, quarantining consults and recording acts as recommendations with `grant_expired`, and answers a grant readback `grant_not_current` with `grant_expired`
 
 #### Scenario: The medical director restores a grant after its legal review lapsed
 - **WHEN** a current legal review is recorded, and the medical director approves a new grant version that relies on it
@@ -175,7 +175,7 @@ A grant version SHALL NOT be approved without a review policy version that the m
 - **THEN** the approval is refused
 
 ### Requirement: AG-11 A consult review is recorded only by a named clinician holding the AU-02 review grant
-The consult review grant SHALL be the role grant of `define-clinical-acts-foundation` AU-02 whose scope is the action `review` over the record class `ai_consult_record`. That record class is not an act class, and a review under the grant creates no act. This change defines no grant model of its own (design call AD-32; tension AT-12, resolved). openChart SHALL let a person record a consult review (AC-08) only while that person holds such a grant in force and holds the `clinician` role under AU-01. The grant carries what AU-02 requires of every grant: the person and clinical role, the effective interval, the attestation it rests on (AU-03), the medical director who recorded it (AG-02), a version, and the `self_granted` flag where the medical director holds it. As AU-02 provides, only the medical director records, widens or renews it, and nothing is granted by default, by role name alone or by the `System Manager` role. No AI system or agent holds one (AU-05). openChart SHALL check every review against the grants in force at that moment, and SHALL record the grant version relied on (AU-04). AU-02 carries this scope and restricts it to holders of the `clinician` role. Where nobody holds the grant, AC-11's fallback applies to quarantined consults only.
+The consult review grant SHALL be the role grant of `define-clinical-acts-foundation` AU-02 whose scope is the action `review` over the record class `ai_consult_record`. That record class is not an act class, and a review under the grant creates no act. This change defines no grant model of its own (design call AD-32; tension AT-12, resolved). openChart SHALL let a person record a consult review (AC-08) only while that person holds such a grant in force and holds the `clinician` role under AU-01. The grant carries what AU-02 requires of every grant: the person and clinical role, the effective interval, the attestation it rests on (AU-03), the medical director who recorded it (AG-02), a version, and the `self_granted` flag where the medical director holds it. As AU-02 provides, only the medical director records, widens or renews it, and nothing is granted by default, by role name alone or by the `System Manager` role. No AI system or agent holds one (AU-05). openChart SHALL check every review against the grants in force at that moment, and SHALL record the grant version relied on (AU-04). AU-02 carries this scope and restricts it to holders of the `clinician` role. Where nobody holds the grant, AC-11's fallback applies to quarantined consults only. A consult review under this grant is a review record, not a sign-off of a medical decision (AC-08; design call AD-54), so it rests on this grant and the attestation behind it (AU-03), not on a licence verification held in an openWallet. A decision's sign-off relies on the verification held in the practitioner's openWallet (ruling 151), which is the foundation's rule [CAF-REQ: sign-off]; the two records of a licence are tension AT-17.
 
 #### Scenario: The medical director grants consult review
 - **WHEN** the medical director records an AU-02 grant of `review` over `ai_consult_record`, for one year, for a named clinician with an attestation in force

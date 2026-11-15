@@ -9,6 +9,26 @@
     "issuer": "syn-ai-system.example",
     "namespace": "syn_ai_system"
   },
+  "added_by": {
+    "kind": "system",
+    "system": {
+      "issuer": "syn-ai-system.example",
+      "namespace": "syn_ai_system"
+    },
+    "operator_ref": "SYN-OPERATOR-0001"
+  },
+  "on_behalf_of": [
+    {
+      "kind": "ai",
+      "openwallet_id": "did:example:syn-ai-wallet-0001",
+      "model": "syn-model-assess",
+      "model_version": "2026.11.0"
+    }
+  ],
+  "source": {
+    "kind": "chart_entry",
+    "ref": "SYN-SNAPSHOT-0002"
+  },
   "context": "operational",
   "patient": {
     "issuer": "syn-openchart-site-a.example",
