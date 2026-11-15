@@ -10,7 +10,7 @@ openChart SHALL publish the clinical facts that openPractice needs for charge ca
   - Procedure: coding, quantity where documented, performed time, performer and encounter reference;
   - a documentation-final indicator with signer reference and signed time.
 
-Codings SHALL carry a code system and a code only, never descriptor text. Publication SHALL be limited to patients with an `active` `openpractice` link, and to integration identities authorized for the billing purpose. The one exception is ruling 88. After a link ends `revoked` or `superseded`, openChart SHALL still deliver pointer-only retractions of facts it already published under that link (CF-04). It SHALL publish no new fact and serve no read for that patient. This is consistent with `define-clinical-acts-foundation` and its tension CT-15.
+Codings SHALL carry a code system and a code only, never descriptor text. Publication SHALL be limited to patients with an `active` `openpractice` link, and to integration identities authorized for the billing purpose. The one exception is ruling 88. After a link ends `revoked` or `superseded`, openChart SHALL still deliver pointer-only retractions of facts it already published under that link (CF-04). It SHALL publish no new fact and serve no read under that link. A later active link for the same patient is governed by this requirement as usual. This is consistent with `define-clinical-acts-foundation` and its tension CT-15.
 
 #### Scenario: Documentation becomes final
 - **WHEN** a clinician finalizes an encounter for a linked patient, once a clinical-encounter capability exists
@@ -22,7 +22,7 @@ Codings SHALL carry a code system and a code only, never descriptor text. Public
 
 #### Scenario: A retraction after the link is revoked
 - **WHEN** a fact published under a link is retracted after that link is revoked
-- **THEN** openChart delivers the pointer-only retraction, publishes nothing new and serves no read for that patient (ruling 88)
+- **THEN** openChart delivers the pointer-only retraction, and publishes nothing new and serves no read under that link (ruling 88)
 
 #### Scenario: Failure: an unconfirmed diagnosis
 - **WHEN** a finalized encounter carries a diagnosis that is not `confirmed`
