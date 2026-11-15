@@ -167,7 +167,8 @@ For a patient whose `openpractice` link is established (PL-02) and has status `a
 **What openChart expects back (⚑ design call 5 in `design.md`).** This follows `opensoft/openPractice-spec` `define-mvp-practice-foundation` EB-09, PROPOSED there.
 - **`received` means only received.** openPractice answers every correction request with `correction.ack` result `received`. It does so even where it holds the link in identity review, including a review it raised on a link that openChart holds `active`. openChart SHALL record the request as open, never as accepted.
 - **Nothing is decided during openPractice's review.** While that review is open, the request is neither accepted nor declined, and no `correction.resolved` arrives. openChart SHALL keep the request open, and SHALL raise no error for the wait.
-- **Revocation closes it.** If the link ends `revoked`, no `correction.resolved` comes for the request. openChart SHALL treat the revocation as closing every open correction request on that link (PL-11), SHALL record that with the revocation as the reason, and SHALL raise no error. Nothing in openChart changes because of the closed request.
+- **A link that ends closes the request, not the correction.** A request still unresolved when its link ends `revoked` or `superseded` SHALL be treated as closed unapplied. openChart SHALL record that, with the end of the link as the reason. It SHALL raise no error, and SHALL expect no `correction.resolved` for the request, because openPractice closes such a request unapplied without telling openChart (its EB-09 and design call F-22).
+- **The patient's correction is not lost.** The correction it carried stays open in openChart. openChart SHALL keep it visible on the patient's record, to the staff who handle the patient's demographic corrections, until it is re-sent. When a link for that patient next becomes established (PL-02), openChart SHALL re-send the correction through that link as a new `demographics.correction_requested`, with a new `request_id`, unless the snapshot applied on that link already carries the proposed value. A link that has never been established carries no correction, so nothing is re-sent through one.
 - **No contract change.** The patient-link contract gains no reject reason for this case, so PL-04 keeps its pin.
 
 #### Scenario: Staff edit a linked patient's name
@@ -188,7 +189,11 @@ For a patient whose `openpractice` link is established (PL-02) and has status `a
 
 #### Scenario: A correction through a link that openPractice holds in review
 - **WHEN** openChart sends a correction request through a link it holds `active`, openPractice holds that link in a review it raised, and openPractice later resolves the review as `revoked`
-- **THEN** openChart records `correction.ack` `received` as received, not accepted, and receives no `correction.resolved`. The revocation closes the request, with the reason recorded and no error raised, and the refusal of direct edits for that link ends (PL-11)
+- **THEN** openChart records `correction.ack` `received` as received, not accepted, and receives no `correction.resolved`. The revocation closes the request unapplied, with the reason recorded and no error raised, and the refusal of direct edits for that link ends (PL-11). The correction stays visible on the patient's record
+
+#### Scenario: A closed correction is re-sent on the next established link
+- **WHEN** a correction request to the legal name was still unresolved when its link was superseded, and a new link for the same patient later becomes established with a snapshot that does not carry the proposed name
+- **THEN** openChart sends the correction through the new link as a new `demographics.correction_requested` with a new `request_id`. The closed request stays recorded as closed unapplied, and no `correction.resolved` is ever expected for it
 
 #### Scenario: A second link in review on a patient with an active link
 - **WHEN** a patient has an active link and a second link from the same issuer in `identity_review` under PL-06 that has never been `active`, and an openChart user edits the patient's name
@@ -199,7 +204,7 @@ openChart SHALL accept `link.revoked` from openPractice. It SHALL set the identi
 
 Revocation SHALL also, recording the reason for each (⚑ design calls 4 and 5 in `design.md`):
 - cancel every open hold on the link (PL-08);
-- close every open correction request that openChart sent through it (PL-10).
+- close every open correction request that openChart sent through it, unapplied, keeping the correction it carried for re-sending (PL-10).
 
 A `link.review_resolved` with outcome `revoked`, for a review that openPractice raised, SHALL be handled as a `link.revoked` of that link.
 

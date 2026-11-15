@@ -221,7 +221,10 @@ Items marked ⚑ are design calls this change makes beyond Brett Heap's rulings.
    - openPractice answers every correction request `received`, even through a link it holds in identity review. That includes a review it raised on a link openChart holds `active`.
    - It decides nothing on such a request while the review is open.
    - It sends no `correction.resolved` for a request whose link ends `revoked`.
-   - openChart therefore records `received` as received only, waits without error, and treats the link's revocation as closing its open correction requests on that link, with the reason recorded.
+   - openChart therefore records `received` as received only, and waits without error.
+   - openPractice closes such a request unapplied without telling openChart. A request still unresolved when its link ends `revoked` or `superseded` is therefore treated by openChart as closed unapplied: the reason is recorded, no error is raised, and no `correction.resolved` is expected.
+   - The correction itself is not lost. It stays visible on the patient's record to the staff who handle demographic corrections. It is re-sent, as a new request, through the next link established for the patient, unless that link's applied snapshot already carries the proposed value.
+   - openPractice's EB-09 relies on this.
    - A `link.review_resolved` `revoked` from openPractice for a review it raised is handled as a revocation, since it is the only way openChart learns that such a review ended the link.
    - The patient-link contract is unchanged: no reject reason was added, so PL-04 still pins `76f465e144893000de4bd2240adb9f547899e2e8100315f698c3cc6cb885b802`.
 
