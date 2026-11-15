@@ -16,9 +16,9 @@ Brett Heap ruled on 33 questions on 2026-11-14; they are tabulated below. **Ruli
 
 **Constitution status.** openChart's `.specify/memory/constitution.md`, in the assembly root `opensoft/openChart`, is the unfilled Spec Kit template on `main`. There is nothing ratified to check against. This design therefore checks against openChart's `AGENTS.md` and the ratified `expanded-patient-intake` requirements. The plan phase waits on adopting a constitution.
 
-## Owner rulings (2026-11-14)
+## Owner rulings (2026-11-14 and 2026-11-15)
 
-Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** Rows that govern only openPractice point to the companion change.
+Rows 1 to 33 have the same source: **Brett Heap, 2026-11-14, authoring session.** Rows 87, 88, 89 and 93 come from **Brett Heap, 2026-11-15**, who answered decisions 79 to 98 with "accept recomendations. on all but 80. for 80 explain that more". Each of those rows records the recommended form he accepted. Rows that govern only openPractice point to the companion change. Rulings are not ratification.
 
 | # | Ruling | Governs |
 |---|---|---|
@@ -55,8 +55,12 @@ Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** Ro
 | 31 | openPractice is the system of record for the administrative appointment; the EHR owns the encounter and keeps an appointment reference if needed. The 1.0 contracts carry no appointment operations; appointment events are a future MINOR version. This closes R-7. | Boundary: Non-goals, Open Question 3 |
 | 32 | One Party with roles; "customer" is a party role only for membership and retail buyers, and a medical-billing accounting customer is derived from the guarantor or payer role | openPractice only |
 | 33 | FD-5 governs sign-offs; where a tier calls for an approval, release decision or attestation, a named human or an opted-in named AI agent with an openWallet ID may sign; tier 4 stays human-only | openPractice only. openChart's identity-review resolution stays with its authorized user. |
+| 87 | (2026-11-15) openChart publishes only `confirmed` diagnoses to openPractice. A retraction follows if a published diagnosis is later refuted. | CF-01 (only `confirmed` encounter diagnoses are published), CF-04 (a refuted published diagnosis is retracted). The mechanism is `define-clinical-acts-foundation`'s publication capability. |
+| 88 | (2026-11-15) Retractions are still delivered after a patient link is revoked or superseded, as pointers only. | CF-01's one exception to its active-link limit, and CF-04. No new fact is published and no read is served on such a link. This is consistent with `define-clinical-acts-foundation`, which recorded the exception as its tension CT-15. |
+| 89 | (2026-11-15) A retraction reason code is added to `openpractice-ehr-clinical-facts`. The follow-up change of ruling 93 carries it. | CF-04. The PL-04 pin of `openpractice-ehr-clinical-facts/1.0` stays at its recorded digest until that follow-up lands. This change then re-pins (task 1.4). |
+| 93 | (2026-11-15) One draft follow-up pull request to `opensoft/openPractice-spec` updates the merged, unratified openPractice drafts. Until it lands, the companion drafts keep failing closed. | Here, only for the retraction reason code of ruling 89. The follow-up is being drafted by another author. Until it lands, a retraction is sent as today, without a reason code. |
 
-The accounting posting modes are named `summary-journal` and `customer-detail` in all three changes. None of rulings 24 to 33 alters either EHR contract or its schema digest; the PL-04 pins are unchanged. Ruling 27 adds PL-16, and ruling 31 settles appointment authority without adding any operation.
+The accounting posting modes are named `summary-journal` and `customer-detail` in all three changes. None of rulings 24 to 33, 87, 88 or 93 alters either EHR contract or its schema digest, and the PL-04 pins are unchanged. Ruling 89 will alter `openpractice-ehr-clinical-facts` through the ruling-93 follow-up, not through this change. Ruling 27 adds PL-16, and ruling 31 settles appointment authority without adding any operation.
 
 ## Goals / Non-Goals
 
@@ -141,6 +145,7 @@ This removes the reliance on `oc_intake_submission_update` (review m10, PL-14). 
 - **Contents:** pointer-only notifications, a capability result, and reads of the billing subset, with codings carrying a system and code only (CF-01 to CF-04).
 - **Billable-facts support:** until a clinical-encounter capability exists, the capability result is false and reads return `no_billable_facts` (CF-06). openPractice then enters charges manually, marked manual (ruling 21).
 - **No billing data:** openChart produces no billing data (CF-05), and holds no coverage (ruling 13).
+- **Diagnoses and retractions:** only `confirmed` encounter diagnoses are published, and a published diagnosis that is later refuted is retracted (ruling 87). Publication is limited to an `active` link, with one exception: pointer-only retractions of facts already published are still delivered after the link ends `revoked` or `superseded` (ruling 88; CF-01, CF-04). A retraction reason code arrives with the ruling-93 follow-up (ruling 89).
 
 ### 9. Standalone operation
 

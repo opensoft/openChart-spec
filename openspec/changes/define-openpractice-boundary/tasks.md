@@ -1,7 +1,7 @@
 ## 1. Ratification And Contract Alignment
 
 - [ ] 1.1 Run `openspec validate define-openpractice-boundary --strict` on the exact revision proposed for ratification. Record the OpenSpec version, timestamp, revision, exit code and output.
-- [ ] 1.2 Obtain Brett Heap's ratification. He stamps `Ratified by` and changes `Status` from `draft` to `ratified` in `proposal.md`, in the same revision. The 2026-11-14 rulings recorded in `design.md` are not ratification. No Spec Kit feature is created before this task is complete.
+- [ ] 1.2 Obtain Brett Heap's ratification. He stamps `Ratified by` and changes `Status` from `draft` to `ratified` in `proposal.md`, in the same revision. The 2026-11-14 and 2026-11-15 rulings recorded in `design.md` are not ratification. No Spec Kit feature is created before this task is complete.
 - [ ] 1.3 Compare this change with `opensoft/openPractice-spec` change `define-mvp-practice-foundation` on four things:
   - the canonical schema digests cited in PL-04 against that change's `contracts/SHA256SUMS`;
   - the contract identifiers `openpractice-ehr-patient-link/1.0` and `openpractice-ehr-clinical-facts/1.0`;
@@ -9,6 +9,7 @@
   - the issuer requirements: PL-03 here against EB-02 there.
 
   Record both revisions and each digest pair. A mismatch blocks the handoff.
+- [ ] 1.4 When the follow-up change of ruling 93 lands in `opensoft/openPractice-spec`, re-pin `openpractice-ehr-clinical-facts/1.0` in PL-04 to its revision and digest, and adopt its retraction reason code in CF-04 (ruling 89). Until then the recorded pin stands, and a retraction carries no reason code.
 
 ## 2. Governance Prerequisites (Routed Open Questions)
 
