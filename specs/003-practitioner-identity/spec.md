@@ -1,6 +1,6 @@
 # Feature Specification: Practitioner Identity — The Accountable Credentialed Practitioner
 
-**Feature Branch**: `002-practitioner-identity`
+**Feature Branch**: `003-practitioner-identity`
 
 **Created**: 2026-08-27
 
@@ -21,8 +21,8 @@ gate predicate"
   questions dispositioned `accepted` by owner ruling 2026-08-26,
   disposition round 1; thirteen ADDED requirements, thirty-four
   scenarios).
-- **This feature**: `specs/002-practitioner-identity/` on branch
-  `002-practitioner-identity`.
+- **This feature**: `specs/003-practitioner-identity/` on branch
+  `003-practitioner-identity`.
 - The change's proposal, design and capability spec are the settled
   source of truth. This specification translates them into user-facing
   form; it does not reopen a dispositioned decision.

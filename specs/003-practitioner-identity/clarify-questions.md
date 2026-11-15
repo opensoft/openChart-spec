@@ -1,4 +1,4 @@
-# Clarify Round 1 — 002-practitioner-identity
+# Clarify Round 1 — 003-practitioner-identity
 
 Session: 2026-08-27. Source: the four assumptions the spec added beyond the
 OpenSpec artifacts (spec.md `## Assumptions`). Structured ambiguity scan found
