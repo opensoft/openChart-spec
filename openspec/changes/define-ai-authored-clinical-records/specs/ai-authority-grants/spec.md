@@ -25,7 +25,7 @@ A grant version, once approved, SHALL NOT be edited. Every change SHALL create a
 - **THEN** the edit is refused, and only a new version approved by the medical director can carry the change
 
 ### Requirement: AG-02 Only the practice's medical director, as the clinical-acts foundation designates, approves or changes a grant
-The medical director SHALL be the one that `define-clinical-acts-foundation` (openChart-spec#5, not yet on main) designates under its AU-01, which is the single definition of the practice's medical director in openChart, including the clinical role and any attestation AU-01 requires. This change defines no designation of its own (design call AD-24). Only that person, while the AU-01 designation is in force, SHALL approve a grant version, widen it, resume it, record its legal review reference, set its review policy and co-review window, or record a consult review grant (AG-11). The medical director, and any reduction under AG-08, MAY narrow or pause it. No AI system, agent, integration identity or other role, `System Manager` included, SHALL approve, widen or resume a grant. Where no AU-01 designation is in force, no grant SHALL be approved and the write path SHALL accept nothing: no grant counts as current, every write that reaches the grant checks is refused with `no_current_grant`, and a consult write refused there is quarantined under AC-11, with AC-11's fallback recipients.
+The medical director SHALL be the one that `define-clinical-acts-foundation` (openChart-spec#5, not yet on main) designates under its AU-01, which is the single definition of the practice's medical director in openChart, including the clinical role and any attestation AU-01 requires. This change defines no designation of its own (design call AD-24). Only that person, while the AU-01 designation is in force, SHALL approve a grant version, widen it, resume it, record its legal review reference, set its review policy and co-review window, or record a consult review grant (AG-11). The medical director, and any reduction under AG-08, MAY narrow or pause it. No AI system, agent, integration identity or other role, `System Manager` included, SHALL approve, widen or resume a grant. Where no AU-01 designation is in force, no grant SHALL be approved and the write path SHALL accept nothing: no grant counts as current, every write that reaches the grant checks is refused with `no_current_grant`, and a consult write refused there is quarantined under AC-11, with AC-11's fallback recipients. When the AU-01 designation lapses or ends, openChart SHALL send every registered source of the practice an `authority.notice` with `change` `no_medical_director` (AW-13).
 
 #### Scenario: Failure: an AI agent tries to approve a grant
 - **WHEN** an AI agent, or the AI system's integration identity, tries to approve or widen a grant
@@ -34,6 +34,10 @@ The medical director SHALL be the one that `define-clinical-acts-foundation` (op
 #### Scenario: Failure: a System Manager tries to approve a grant
 - **WHEN** a user who holds `System Manager` but no AU-01 designation tries to approve an `advice_only` grant
 - **THEN** the approval is refused and no grant is recorded
+
+#### Scenario: Failure: the medical director's designation lapses
+- **WHEN** the AU-01 designation ends because its licensure attestation lapses
+- **THEN** every registered source of the practice receives an `authority.notice` with `change` `no_medical_director`, and its later consults are refused with `no_current_grant` and quarantined
 
 #### Scenario: Failure: the practice has no medical director recorded
 - **WHEN** an administrator tries to activate a grant for a practice with no medical director recorded

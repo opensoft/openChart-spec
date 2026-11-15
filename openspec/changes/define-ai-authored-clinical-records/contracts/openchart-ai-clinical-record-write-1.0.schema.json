@@ -12,6 +12,8 @@
     { "$ref": "#/$defs/consultReviewed" },
     { "$ref": "#/$defs/readbackRequest" },
     { "$ref": "#/$defs/readbackResult" },
+    { "$ref": "#/$defs/grantReadbackRequest" },
+    { "$ref": "#/$defs/grantReadback" },
     { "$ref": "#/$defs/messageAck" }
   ],
   "$defs": {
@@ -410,10 +412,10 @@
       }
     },
     "authorityNotice": {
-      "description": "A change in authority. From the AI system, only a reduction (paused or narrowed) is accepted, and openChart applies it at once; a widening is only ever the medical director's act in openChart. From openChart, every change to its grant is announced.",
+      "description": "A change in authority or in the source's standing. From the AI system, only a reduction (paused or narrowed) is accepted, and openChart applies it at once; a widening is only ever the medical director's act in openChart. From openChart, every change to its grant is announced, and so is every change to the source's standing: suspended (a manual suspension; every write is refused), cap_suspended (a cap suspension; non-urgent consults are refused), deregistered (the last notice before the identity stops being served), suspension_lifted (either kind of suspension lifted) and no_medical_director (no medical director designation is in force, so no grant is current). grant_id and configuration_version are required for a grant change, and present for a standing change only where a grant exists.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "direction", "grant_id", "change", "effective_at", "configuration_version"],
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "direction", "change", "effective_at"],
       "properties": {
         "contract": { "$ref": "#/$defs/contract" },
         "contract_version": { "$ref": "#/$defs/contractVersion" },
@@ -425,7 +427,7 @@
         "direction": { "enum": ["from_ai_system", "from_openchart"] },
         "grant_id": { "$ref": "#/$defs/opaqueRef" },
         "grant_version": { "type": "integer", "minimum": 1 },
-        "change": { "enum": ["paused", "narrowed", "resumed", "expired", "revoked", "superseded"] },
+        "change": { "enum": ["paused", "narrowed", "resumed", "expired", "revoked", "superseded", "suspended", "cap_suspended", "deregistered", "suspension_lifted", "no_medical_director"] },
         "effective_at": { "$ref": "#/$defs/timestamp" },
         "configuration_version": { "$ref": "#/$defs/versionLabel" },
         "new_mode": { "$ref": "#/$defs/mode" },
@@ -436,8 +438,85 @@
           "items": { "$ref": "#/$defs/opaqueRef" }
         }
       },
-      "if": { "properties": { "direction": { "const": "from_ai_system" } }, "required": ["direction"] },
-      "then": { "properties": { "change": { "enum": ["paused", "narrowed"] } } }
+      "allOf": [
+        {
+          "if": { "properties": { "direction": { "const": "from_ai_system" } }, "required": ["direction"] },
+          "then": { "properties": { "change": { "enum": ["paused", "narrowed"] } } }
+        },
+        {
+          "if": { "properties": { "change": { "enum": ["paused", "narrowed", "resumed", "expired", "revoked", "superseded"] } }, "required": ["change"] },
+          "then": { "required": ["grant_id", "configuration_version"] }
+        },
+        {
+          "if": { "properties": { "change": { "enum": ["suspended", "cap_suspended", "deregistered", "suspension_lifted", "no_medical_director"] } }, "required": ["change"] },
+          "then": { "properties": { "direction": { "const": "from_openchart" } } }
+        }
+      ]
+    },
+    "grantReadbackRequest": {
+      "description": "The source system, or the relay acting for it, asks openChart for the state of its own authority, as a heartbeat. It carries no patient or clinical content.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "grant.readback_request" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" }
+      }
+    },
+    "grantReadback": {
+      "description": "openChart's answer to a grant readback, from its own records at read time, with no patient or clinical content. unauthorized answers an identity that is not the source's registered one or its relay, and a manually suspended or deregistered identity. grant_current means an active grant with a medical director designation in force; grant_not_current gives the reason. source_status says whether the source is cap-suspended.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "result", "read_at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "grant.readback" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "in_reply_to": { "$ref": "#/$defs/uuid" },
+        "result": { "enum": ["grant_current", "grant_not_current", "unauthorized"] },
+        "read_at": { "$ref": "#/$defs/timestamp" },
+        "source_status": { "enum": ["active", "cap_suspended"] },
+        "not_current_reason": { "enum": ["no_grant", "grant_paused", "grant_expired", "grant_revoked", "no_medical_director"] },
+        "grant": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["grant_id", "grant_version", "mode", "configuration_version", "state", "effective_at"],
+          "properties": {
+            "grant_id": { "$ref": "#/$defs/opaqueRef" },
+            "grant_version": { "type": "integer", "minimum": 1 },
+            "mode": { "$ref": "#/$defs/mode" },
+            "configuration_version": { "$ref": "#/$defs/versionLabel" },
+            "state": { "enum": ["active", "paused", "expired", "revoked"] },
+            "effective_at": { "$ref": "#/$defs/timestamp" },
+            "expires_at": { "$ref": "#/$defs/timestamp" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "result": { "const": "grant_current" } }, "required": ["result"] },
+          "then": {
+            "required": ["source_status", "grant"],
+            "properties": { "grant": { "properties": { "state": { "const": "active" } } } },
+            "not": { "required": ["not_current_reason"] }
+          }
+        },
+        {
+          "if": { "properties": { "result": { "const": "grant_not_current" } }, "required": ["result"] },
+          "then": { "required": ["source_status", "not_current_reason"] }
+        },
+        {
+          "if": { "properties": { "result": { "const": "unauthorized" } }, "required": ["result"] },
+          "then": { "not": { "anyOf": [{ "required": ["source_status"] }, { "required": ["grant"] }, { "required": ["not_current_reason"] }] } }
+        }
+      ]
     },
     "rejectReason": {
       "enum": [

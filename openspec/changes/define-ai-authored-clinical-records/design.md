@@ -56,7 +56,7 @@ These names are used identically in this change and in `MedxSoft/MedxEHR-spec` c
 
 | Term | Meaning |
 |---|---|
-| `openchart-ai-clinical-record-write/1.0` | The write-path contract this change owns. Schema `contracts/openchart-ai-clinical-record-write-1.0.schema.json`, `$id` `urn:openchart:contract:openchart-ai-clinical-record-write:1.0`, SHA-256 `69a1420daa7e130614046a413bd31f15a4ea24bab810594bdd74013d7338ae5b`. |
+| `openchart-ai-clinical-record-write/1.0` | The write-path contract this change owns. Schema `contracts/openchart-ai-clinical-record-write-1.0.schema.json`, `$id` `urn:openchart:contract:openchart-ai-clinical-record-write:1.0`, SHA-256 `97db018318a8f4a1e233e8416c7f07b908d4f55be1e4f995c0e0eba6737c91bc`. |
 | external clinical AI system | The system that writes AI-authored records. It is identified by `source_system` (issuer and namespace). |
 | source token | A write's `source_system.namespace`: the token MI-12 uses for the source system where it defines one (for example `medxfactory`). `healthlinc`, `openpractice_agent` and `openchart` are refused (AW-02, AD-30). |
 | relay | A system that holds the integration identity and delivers one source system's writes and receipts; the write still names the source system (ruling 70, AW-02). |
@@ -78,7 +78,8 @@ These names are used identically in this change and in `MedxSoft/MedxEHR-spec` c
 | reserved act | An act reserved to a human clinician unless the recorded legal review clears it (AA-05). |
 | write receipt | `write.receipt`: `accepted`, `duplicate` or `refused` with a reason code (AW-06). |
 | readback | `record.readback_request` and `record.readback`: the writing system confirms what openChart stored, by digest and code only (AW-12). |
-| authority notice | `authority.notice`: a change in authority, from either side (AG-08). |
+| authority notice | `authority.notice`: a change in authority, from either side, or in the source's standing, from openChart (AG-08, AW-13). |
+| grant readback | `grant.readback_request` and `grant.readback`: the source reads back its own authority as a heartbeat, with no content (AW-14). |
 | context | `operational`, `scenario` or `simulation`; only `operational` is recorded (AW-04). |
 | knowledge basis | What an AI turn's or act's statements rest on: `cited_sources`, `model_knowledge` or `mixed` (AC-03, AD-27). |
 | source authority reference | The AI system's own reference to the configuration it acted under, `source_authority_ref` (AG-01). |
@@ -121,17 +122,19 @@ Tier 1 is the only tier in scope to build (rulings 66 and 67).
 |---|---|---|
 | `consult.write` | AI system → openChart | Tier 1 consult record (AC-01) |
 | `act.write` | AI system → openChart | Tier 2 act; refused with `tier2_not_in_force` until the foundation exists and a future governed amendment puts Tier 2 in force (AA-01) |
-| `authority.notice` | both | A change in authority; from the AI system only a reduction is accepted (AG-08) |
+| `authority.notice` | both | A change in authority, or from openChart a change in the source's standing; from the AI system only a reduction is accepted (AG-08, AW-13) |
 | `write.receipt` | openChart → AI system | The answer to every write and notice (AW-06) |
 | `act.status` | openChart → AI system | Co-review outcome, reversal, hand-off, cancellation, escalation (AA-07 to AA-11) |
 | `consult.reviewed` | openChart → AI system | Review outcome as a code (AC-08) |
 | `record.readback_request` | AI system or its relay → openChart | Asks what openChart stored for a record it wrote (AW-12) |
 | `record.readback` | openChart → AI system or its relay | The stored record's identifiers, content digest, grant version, state and review status; no content (AW-12) |
+| `grant.readback_request` | AI system or its relay → openChart | Heartbeat: asks for the state of the source's own authority, with no content (AW-14) |
+| `grant.readback` | openChart → AI system or its relay | `grant_current` or `grant_not_current` with its reason, with `source_status`; or `unauthorized` (AW-14) |
 | `message.ack` | both | Acknowledges a status or notice |
 
 The refusal reasons are closed, and AW-06 fixes the order in which they are checked: `schema_invalid`, `unsupported_major_version`, `unauthorized`, `non_operational_context`, `patient_link_unknown`, `patient_link_mismatch`, `patient_link_in_review`, `no_current_grant`, `grant_paused`, `grant_expired`, `grant_revoked`, `grant_mismatch`, `mode_mismatch`, `mode_not_permitted`, `allowlist_entry_unknown`, `allowlist_entry_mismatch`, `conditions_unverified`, `reserved_act_refused`, `emergency_management_refused`, `approver_mismatch`, `legal_review_mismatch`, `targets_clinician_record`, `act_type_unsupported`, `tier2_not_in_force`, `conflicting_duplicate`, `content_digest_mismatch` and `notice_would_widen`.
 
-`contracts/examples/` holds 37 synthetic fixtures: 13 that must validate and 24 that must fail, each for one stated reason. They are part of the contract-test suite (AW-11).
+`contracts/examples/` holds 48 synthetic fixtures: 19 that must validate and 29 that must fail, each for one stated reason. They are part of the contract-test suite (AW-11).
 
 ### 3. openChart's own record of authority (ruling 65)
 
@@ -308,7 +311,10 @@ Each item goes beyond the rulings and is proposed, not ruled, except AD-1, which
 | AD-37 | Two suspensions and a deregistration, audited and effective at once. A manual suspension or deregistration (a human judged the source unsafe) refuses every write at step 2 and stores nothing; only the medical director lifts a manual suspension. A cap suspension, triggered by a per-source quarantine cap of at most 20 non-urgent quarantines in a rolling 24 hours, stops only non-urgent consults: emergency and `red_flag` consults never count and are still quarantined and listed urgently. While no medical director is designated, the administrative role may lift a cap suspension, never a manual one, and lifting grants nothing. The ceiling is proposed for the owner to confirm. | AW-13 |
 | AD-38 | The quarantined mark is three fields on MI-12's record, only for origin `ai_consult`: `ai_consult_state` (`accepted` or `quarantined`), `quarantine_cause` (one of the nine step-8 codes) and `quarantine_grant_checked` (grant id and version, when a grant existed). `quarantine_cause` may also be `source_cap_suspended` (AW-13). `define-clinical-message-inbox` defines the record; this change asks that change to accept these fields. | AC-11 |
 | AD-39 | With no responsible clinician or no medical director, a quarantined consult is listed for every clinician authorized for the chart, and the administrative role gets an alert with no clinical content. When nobody holds an AG-11 grant, any named holder of the `clinician` role authorized for the chart may review a quarantined consult, marked as made without a grant (AT-13). | AC-11 |
-| AD-40 | What the source receives, using existing codes only: a write refused under a manual suspension, a deregistration, or a cap suspension (non-urgent) gets `refused` `unauthorized`; an emergency or `red_flag` consult from a cap-suspended source gets `refused` with its step-8 reason, or `unauthorized` when every grant check passes. No existing code says "quarantined because the source is cap-suspended", so `unauthorized` is used and the internal cause is `source_cap_suspended`. Every case tells the source the consult was not recorded. A refused write that declared the emergency indicator or `red_flag` keeps them on its refusal record and is listed urgently without content. | AW-06, AW-13, AC-11 |
+| AD-40 | What the source receives, using existing codes only: a write refused under a manual suspension, a deregistration, or a cap suspension (non-urgent) gets `refused` `unauthorized`; an emergency or `red_flag` consult from a cap-suspended source gets `refused` with its step-8 reason, or `unauthorized` when every grant check passes. No existing code says "quarantined because the source is cap-suspended", so `unauthorized` is used and the internal cause is `source_cap_suspended`. Every case tells the source the consult was not recorded. A refused write that declared the emergency indicator or `red_flag` keeps them on its refusal record, and is listed urgently without content only as AD-43 allows. | AW-06, AW-13, AC-11 |
+| AD-41 | Every reduction, removal or restoration of a source's standing is announced with a true `authority.notice` value added for it: `suspended`, `cap_suspended`, `deregistered` (the last notice), `suspension_lifted` and `no_medical_director`. These values come only from openChart, and carry the grant identifier and configuration version where a grant exists. openChart owns a 15-minute notice clock: an unacknowledged notice alerts the medical director, and the administrative role without content, and re-alerts every 15 minutes, while openChart keeps refusing or quarantining by its own records. The value is proposed for the owner to confirm. | AW-08, AW-13, AG-02 |
+| AD-42 | A source bounds its own exposure with a content-free grant readback, `grant.readback_request` and `grant.readback`, added to the 1.0 contract. A manually suspended or deregistered source gets `unauthorized`; otherwise the answer is `grant_current` or `grant_not_current` with its reason, plus `source_status`. Interim versions of an open consult were not added: the readback needs no content. | AW-14 |
+| AD-43 | Urgent listing of a refusal applies only to an operational write from a registered identity that is active, cap-suspended or manually suspended; never from a deregistered or unregistered caller or a scenario or simulation context. The flags stay on every refusal record. Per source, urgent listings beyond a policy ceiling of at most 10 per rolling 60 minutes are collapsed into one hourly digest for the medical director. Consults quarantined with the emergency indicator or `red_flag`, at most 10 per rolling 24 hours, raise an alarm that prompts, and does not perform, a manual suspension. **Residual:** a patient given emergency guidance by a deregistered or unregistered source is not listed, because openChart cannot trust such a caller and listing would be unbounded; that source must hand the patient off itself. The values are proposed for the owner to confirm. | AW-06, AW-13 |
 
 ## Conflicts and tensions
 
@@ -337,6 +343,7 @@ Thirteen are recorded. The Disposition column gives the owner's disposition wher
 - **[AI text is mistaken for a clinician's]** → An author type on every turn and act, labels on every surface, the patient's included.
 - **[An unsafe answer reaches a patient]** → Ruling 57 accepts delivery without sign-off; the review sample, the built-in triggers and the `unsafe` alert are the safety net.
 - **[Advice content strays into diagnosis or treatment]** → The source system's own control and declaration, the built-in triggers, the sample and the reviewer's breach finding (AD-31). Whatever the text says, the record is never a fact of record.
+- **[A deregistered source's patient goes unlisted]** → Accepted residual (AD-43): a deregistered or unregistered caller cannot raise urgent listings; that source must hand off itself.
 - **[Co-review backlog]** → Escalation to the medical director, who can narrow or pause.
 - **[Two records of authority drift]** → The configuration version must match exactly; drift refuses writes rather than accepting them.
 - **[Tier 1 waits on the inbox]** → AD-3; the alternative is a standalone record capability.
@@ -345,7 +352,7 @@ Thirteen are recorded. The Disposition column gives the owner's disposition wher
 
 ## Migration Plan
 
-1. Validate strictly. Brett Heap disposes the open tensions (AT-5 to AT-8, AT-10 to AT-13 and the residual reading under AT-1) and AD-2 to AD-40, stamps `Ratified by` and sets `Status: ratified`. `define-clinical-message-inbox` is ratified first or together (AD-3).
+1. Validate strictly. Brett Heap disposes the open tensions (AT-5 to AT-8, AT-10 to AT-13 and the residual reading under AT-1) and AD-2 to AD-43, stamps `Ratified by` and sets `Status: ratified`. `define-clinical-message-inbox` is ratified first or together (AD-3).
 2. Adopt openChart's constitution through separate governance.
 3. After openChart-spec#5's feature (1), with its clinical roles and authority, has landed, create the single Spec Kit feature from the assembly root, starting with Tier 1: the write-path role, the consult review grant, the quarantine of consults refused at the grant checks, the grant record for `advice_only`, the legal-review record, the review policy, the consult record and its review, and refusal of every `act.write` with `tier2_not_in_force`. Contract tests run against an AI-system double alongside the standalone regression suite.
 4. Enable advice-only for a practice only when its gates are recorded (AG-04).
@@ -357,7 +364,7 @@ Thirteen are recorded. The Disposition column gives the owner's disposition wher
 Each question is routed in `tasks.md` §2 to the gate it blocks.
 
 1. **Constitution adoption.** openChart's constitution is the unfilled template. This blocks planning.
-2. **Owner dispositions** of the open tensions (AT-5 to AT-8, AT-10 to AT-13 and the residual reading under AT-1) and of AD-2 to AD-40. AD-1 is ruled (ruling 65). These block ratification.
+2. **Owner dispositions** of the open tensions (AT-5 to AT-8, AT-10 to AT-13 and the residual reading under AT-1) and of AD-2 to AD-43. AD-1 is ruled (ruling 65). These block ratification.
 3. **The clinical-acts foundation.** Answered by ruling 72: another author drafted it as openChart-spec#5. Tier 1 needs its feature (1); Tier 2 also needs a future governed amendment (ruling 67).
 4. **The responsible clinician.** openChart records no care team today. Which change defines a patient's responsible clinician? Meanwhile, AD-12's fallback to the medical director applies.
 5. **The AI system's patient link.** Is it registered through the ratified external-identifier path, or through a governed link contract like PL-02's? Meanwhile, AD-23 applies.
