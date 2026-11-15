@@ -15,9 +15,13 @@ The digest identifies the schema even after archival moves the file. openChart S
 - **THEN** openChart refuses it with reason `unsupported_major_version` and stores no clinical content
 
 ### Requirement: AW-02 Only a registered AI system's integration identity may write, for one source system and one practice
-openChart SHALL accept write-path messages only from an authenticated integration identity that is registered for exactly one external clinical AI system, identified by its `source_system` (issuer and namespace), and exactly one practice. The identity SHALL hold a dedicated write-path integration role that is narrower than `System Manager`, is named in planning, and is authorized for subject, tenant, purpose and role, as the ratified API requirement demands. Registering an AI system SHALL be an audited act by a named human. No AI system and no agent SHALL register, widen or re-scope an integration identity.
+openChart SHALL accept write-path messages only from an authenticated integration identity that is registered for exactly one external clinical AI system, identified by its `source_system` (issuer and namespace), and exactly one practice. The identity SHALL hold a dedicated write-path integration role that is narrower than `System Manager`, is named in planning, and is authorized for subject, tenant, purpose and role, as the ratified API requirement demands. Registering an AI system SHALL be an audited act by a named human, and SHALL be refused while no AU-01 designation of the foundation is in force for the practice. No AI system and no agent SHALL register, widen or re-scope an integration identity.
 
 The integration identity MAY be held by a relay that delivers one source system's writes and returns its receipts, as ruling 70 provides for the medical AI's records. The relay SHALL be registered for that one source system and practice, and each write SHALL still name the source system, not the relay. The registration SHALL record whether the source is relay-only. A source whose owner has ruled that it writes only through a relay SHALL be registered relay-only, by the named human, citing that ruling. For a relay-only source, openChart SHALL register only the relay's integration identity, SHALL refuse to register a direct identity for it, and SHALL refuse with `unauthorized` any write naming it that does not come from its relay. A source system's namespace SHALL be the source token that MI-12 of `define-clinical-message-inbox` uses for it, where MI-12 defines one. `healthlinc` and `openpractice_agent` SHALL NOT be write-path sources, and `openchart` SHALL NOT be a source namespace; the schema refuses all three (design call AD-30).
+
+#### Scenario: Failure: registration while no medical director is designated
+- **WHEN** a named human tries to register an AI system for a practice with no AU-01 designation in force
+- **THEN** the registration is refused, and no integration identity is registered
 
 #### Scenario: Failure: an unregistered caller writes
 - **WHEN** a caller without the write-path integration role sends a `consult.write`
@@ -64,7 +68,7 @@ openChart SHALL record a write only when its `context` is `operational`. A write
 - **THEN** openChart refuses it with reason `non_operational_context` and creates no record
 
 ### Requirement: AW-05 Writes are idempotent and replay-safe
-The `message_id` of each inbound message SHALL be its idempotency key. Idempotency and duplicate detection SHALL be scoped to the authenticated integration identity, that is, to its practice and source system (AW-02): a `message_id`, a `consult_id` and an `act_id` are matched only against messages and records from the same practice and source system, never across integrations. A message whose `message_id` was already processed SHALL be answered with the original receipt and SHALL change nothing. A write that repeats a `consult_id` and `consult_version`, or an `act_id` and `act_version`, under a new `message_id` with identical content SHALL be answered `duplicate` with the original `record_ref`. The same identifiers with different content SHALL be refused with reason `conflicting_duplicate`, SHALL leave the existing record unchanged, and SHALL be recorded as an integration exception that holds only identifiers and a coded cause. A quarantined consult (AC-11) is not a record for these rules: a repeat is evaluated afresh, and AC-11 keeps a single quarantined copy. The `message_id` of every message openChart sends SHALL be a random UUID, reused on every retry. No key SHALL carry PHI.
+The `message_id` of each inbound message SHALL be its idempotency key. Idempotency and duplicate detection SHALL be scoped to the authenticated integration identity, that is, to its practice and source system (AW-02): a `message_id`, a `consult_id` and an `act_id` are matched only against messages and records from the same practice and source system, never across integrations. A message whose `message_id` was already processed SHALL be answered with the original receipt and SHALL change nothing. A write that repeats a `consult_id` and `consult_version`, or an `act_id` and `act_version`, under a new `message_id` with identical content SHALL be answered `duplicate` with the original `record_ref`. The same identifiers with different content SHALL be refused with reason `conflicting_duplicate`, SHALL leave the existing record unchanged, and SHALL be recorded as an integration exception that holds only identifiers and a coded cause. A quarantined consult (AC-11) counts for these rules only as follows: a repeat with identical content is evaluated afresh and refused as AC-11 states, adding no copy; a repeat with different content is refused with `conflicting_duplicate`, and the first quarantined copy is kept unchanged. The `message_id` of every message openChart sends SHALL be a random UUID, reused on every retry. No key SHALL carry PHI.
 
 #### Scenario: Failure: a write is retried three times
 - **WHEN** the same `consult.write` arrives three times with the same `message_id`
@@ -173,3 +177,24 @@ openChart SHALL answer a `record.readback_request` with exactly one `record.read
 #### Scenario: Failure: the record does not exist
 - **WHEN** a readback names a record reference openChart does not hold
 - **THEN** openChart answers `not_found` with no digest, state or status
+
+### Requirement: AW-13 An integration identity can be suspended or deregistered at once, and a per-source quarantine cap suspends it
+openChart SHALL provide an audited suspend act and an audited deregister act on an integration identity, each effective at once (design call AD-37). While an identity is suspended, and after it is deregistered, every message from it SHALL fail at step 2 of AW-06's precedence with reason `unauthorized`, and SHALL store no clinical content; nothing it sends is quarantined. The medical director, or a holder of the administrative role that the foundation's AU-01 names, MAY suspend an identity. Only the medical director SHALL lift a suspension. The medical director or a holder of that administrative role MAY deregister an identity; a deregistered identity is never re-enabled, and only a new registration under AW-02 restores a path. Every suspension, lift and deregistration SHALL be recorded with actor, reason and time, and listed for the medical director and the administrative role.
+
+openChart SHALL count, per source system and practice, the consults quarantined under AC-11 in any rolling 24 hours. The practice's policy sets the cap, which SHALL NOT exceed a built-in ceiling of 20; with no policy set, the ceiling applies (design call AD-37). When a source reaches its cap, openChart SHALL quarantine that consult, suspend the source's identity at once as if by the suspend act, and alert the medical director, or, where none is designated, the administrative role, with identifiers and a coded cause only.
+
+#### Scenario: Failure: the administrative role suspends an unsafe source
+- **WHEN** a holder of the administrative role that the foundation's AU-01 names suspends an AI system's integration identity
+- **THEN** every later write from it is refused with reason `unauthorized` and stores no clinical content, and the suspension is listed for the medical director
+
+#### Scenario: Failure: someone other than the medical director lifts a suspension
+- **WHEN** a holder of the administrative role tries to lift a suspension
+- **THEN** the action is refused, and the identity stays suspended until the medical director lifts it
+
+#### Scenario: Failure: a deregistered identity writes
+- **WHEN** a write arrives from a deregistered integration identity
+- **THEN** openChart refuses it with reason `unauthorized`, stores no clinical content, and offers no way to re-enable that identity
+
+#### Scenario: Failure: a source reaches its quarantine cap
+- **WHEN** a source's twentieth consult in 24 hours is quarantined, with no lower cap set
+- **THEN** openChart quarantines it, suspends the source's identity at once, and alerts the medical director; the next write from that source is refused with reason `unauthorized`

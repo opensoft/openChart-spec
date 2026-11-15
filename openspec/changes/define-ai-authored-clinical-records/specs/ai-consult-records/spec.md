@@ -120,7 +120,7 @@ openChart SHALL record, for each consult, whether it was selected, why, and the 
 ### Requirement: AC-08 Review status, reviewer and outcome are recorded by a named clinician, and an overdue review escalates
 Each consult record SHALL carry a review status: `not_selected`, `selected`, `in_review` or `reviewed`. A review SHALL be recorded only by a named clinician holding a consult review grant in force (AG-11), with the grant version relied on, the outcome (`concur`, `concur_with_note`, `follow_up_required` or `unsafe`), an optional note, and the time (design call AD-25). No AI system and no agent SHALL record, change or close a review. A review SHALL be immutable; a later view SHALL be a new review event.
 
-A selected consult that is not reviewed within the review policy's window SHALL escalate to the medical director, who keeps being alerted until it is reviewed (design call AD-13). An `unsafe` outcome SHALL alert the medical director at once and mark a clinician follow-up as owed to the patient. openChart SHALL report each outcome to the AI system as a `consult.reviewed` code only (design call AD-21), except for a quarantined consult (AC-11), whose review is never reported. With any outcome, the reviewer MAY record the finding `advice_scope_breach` (ruling 66), which SHALL alert the medical director at once. In contract 1.0 the finding stays in openChart, and `consult.reviewed` carries the outcome code only (design call AD-31).
+A selected consult that is not reviewed within the review policy's window SHALL escalate to the medical director, who keeps being alerted until it is reviewed (design call AD-13). A quarantined consult uses AC-11's fixed window and fallback recipients instead, because it may have no grant and no medical director. An `unsafe` outcome SHALL alert the medical director at once and mark a clinician follow-up as owed to the patient. openChart SHALL report each outcome to the AI system as a `consult.reviewed` code only (design call AD-21), except for a quarantined consult (AC-11), whose review is never reported. With any outcome, the reviewer MAY record the finding `advice_scope_breach` (ruling 66), which SHALL alert the medical director at once. In contract 1.0 the finding stays in openChart, and `consult.reviewed` carries the outcome code only (design call AD-31).
 
 #### Scenario: Failure: an agent tries to record a review
 - **WHEN** an AI agent tries to record a review outcome on a consult
@@ -158,17 +158,27 @@ An AI never manages an emergency in any mode (ruling 61). When a consult write c
 When openChart refuses a `consult.write` at step 8 of AW-06's precedence, after the write has passed steps 1 to 6, openChart SHALL keep the consult as quarantined AI communication (design call AD-33). Step 8 is any grant check of AG-06: `no_current_grant`, `grant_paused`, `grant_expired`, `grant_revoked`, `grant_mismatch`, `mode_mismatch`, `mode_not_permitted`, `approver_mismatch` or `legal_review_mismatch`. The AI's answer has already reached the patient (rulings 57 and 66), and the patient's doctor must be able to see what was said. Only such a write qualifies, because its source is authenticated, its content is intact, its context is operational and its patient is resolved through an existing link.
 
 A quarantined consult SHALL:
-- hold what an accepted consult record holds under AC-01 to AC-03, on MI-12's clinical communication record with origin `ai_consult`, marked `quarantined`, together with the refusal reason and the grant version openChart checked;
-- carry, on every display, the label of AC-04 and the words "delivered without a current grant";
-- be selected for review whatever the sample (AC-07), and be listed for the patient's responsible clinician, or for the medical director where openChart records none (design call AD-12);
-- be listed urgently for the responsible clinician and the medical director when its emergency indicator is set or its `review_flags` carry `red_flag`;
+- hold what an accepted consult record holds under AC-01 to AC-03, on MI-12's clinical communication record with origin `ai_consult`, carrying the quarantined mark below;
+- carry, on every display, the label of AC-04 and a quarantine label that states its coded cause: for `no_current_grant`, `grant_paused`, `grant_expired` or `grant_revoked`, "Not accepted: delivered without a current grant (<code>)"; for `grant_mismatch`, `mode_mismatch`, `mode_not_permitted`, `approver_mismatch` or `legal_review_mismatch`, "Not accepted: delivered under an authority that does not match the practice's grant (<code>)";
+- be readable by every clinician authorized for that patient's chart and by the medical director, through an authenticated openChart session on mobile or workstation, as AC-06 provides for accepted consults, and by nobody else: not by the source system, openPractice or the administrative role that the foundation's AU-01 names;
+- be selected for review whatever the sample (AC-07), with a review window fixed in openChart that depends on no grant: 24 hours, or 1 hour when its emergency indicator is set or its `review_flags` carry `red_flag` (design call AD-36). A review policy MAY shorten these windows and SHALL NOT lengthen them;
+- be listed for the patient's responsible clinician and for the medical director. Where openChart records no responsible clinician, or no AU-01 designation is in force, it SHALL be listed for every clinician authorized for that patient's chart, and the administrative role that the foundation's AU-01 names SHALL receive an alert that carries only an opaque reference and a coded cause (design call AD-39);
+- be listed urgently for those recipients when its emergency indicator is set or its `review_flags` carry `red_flag`;
+- escalate when its window passes with no review: to the medical director and, where none is designated, to every clinician authorized for the chart and to the administrative role that the foundation's AU-01 names, re-alerting until a review is recorded. No timer or default SHALL close it;
 - never be a diagnosis or a clinical fact of record (AC-04), and never become an accepted consult record through a later grant, approval or edit.
 
-A quarantined consult SHALL NOT count as an accepted record for the AI system. Its receipt is `refused`, with the grant reason and no `record_ref`. Its reference is never sent to the source system, a readback that names it is answered `not_found` (AW-12), and no `consult.reviewed` is sent for it. A repeat of the same `consult_id` and `consult_version` with identical content SHALL be refused the same way, and SHALL add no second quarantined copy. A consult refused at any other step, and every refused `act.write`, SHALL store no clinical content (AW-06).
+A quarantined consult SHALL NOT count as an accepted record for the AI system. Its receipt is `refused`, with the grant reason and no `record_ref`. Its reference is never sent to the source system, a readback that names it is answered `not_found` (AW-12), and no `consult.reviewed` is sent for it. A repeat of the same `consult_id` and `consult_version` with identical content SHALL be refused the same way and add no second copy. A repeat with different content SHALL be refused with `conflicting_duplicate`; the first quarantined copy SHALL stay unchanged, and an integration exception SHALL hold only identifiers and the coded cause (AW-05). A consult refused at any other step, every write from a suspended or deregistered identity (AW-13), and every refused `act.write` SHALL store no clinical content (AW-06).
+
+**Who reviews it.** A quarantined consult is reviewed under AC-08 by a holder of the AG-11 grant. When no person in the practice holds an AG-11 grant in force, because no AU-01 designation is in force or none has been recorded, any named clinician authorized for that patient's chart MAY record the review, and the review SHALL be marked as made without a review grant (design call AD-39; tension AT-13). The rule fails towards a clinician seeing and reviewing the consult.
+
+**The quarantined mark.** MI-12's record carries three fields, present only for origin `ai_consult` (design call AD-38):
+- `ai_consult_state`: `accepted` (an AC-01 consult record) or `quarantined`;
+- `quarantine_cause`: present only when `quarantined`; one of the nine step-8 reason codes above;
+- `quarantine_grant_checked`: present only when `quarantined` and a grant existed; the `grant_id` and `grant_version` openChart checked.
 
 #### Scenario: Failure: a consult arrives with no current grant
 - **WHEN** a `consult.write` for a linked patient passes every check before the grant checks, and the practice has no current grant
-- **THEN** openChart answers `refused` with reason `no_current_grant` and no `record_ref`, keeps the consult as quarantined AI communication labelled "delivered without a current grant", selects it for review, and lists it for the responsible clinician
+- **THEN** openChart answers `refused` with reason `no_current_grant` and no `record_ref`, keeps the consult as quarantined AI communication labelled "Not accepted: delivered without a current grant (no_current_grant)", selects it for review, and lists it for the responsible clinician
 
 #### Scenario: Failure: an emergency consult arrives after the grant expired
 - **WHEN** a consult with the emergency indicator set ended after the practice's grant expired
@@ -181,6 +191,30 @@ A quarantined consult SHALL NOT count as an accepted record for the AI system. I
 #### Scenario: Failure: a consult refused before the grant checks stores nothing
 - **WHEN** a `consult.write` is refused with reason `patient_link_unknown`
 - **THEN** openChart stores no clinical content and keeps only the refusal record, because the consult cannot be tied to a patient
+
+#### Scenario: Failure: an emergency consult is quarantined with no medical director and no responsible clinician
+- **WHEN** no AU-01 designation is in force, openChart records no responsible clinician, and a consult with the emergency indicator set is quarantined
+- **THEN** it is listed urgently for every clinician authorized for the patient's chart, its review is due within 1 hour, and the administrative role that the foundation's AU-01 names receives an alert carrying only an opaque reference and a coded cause
+
+#### Scenario: Failure: a quarantined consult is not reviewed in time
+- **WHEN** a quarantined consult's fixed window passes with no review
+- **THEN** openChart escalates it to the medical director, or, where none is designated, to every clinician authorized for the chart and to the administrative role that the foundation's AU-01 names, and keeps re-alerting until a review is recorded
+
+#### Scenario: Failure: no review grant can exist
+- **WHEN** nobody in the practice holds an AG-11 grant, and a named clinician authorized for the patient's chart reviews a quarantined consult
+- **THEN** openChart records the review, marked as made without a review grant
+
+#### Scenario: Failure: a repeat of a quarantined consult carries different content
+- **WHEN** a second write for a quarantined consult's `consult_id` and `consult_version` carries a different exchange
+- **THEN** openChart refuses it with reason `conflicting_duplicate`, keeps the first quarantined copy unchanged, and records an integration exception holding only identifiers and the coded cause
+
+#### Scenario: Failure: a consult is quarantined for a mismatch, not for want of a grant
+- **WHEN** a consult is quarantined with reason `grant_mismatch` while a grant is in force
+- **THEN** its label reads "Not accepted: delivered under an authority that does not match the practice's grant (grant_mismatch)", never "delivered without a current grant"
+
+#### Scenario: Failure: the administrative role follows a quarantine alert
+- **WHEN** a holder of the administrative role that the foundation's AU-01 names opens a quarantine alert
+- **THEN** openChart shows only the opaque reference and the coded cause, and no consult content
 
 #### Scenario: Failure: the grant is restored and the consult is re-sent
 - **WHEN** the medical director approves a new grant version after a consult was quarantined, and the AI system re-sends the same consult
