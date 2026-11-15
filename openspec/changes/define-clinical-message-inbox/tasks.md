@@ -6,11 +6,12 @@
   - the schema digest in MI-02 against `sha256sum -c contracts/SHA256SUMS` at the compared revision;
   - the contract identifier `openpractice-clinical-handoff/1.0`, its message set, its reject codes and its status codes;
   - the namespaces `healthlinc`, `openpractice` and `openchart`, and the issuer handling;
-  - `conversation_source` and `conversation_ref` (ruling 51), and `clinical_need.marker` with its `origin_not_verified` rejection (openPractice ER-18), as pinned at `097278c`;
-  - at the next re-pin: `identity_state`, `unlinked_identity`, `handoff.clinician_urgency_raised` and the `coach_triage` and `medical_ai_triage` sources. Also confirm that the amended ER-06 offers `urgent` and `priority` items on a link in review or with no link, and that the refusal text is gone (MT-1, MT-2).
+  - `conversation_source` and `conversation_ref` (ruling 51), and `clinical_need.marker` with its `origin_not_verified` rejection (openPractice ER-18);
+  - `identity_state`, `unlinked_identity` (`legal_name`, `birth_date`, `administrative_sex`), `handoff.clinician_urgency_raised`, the `coach_triage` and `medical_ai_triage` sources, and the optional `link_id` for an unlinked handoff, all as pinned at `165aff0`;
+  - ER-06 and ER-03 at the compared revision, against MI-18 and MI-10.
 
   Record both revisions and each digest pair. A mismatch blocks the handoff. When that change's schema changes, update MI-02's pin in a governed revision of this change.
-- [ ] 1.4 Record Brett Heap's disposition of tensions MT-3 to MT-10, MT-12, MT-14 and MT-15, and of design calls MD-1 to MD-21. MT-11 and MT-13 were resolved by the re-pin to `097278c`, and MT-1 and MT-2 by the amended ER-06; record those confirmations. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-5, MT-6 and MT-15; `define-openpractice-boundary` for MT-3; and medXfactory's `define-patient-medical-ai-connection` for MT-14. Otherwise this change yields.
+- [ ] 1.4 Record Brett Heap's disposition of MT-1's residual, of tensions MT-3 to MT-10, MT-12, MT-14 and MT-15, and of design calls MD-1 to MD-21. MT-2, MT-11 and MT-13 are resolved by the openPractice change's text at `165aff0`; record that confirmation. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-1's residual, MT-5, MT-6 and MT-15; `define-openpractice-boundary` for MT-3 (the follow-up the openPractice change's T-11 proposes); and medXfactory's `define-patient-medical-ai-connection` for MT-14. Otherwise this change yields.
 
 ## 2. Governance Prerequisites (Routed Open Questions)
 
@@ -45,7 +46,7 @@
   - AI-authored content is never shown as clinician-authored, and its source system is named;
   - no medical-AI exchange is filed through the inbox;
   - an AI-authored order, prescription or diagnosis is held as communication, and creates no clinical act;
-  - a `priority` offer is never rejected for identity, and `unlinked_identity` is never matched or filed;
+  - a `priority` offer is never rejected for identity, `unlinked_identity` is never matched or filed, and no message about an `unlinked` handoff carries a `link_id`;
   - a clinician's raise is sent as `handoff.clinician_urgency_raised`, and a failed urgent delivery reopens its item;
   - no billable fact or statement comes from an item;
   - all fixtures are synthetic.
