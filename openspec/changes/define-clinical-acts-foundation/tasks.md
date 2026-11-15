@@ -8,7 +8,7 @@
   - the follow-up of ruling 93 in `opensoft/openPractice-spec` for CT-16 (ruling 89's reason code). When it lands, re-pin this change to it and close CT-16;
   - `define-openpractice-boundary` for CT-13, and for ruling 88's exception to CF-01 (CT-15) if that change records it.
 
-  At ratification, the owner applies ruling 84's clarifying amendment (`design.md`, "Proposed clarifying amendment (ruling 84)") to FR-008 of the ratified feature `specs/001-expanded-patient-intake/spec.md`. This change adds no MODIFIED delta.
+  At ratification, the owner applies ruling 84's clarifying amendment (`design.md`, "Proposed clarifying amendment (ruling 84)") to the canonical `expanded-patient-intake` requirement "Intake does not confer clinician or autonomous authority". This change adds no MODIFIED delta.
 - [ ] 1.5 Compare this change with each dependent draft, and record both revisions for each comparison. A mismatch blocks the handoff of the affected feature.
   - **`define-openpractice-boundary`:** the clinical-facts schema digest `6b2071fe61693d144aa91f4fc68e51d0cd7563d66b5cd2086f281a959f7e69ec` (PL-04), against `sha256sum -c contracts/SHA256SUMS` in `opensoft/openPractice-spec` `define-mvp-practice-foundation` at the compared revision.
   - **`define-ai-authored-clinical-records`:** its twelve minimum contents, against the table in `design.md`.
@@ -19,14 +19,14 @@
 - [ ] 2.2 Open Question 2: owner dispositions (task 1.4). This gate blocks ratification.
 - [ ] 2.3 `define-openpractice-boundary` is ratified, and its publication surface and durable outbound store (PL-14) are built. This gate blocks live publication in feature (3) only; feature (3) may build against an openPractice double.
 - [ ] 2.4 **`define-prescribing-safety-checks` is ratified (owner ruling 74).** It is being drafted under ruling 75, with the minimum contents listed in `design.md`. This gate blocks feature (5), prescriptions, entirely: no task of feature (5) may start before it is met. Even after it is met, RX-02 refuses every prescription signature in any deployment where that change's gate is not met.
-- [ ] 2.5 Open Questions 3 to 7 are routed as `design.md` states: counsel for Open Questions 3 and 4, planning for Open Question 5, the boundary change for Open Question 6, and the owner for Open Question 7. Each fails closed meanwhile (CD-27, CD-17, CD-20 under ruling 83, and no deletion), so none blocks features (1) to (4).
+- [ ] 2.5 Open Questions 3 to 6 are routed as `design.md` states: counsel for Open Questions 3 and 4, planning for Open Question 5, and the boundary change for Open Question 6. Each fails closed meanwhile (CD-27, no deletion, and CD-17), so none blocks features (1) to (4). Open Question 7 is closed by ruling 83 (CD-20).
 - [ ] 2.6 **Ruling 98 (CD-38), before feature (1) goes live.** The first medical director's designation takes effect only after a second named human confirms it, or, for a practice with a single administrator, after a licence verification against the licensing board's public record is recorded. Feature (1) is built and tested with that path, and no deployment enables live clinical authority until this task is complete. Designations, attestations and self-grants are listed for the medical director as well as the administrative role.
 
 ## 3. Spec Kit Handoff (ordered features; ruling 85, CD-31)
 
 There are five ordered features (owner ruling 85). Each is created from the assembly root only after task 1.3, and only after the feature before it has landed. Record immutable two-way links between each feature and this change. Each feature maps its requirements and every scenario to executable tasks, without copying them here.
 
-- [ ] 3.1 **Feature (1): clinical authority.** It covers AU-01 to AU-06. It is the foundation's own first feature (ruling 92), built on its own and ahead of the acts (CD-41; #3 MT-22). The plan must decide:
+- [ ] 3.1 **Feature (1): clinical authority.** It covers AU-01 to AU-06. Clinical roles and authority are their own small first feature (ruling 92), built on its own and ahead of the acts (CD-41; #3 MT-22). The plan must decide:
   - the administrative role that designates the medical director, and the attestation-recording permission (Open Question 5);
   - the stores for designations, attestations and grants, including every grant scope (act class, `review` over `ai_consult_record`, and the AU-06 inbox scopes of ruling 92);
   - the ruling-98 confirmation or licence-verification path (task 2.6).
