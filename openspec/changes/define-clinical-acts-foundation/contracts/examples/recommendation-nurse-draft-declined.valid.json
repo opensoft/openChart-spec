@@ -1,0 +1,63 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "recommendation",
+  "recommendation_id": "SYN-REC-0002",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "entry_class": "information",
+  "not_authorized_decision": true,
+  "missing_authority": [
+    "no_grant_in_force"
+  ],
+  "decision_maker": {
+    "kind": "human",
+    "identity_basis": {
+      "basis": "verified_by_chart"
+    },
+    "account_ref": "SYN-USER-NURSE-0001",
+    "clinical_role": "nurse"
+  },
+  "proposed": {
+    "action": "sign",
+    "act_class": "order",
+    "act_type": "imaging_order",
+    "content": {
+      "order_category": "imaging",
+      "text": "SYN synthetic imaging study",
+      "priority": "routine"
+    },
+    "draft_ref": {
+      "act_id": "SYN-ACT-ORD-0003",
+      "act_version": 1
+    }
+  },
+  "provenance": {
+    "received_at": "2026-11-15T11:00:00Z",
+    "source": {
+      "kind": "clinician_observation",
+      "ref": "SYN-ACT-ENC-0001"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-NURSE-0001",
+      "clinical_role": "nurse"
+    }
+  },
+  "receipt": {
+    "code": "recorded_as_recommendation",
+    "sent_at": "2026-11-15T11:00:00Z"
+  },
+  "review": {
+    "state": "declined",
+    "decided_by_ref": "SYN-USER-CLIN-0001",
+    "decided_at": "2026-11-15T12:00:00Z",
+    "reason_code": "not_clinically_indicated"
+  }
+}

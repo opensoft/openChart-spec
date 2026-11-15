@@ -2,166 +2,172 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-clinical-act-content:1.0",
   "title": "openchart-clinical-act-content 1.0",
-  "description": "Canonical content schema for one version of a clinician-authored clinical act in openChart. Owned by opensoft/openChart-spec change define-clinical-acts-foundation. One record shape covers six act classes: encounter, clinical_note, diagnosis_of_record, procedure_performed, order and prescription. The shared envelope carries authorship, the status lifecycle, signatures with attestation, amendment by new versions, entered-in-error handling, the co-signature hook and provenance. author_type accepts only clinician in 1.x; a later governed change may add another value only in a new MINOR version. Each class's clinical content is addressable as $defs/<class>Content, so that another contract, such as openchart-ai-clinical-record-write, can pin it by this schema's digest. Codings carry the code system, code, version where the practice-supplied code set declares one, display and the practice-supplied code-set reference; openChart bundles no code set. Every object is closed. All examples are synthetic.",
+  "description": "Canonical content schema for openChart's clinical record, owned by opensoft/openChart-spec change define-clinical-acts-foundation. record_kind tells the two record kinds apart. act_version ($defs/actVersion) is one version of a clinical act of six classes: encounter, clinical_note, diagnosis_of_record, procedure_performed, order and prescription; its envelope carries the author, the addition provenance of owner ruling 80 (who or what added it, on whose behalf, from what source, when), the status lifecycle, signatures with the practitioner's sign-off evidence of owner ruling 151, amendment by new versions, entered-in-error handling, the co-signature hook and derivation. recommendation ($defs/recommendationRecord) is a decision made without authority, entered in full and marked not an authorized decision, with the missing authority coded; it is never an act of record. author_type on an act is clinician; act content from any other author is a recommendation. Each class's clinical content is addressable as $defs/<class>Content, so that another contract, such as openchart-ai-clinical-record-write, can pin it by this schema's digest. Codings carry the code system, code, version where the practice-supplied code set declares one, display and the practice-supplied code-set reference; openChart bundles no code set. Every object is closed. All examples are synthetic.",
   "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "contract",
-    "contract_version",
-    "act_id",
-    "act_version",
-    "act_class",
-    "act_type",
-    "patient",
-    "status",
-    "author",
-    "recorded_at",
-    "lifecycle",
-    "content"
-  ],
+  "required": ["contract", "contract_version", "record_kind"],
   "properties": {
     "contract": { "const": "openchart-clinical-act-content" },
     "contract_version": { "$ref": "#/$defs/contractVersion" },
-    "act_id": { "$ref": "#/$defs/opaqueRef" },
-    "act_version": { "type": "integer", "minimum": 1 },
-    "act_class": { "$ref": "#/$defs/actClass" },
-    "act_type": { "$ref": "#/$defs/codeToken" },
-    "patient": { "$ref": "#/$defs/openchartPatientRef" },
-    "status": { "$ref": "#/$defs/codeToken" },
-    "author": { "$ref": "#/$defs/author" },
-    "recorded_at": { "$ref": "#/$defs/timestamp" },
-    "supersedes": { "$ref": "#/$defs/actVersionRef" },
-    "superseded_by": { "$ref": "#/$defs/actVersionRef" },
-    "amendment_reason": { "type": "string", "minLength": 1, "maxLength": 2000 },
-    "signatures": {
-      "type": "array",
-      "minItems": 1,
-      "maxItems": 10,
-      "items": { "$ref": "#/$defs/signature" }
-    },
-    "cosignature": { "$ref": "#/$defs/cosignature" },
-    "derived_from": {
-      "type": "array",
-      "minItems": 1,
-      "maxItems": 50,
-      "items": { "$ref": "#/$defs/derivedFrom" }
-    },
-    "restricted": {
-      "description": "Proposed default pending counsel (design call CD-27): a restricted act, and any encounter carrying one, is never published or exposed outside openChart's chart view.",
-      "type": "boolean"
-    },
-    "lifecycle": {
-      "type": "array",
-      "minItems": 1,
-      "maxItems": 200,
-      "items": { "$ref": "#/$defs/lifecycleEvent" }
-    },
-    "content": { "type": "object" }
+    "record_kind": { "enum": ["act_version", "recommendation"] }
   },
   "allOf": [
     {
-      "if": { "properties": { "act_class": { "const": "encounter" } }, "required": ["act_class"] },
-      "then": {
-        "properties": {
-          "status": { "$ref": "#/$defs/encounterStatus" },
-          "content": { "$ref": "#/$defs/encounterContent" }
-        }
-      }
+      "if": { "properties": {"record_kind": {"const": "act_version"}}, "required": ["record_kind"] },
+      "then": { "$ref": "#/$defs/actVersion" }
     },
     {
-      "if": { "properties": { "act_class": { "const": "clinical_note" } }, "required": ["act_class"] },
-      "then": {
-        "properties": {
-          "status": { "$ref": "#/$defs/documentationStatus" },
-          "content": { "$ref": "#/$defs/clinicalNoteContent" }
-        }
-      }
-    },
-    {
-      "if": { "properties": { "act_class": { "const": "diagnosis_of_record" } }, "required": ["act_class"] },
-      "then": {
-        "properties": {
-          "status": { "$ref": "#/$defs/documentationStatus" },
-          "content": { "$ref": "#/$defs/diagnosisContent" }
-        }
-      }
-    },
-    {
-      "if": { "properties": { "act_class": { "const": "procedure_performed" } }, "required": ["act_class"] },
-      "then": {
-        "properties": {
-          "status": { "$ref": "#/$defs/documentationStatus" },
-          "content": { "$ref": "#/$defs/procedureContent" }
-        }
-      }
-    },
-    {
-      "if": { "properties": { "act_class": { "const": "order" } }, "required": ["act_class"] },
-      "then": {
-        "properties": {
-          "status": { "$ref": "#/$defs/requestStatus" },
-          "content": { "$ref": "#/$defs/orderContent" }
-        }
-      }
-    },
-    {
-      "if": { "properties": { "act_class": { "const": "prescription" } }, "required": ["act_class"] },
-      "then": {
-        "properties": {
-          "status": { "$ref": "#/$defs/requestStatus" },
-          "content": { "$ref": "#/$defs/prescriptionContent" }
-        }
-      }
-    },
-    {
-      "description": "A signed encounter has an end time (EN-04).",
-      "if": {
-        "properties": { "act_class": { "const": "encounter" }, "status": { "enum": ["final", "amended"] } },
-        "required": ["act_class", "status"]
-      },
-      "then": {
-        "properties": { "content": { "properties": { "period": { "required": ["end"] } } } }
-      }
-    },
-    {
-      "description": "Every signed status carries the author's signature.",
-      "if": {
-        "properties": { "status": { "enum": ["final", "amended", "pending_release", "released", "completed", "discontinued", "entered_in_error"] } },
-        "required": ["status"]
-      },
-      "then": {
-        "required": ["signatures"],
-        "properties": {
-          "signatures": { "contains": { "properties": { "signature_role": { "const": "author" } }, "required": ["signature_role"] } }
-        }
-      }
-    },
-    {
-      "description": "A version after the first supersedes its predecessor and states why.",
-      "if": { "properties": { "act_version": { "minimum": 2 } }, "required": ["act_version"] },
-      "then": { "required": ["supersedes", "amendment_reason"] }
-    },
-    {
-      "description": "Only a later version can carry the status amended.",
-      "if": { "properties": { "status": { "const": "amended" } }, "required": ["status"] },
-      "then": { "properties": { "act_version": { "minimum": 2 } } }
-    },
-    {
-      "description": "A cancelled, discontinued or entered-in-error act carries the attributed lifecycle event, with its reason code.",
-      "if": { "properties": { "status": { "enum": ["cancelled", "discontinued", "entered_in_error"] } }, "required": ["status"] },
-      "then": {
-        "properties": {
-          "lifecycle": {
-            "contains": {
-              "properties": { "event": { "enum": ["cancelled", "discontinued", "entered_in_error"] } },
-              "required": ["event", "reason_code"]
-            }
-          }
-        }
-      }
+      "if": { "properties": {"record_kind": {"const": "recommendation"}}, "required": ["record_kind"] },
+      "then": { "$ref": "#/$defs/recommendationRecord" }
     }
   ],
   "$defs": {
+    "actVersion": {
+      "description": "One version of a clinical act: a practitioner's draft, or a decision the practitioner signed off (CA-01 to CA-15). The author type is clinician; act content from any other author is a recommendation record instead (CA-02, AN-09).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "record_kind",
+        "act_id",
+        "act_version",
+        "act_class",
+        "act_type",
+        "patient",
+        "status",
+        "entry_class",
+        "author",
+        "recorded_at",
+        "provenance",
+        "lifecycle",
+        "content"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "record_kind": true,
+        "act_id": { "$ref": "#/$defs/opaqueRef" },
+        "act_version": { "type": "integer", "minimum": 1 },
+        "act_class": { "$ref": "#/$defs/actClass" },
+        "act_type": { "$ref": "#/$defs/codeToken" },
+        "patient": { "$ref": "#/$defs/openchartPatientRef" },
+        "status": { "$ref": "#/$defs/codeToken" },
+        "entry_class": { "const": "decision" },
+        "author": { "$ref": "#/$defs/author" },
+        "recorded_at": { "$ref": "#/$defs/timestamp" },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "supersedes": { "$ref": "#/$defs/actVersionRef" },
+        "superseded_by": { "$ref": "#/$defs/actVersionRef" },
+        "amendment_reason": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "signatures": { "type": "array", "minItems": 1, "maxItems": 10, "items": {"$ref": "#/$defs/signature"} },
+        "cosignature": { "$ref": "#/$defs/cosignature" },
+        "derived_from": { "type": "array", "minItems": 1, "maxItems": 50, "items": {"$ref": "#/$defs/derivedFrom"} },
+        "adopted_from": {
+          "description": "The recommendation this act adopts (AN-11). The new act is the adopting clinician's own decision.",
+          "$ref": "#/$defs/recommendationRef"
+        },
+        "restricted": {
+          "description": "Proposed default pending counsel (design call CD-27): a restricted act, and any encounter carrying one, is never published or exposed outside openChart's chart view.",
+          "type": "boolean"
+        },
+        "lifecycle": { "type": "array", "minItems": 1, "maxItems": 200, "items": {"$ref": "#/$defs/lifecycleEvent"} },
+        "content": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": {"act_class": {"const": "encounter"}}, "required": ["act_class"] },
+          "then": {
+            "properties": { "status": {"$ref": "#/$defs/encounterStatus"}, "content": {"$ref": "#/$defs/encounterContent"} }
+          }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "clinical_note"}}, "required": ["act_class"] },
+          "then": {
+            "properties": { "status": {"$ref": "#/$defs/documentationStatus"}, "content": {"$ref": "#/$defs/clinicalNoteContent"} }
+          }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "diagnosis_of_record"}}, "required": ["act_class"] },
+          "then": {
+            "properties": { "status": {"$ref": "#/$defs/documentationStatus"}, "content": {"$ref": "#/$defs/diagnosisContent"} }
+          }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "procedure_performed"}}, "required": ["act_class"] },
+          "then": {
+            "properties": { "status": {"$ref": "#/$defs/documentationStatus"}, "content": {"$ref": "#/$defs/procedureContent"} }
+          }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "order"}}, "required": ["act_class"] },
+          "then": {
+            "properties": { "status": {"$ref": "#/$defs/requestStatus"}, "content": {"$ref": "#/$defs/orderContent"} }
+          }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "prescription"}}, "required": ["act_class"] },
+          "then": {
+            "properties": { "status": {"$ref": "#/$defs/requestStatus"}, "content": {"$ref": "#/$defs/prescriptionContent"} }
+          }
+        },
+        {
+          "description": "A signed encounter has an end time (EN-04).",
+          "if": {
+            "properties": { "act_class": {"const": "encounter"}, "status": {"enum": ["final", "amended"]} },
+            "required": ["act_class", "status"]
+          },
+          "then": {
+            "properties": { "content": {"properties": {"period": {"required": ["end"]}}} }
+          }
+        },
+        {
+          "description": "Every signed status carries the author's signature.",
+          "if": {
+            "properties": {
+              "status": {
+                "enum": ["final", "amended", "pending_release", "released", "completed", "discontinued", "entered_in_error"]
+              }
+            },
+            "required": ["status"]
+          },
+          "then": {
+            "required": ["signatures"],
+            "properties": {
+              "signatures": {
+                "contains": { "properties": {"signature_role": {"const": "author"}}, "required": ["signature_role"] }
+              }
+            }
+          }
+        },
+        {
+          "description": "A version after the first supersedes its predecessor and states why.",
+          "if": { "properties": {"act_version": {"minimum": 2}}, "required": ["act_version"] },
+          "then": { "required": ["supersedes", "amendment_reason"] }
+        },
+        {
+          "description": "Only a later version can carry the status amended.",
+          "if": { "properties": {"status": {"const": "amended"}}, "required": ["status"] },
+          "then": { "properties": {"act_version": {"minimum": 2}} }
+        },
+        {
+          "description": "A cancelled, discontinued or entered-in-error act carries the attributed lifecycle event, with its reason code.",
+          "if": {
+            "properties": { "status": {"enum": ["cancelled", "discontinued", "entered_in_error"]} },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "lifecycle": {
+                "contains": {
+                  "properties": { "event": {"enum": ["cancelled", "discontinued", "entered_in_error"]} },
+                  "required": ["event", "reason_code"]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
     "contractVersion": {
       "description": "MAJOR.MINOR. Only MAJOR 1 is defined by this schema.",
       "type": "string",
@@ -184,11 +190,20 @@
     },
     "versionLabel": { "type": "string", "pattern": "^[A-Za-z0-9._:+-]{1,64}$" },
     "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "walletId": {
+      "description": "An openWallet wallet identifier, in the identifier shape of openWallet's wallet record (opensoft/openWallet). It is an attestation reference, never the identifier of a person or a patient.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$"
+    },
     "actClass": {
       "enum": ["encounter", "clinical_note", "diagnosis_of_record", "procedure_performed", "order", "prescription"]
     },
-    "encounterStatus": { "enum": ["in_progress", "final", "amended", "cancelled", "entered_in_error"] },
-    "documentationStatus": { "enum": ["draft", "final", "amended", "cancelled", "entered_in_error"] },
+    "encounterStatus": {
+      "enum": ["in_progress", "final", "amended", "cancelled", "entered_in_error"]
+    },
+    "documentationStatus": {
+      "enum": ["draft", "final", "amended", "cancelled", "entered_in_error"]
+    },
     "requestStatus": {
       "enum": ["draft", "pending_release", "released", "completed", "discontinued", "cancelled", "entered_in_error"]
     },
@@ -221,19 +236,224 @@
       "type": "object",
       "additionalProperties": false,
       "required": ["act_id"],
-      "properties": { "act_id": { "$ref": "#/$defs/opaqueRef" } }
+      "properties": { "act_id": {"$ref": "#/$defs/opaqueRef"} }
     },
     "actVersionRef": {
       "type": "object",
       "additionalProperties": false,
       "required": ["act_id", "act_version"],
+      "properties": { "act_id": {"$ref": "#/$defs/opaqueRef"}, "act_version": {"type": "integer", "minimum": 1} }
+    },
+    "recommendationRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recommendation_id"],
+      "properties": { "recommendation_id": {"$ref": "#/$defs/opaqueRef"} }
+    },
+    "additionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["record_kind", "id"],
       "properties": {
-        "act_id": { "$ref": "#/$defs/opaqueRef" },
-        "act_version": { "type": "integer", "minimum": 1 }
+        "record_kind": { "enum": ["act_version", "recommendation"] },
+        "id": { "$ref": "#/$defs/opaqueRef" },
+        "version": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "identityBasis": {
+      "description": "verified_by_chart when openChart itself authenticated the identity; asserted_by when an identified system vouched for it, naming that system (design call CD-42, PROPOSED). A writer is always verified_by_chart.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis"],
+      "properties": {
+        "basis": { "enum": ["verified_by_chart", "asserted_by"] },
+        "asserted_by_system_id": { "$ref": "#/$defs/opaqueRef" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": {"basis": {"const": "asserted_by"}}, "required": ["basis"] },
+          "then": { "required": ["asserted_by_system_id"] }
+        },
+        {
+          "if": { "properties": {"basis": {"const": "verified_by_chart"}}, "required": ["basis"] },
+          "then": { "properties": {"asserted_by_system_id": false} }
+        }
+      ]
+    },
+    "party": {
+      "description": "An identified party (AN-02): the writer of an addition, a party on whose behalf it was written, or a decision maker. kind is human (a named account in the chart; a practitioner who signs off is also identified by openwallet_id), patient (the verified link; a representative is named as such), ai (openwallet_id with the model and model version), device (make, model and serial, or a device_id with its kind) or system (the registered integration identity and its operator). identity_basis says whether openChart authenticated the identity itself or an identified system vouched for it (design call CD-42, PROPOSED).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "identity_basis"],
+      "properties": {
+        "kind": { "enum": ["human", "patient", "ai", "device", "system"] },
+        "identity_basis": { "$ref": "#/$defs/identityBasis" },
+        "account_ref": { "$ref": "#/$defs/opaqueRef" },
+        "clinical_role": { "$ref": "#/$defs/clinicalRole" },
+        "licence_attestation_ref": { "$ref": "#/$defs/opaqueRef" },
+        "openwallet_id": { "$ref": "#/$defs/walletId" },
+        "patient_link_ref": { "$ref": "#/$defs/opaqueRef" },
+        "acting_as": { "enum": ["patient", "representative"] },
+        "representative_ref": { "$ref": "#/$defs/opaqueRef" },
+        "model": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "model_version": { "$ref": "#/$defs/versionLabel" },
+        "make": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "serial": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "device_id": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "device_id_kind": { "enum": ["udi", "asset_tag"] },
+        "system_id": { "$ref": "#/$defs/opaqueRef" },
+        "operator_ref": { "$ref": "#/$defs/opaqueRef" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": {"kind": {"const": "human"}}, "required": ["kind"] },
+          "then": {
+            "required": ["account_ref"],
+            "properties": {
+              "patient_link_ref": false,
+              "acting_as": false,
+              "representative_ref": false,
+              "model": false,
+              "model_version": false,
+              "make": false,
+              "serial": false,
+              "device_id": false,
+              "device_id_kind": false,
+              "system_id": false,
+              "operator_ref": false
+            }
+          }
+        },
+        {
+          "if": { "properties": {"kind": {"const": "patient"}}, "required": ["kind"] },
+          "then": {
+            "required": ["patient_link_ref", "acting_as"],
+            "properties": {
+              "account_ref": false,
+              "clinical_role": false,
+              "licence_attestation_ref": false,
+              "openwallet_id": false,
+              "model": false,
+              "model_version": false,
+              "make": false,
+              "serial": false,
+              "device_id": false,
+              "device_id_kind": false,
+              "system_id": false,
+              "operator_ref": false
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": {"const": "patient"}, "acting_as": {"const": "representative"} },
+            "required": ["kind", "acting_as"]
+          },
+          "then": { "required": ["representative_ref"] }
+        },
+        {
+          "if": { "properties": {"kind": {"const": "ai"}}, "required": ["kind"] },
+          "then": {
+            "required": ["openwallet_id", "model", "model_version"],
+            "properties": {
+              "account_ref": false,
+              "clinical_role": false,
+              "licence_attestation_ref": false,
+              "patient_link_ref": false,
+              "acting_as": false,
+              "representative_ref": false,
+              "make": false,
+              "serial": false,
+              "device_id": false,
+              "device_id_kind": false,
+              "system_id": false,
+              "operator_ref": false
+            }
+          }
+        },
+        {
+          "if": { "properties": {"kind": {"const": "device"}}, "required": ["kind"] },
+          "then": {
+            "properties": {
+              "account_ref": false,
+              "clinical_role": false,
+              "licence_attestation_ref": false,
+              "openwallet_id": false,
+              "patient_link_ref": false,
+              "acting_as": false,
+              "representative_ref": false,
+              "model_version": false,
+              "system_id": false,
+              "operator_ref": false
+            },
+            "if": { "required": ["device_id"] },
+            "then": { "required": ["device_id_kind"] },
+            "else": { "required": ["make", "model", "serial"] }
+          }
+        },
+        {
+          "if": { "properties": {"kind": {"const": "system"}}, "required": ["kind"] },
+          "then": {
+            "required": ["system_id", "operator_ref"],
+            "properties": {
+              "account_ref": false,
+              "clinical_role": false,
+              "licence_attestation_ref": false,
+              "openwallet_id": false,
+              "patient_link_ref": false,
+              "acting_as": false,
+              "representative_ref": false,
+              "model": false,
+              "model_version": false,
+              "make": false,
+              "serial": false,
+              "device_id": false,
+              "device_id_kind": false
+            }
+          }
+        }
+      ]
+    },
+    "provenance": {
+      "description": "What every addition records (AN-04; owner ruling 80, clauses 4 to 8): received_at from openChart's own clock; occurred_at where the information arose at another time; the source with a reference to it; the writer (added_by), always verified by the chart; and every party it was added for, in order from the originator to the writer. Permanent: a correction is a new addition that points to the old one (corrects).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["received_at", "source", "added_by"],
+      "properties": {
+        "received_at": { "$ref": "#/$defs/timestamp" },
+        "occurred_at": { "$ref": "#/$defs/timestamp" },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "ref"],
+          "properties": {
+            "kind": {
+              "enum": [
+                "patient_statement",
+                "device_reading",
+                "ai_consult",
+                "clinician_observation",
+                "external_record",
+                "chart_entry"
+              ]
+            },
+            "ref": { "$ref": "#/$defs/opaqueRef" }
+          }
+        },
+        "added_by": {
+          "allOf": [
+            { "$ref": "#/$defs/party" },
+            {
+              "properties": { "identity_basis": {"properties": {"basis": {"const": "verified_by_chart"}}} }
+            }
+          ]
+        },
+        "on_behalf_of": { "type": "array", "minItems": 1, "maxItems": 20, "items": {"$ref": "#/$defs/party"} },
+        "corrects": { "$ref": "#/$defs/additionRef" }
       }
     },
     "author": {
-      "description": "The named author of this version. author_type accepts only clinician in 1.x: a named human holding an openChart clinical role grant, acting through an authenticated openChart session.",
+      "description": "The named author of this version. author_type is clinician: a named human holding an openChart clinical role grant (clinician or nurse), acting through their own authenticated openChart session. Act content from any other author is entered as a recommendation record, never refused for that reason (CA-02, AN-09).",
       "type": "object",
       "additionalProperties": false,
       "required": ["author_type", "author_ref", "author_role", "authority_basis_ref"],
@@ -248,10 +468,19 @@
       }
     },
     "signature": {
-      "description": "A signature binds the signer, the signer's role and grant version, the attestation statement and version, the time and the SHA-256 of the canonical content signed.",
+      "description": "A signature binds the signer, the signer's role and grant version, the attestation statement and version, the time, the SHA-256 of the canonical content signed, and the practitioner's sign-off evidence under owner ruling 151 (CA-04).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["signature_role", "signer_ref", "signer_role", "authority_basis_ref", "attestation", "signed_at", "content_sha256"],
+      "required": [
+        "signature_role",
+        "signer_ref",
+        "signer_role",
+        "authority_basis_ref",
+        "attestation",
+        "signed_at",
+        "content_sha256",
+        "sign_off"
+      ],
       "properties": {
         "signature_role": { "enum": ["author", "cosigner"] },
         "signer_ref": { "$ref": "#/$defs/opaqueRef" },
@@ -261,15 +490,54 @@
           "type": "object",
           "additionalProperties": false,
           "required": ["code", "version"],
-          "properties": {
-            "code": { "$ref": "#/$defs/codeToken" },
-            "version": { "$ref": "#/$defs/versionLabel" }
-          }
+          "properties": { "code": {"$ref": "#/$defs/codeToken"}, "version": {"$ref": "#/$defs/versionLabel"} }
         },
         "signed_at": { "$ref": "#/$defs/timestamp" },
         "content_sha256": {
           "description": "SHA-256 of the RFC 8785 canonical JSON serialization of this version's content object.",
           "$ref": "#/$defs/sha256"
+        },
+        "sign_off": { "$ref": "#/$defs/signOff" }
+      }
+    },
+    "signOff": {
+      "description": "The practitioner's sign-off evidence (CA-04; owner ruling 151): the openwallet_id that signed, the licence verification relied on, the openSig attestation, the SHA-256 of the provenance, the custody model of the presenting key and the check's result. The fields are design call CD-48, PROPOSED; what a licence verification and an openSig attestation contain is for openWallet and openSig to specify (Open Questions 9 and 11).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "openwallet_id",
+        "licence_verification",
+        "opensig_attestation_ref",
+        "provenance_sha256",
+        "custody_model",
+        "check"
+      ],
+      "properties": {
+        "openwallet_id": { "$ref": "#/$defs/walletId" },
+        "licence_verification": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref", "covers", "verified_at"],
+          "properties": {
+            "ref": { "$ref": "#/$defs/opaqueRef" },
+            "covers": { "$ref": "#/$defs/codeToken" },
+            "verified_at": { "$ref": "#/$defs/timestamp" }
+          }
+        },
+        "opensig_attestation_ref": { "$ref": "#/$defs/opaqueRef" },
+        "provenance_sha256": {
+          "description": "SHA-256 of the RFC 8785 canonical JSON serialization of this version's provenance object.",
+          "$ref": "#/$defs/sha256"
+        },
+        "custody_model": {
+          "description": "The declared custody model of the wallet key that signed, as openWallet records it.",
+          "$ref": "#/$defs/codeToken"
+        },
+        "check": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["result", "checked_at"],
+          "properties": { "result": {"const": "passed"}, "checked_at": {"$ref": "#/$defs/timestamp"} }
         }
       }
     },
@@ -283,7 +551,9 @@
         "source_ref": { "$ref": "#/$defs/opaqueRef" },
         "mode": { "enum": ["before_effect", "after_the_fact"] },
         "due_at": { "$ref": "#/$defs/timestamp" },
-        "state": { "enum": ["pending", "cosigned", "superseded_by_amendment", "entered_in_error", "overdue_escalated"] },
+        "state": {
+          "enum": ["pending", "cosigned", "superseded_by_amendment", "entered_in_error", "overdue_escalated"]
+        },
         "escalated_to_ref": { "$ref": "#/$defs/opaqueRef" }
       }
     },
@@ -323,8 +593,18 @@
         "by_ref": { "$ref": "#/$defs/opaqueRef" },
         "at": { "$ref": "#/$defs/timestamp" },
         "reason_code": { "$ref": "#/$defs/codeToken" },
-        "note": { "type": "string", "minLength": 1, "maxLength": 2000 }
-      }
+        "note": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "recommendation_ref": {
+          "description": "The recommendation a draft became when it was submitted without the authority to sign it (AN-14).",
+          "$ref": "#/$defs/opaqueRef"
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": {"reason_code": {"const": "recorded_as_recommendation"}}, "required": ["reason_code"] },
+          "then": { "required": ["recommendation_ref"] }
+        }
+      ]
     },
     "coding": {
       "description": "A code from a practice-supplied code set. openChart bundles no code set and asserts no license status for any code system.",
@@ -356,15 +636,12 @@
       "additionalProperties": false,
       "required": ["period", "participants"],
       "properties": {
-        "encounter_type": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/coding" } },
+        "encounter_type": { "type": "array", "maxItems": 10, "items": {"$ref": "#/$defs/coding"} },
         "period": {
           "type": "object",
           "additionalProperties": false,
           "required": ["start"],
-          "properties": {
-            "start": { "$ref": "#/$defs/timestamp" },
-            "end": { "$ref": "#/$defs/timestamp" }
-          }
+          "properties": { "start": {"$ref": "#/$defs/timestamp"}, "end": {"$ref": "#/$defs/timestamp"} }
         },
         "participants": {
           "type": "array",
@@ -385,7 +662,7 @@
           "description": "An optional reference to the administrative appointment held by its system of record. openChart performs no appointment operation.",
           "$ref": "#/$defs/externalRef"
         },
-        "reason_codings": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/coding" } }
+        "reason_codings": { "type": "array", "maxItems": 10, "items": {"$ref": "#/$defs/coding"} }
       }
     },
     "clinicalNoteContent": {
@@ -422,8 +699,12 @@
       "properties": {
         "diagnosis_role": { "enum": ["encounter_diagnosis", "problem_list"] },
         "code": { "$ref": "#/$defs/coding" },
-        "verification_status": { "enum": ["unconfirmed", "provisional", "differential", "confirmed", "refuted"] },
-        "clinical_status": { "enum": ["active", "recurrence", "relapse", "inactive", "remission", "resolved"] },
+        "verification_status": {
+          "enum": ["unconfirmed", "provisional", "differential", "confirmed", "refuted"]
+        },
+        "clinical_status": {
+          "enum": ["active", "recurrence", "relapse", "inactive", "remission", "resolved"]
+        },
         "encounter_ref": { "$ref": "#/$defs/actRef" },
         "rank": { "type": "integer", "minimum": 1 },
         "onset_date": { "$ref": "#/$defs/date" },
@@ -432,11 +713,11 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "diagnosis_role": { "const": "encounter_diagnosis" } }, "required": ["diagnosis_role"] },
+          "if": { "properties": {"diagnosis_role": {"const": "encounter_diagnosis"}}, "required": ["diagnosis_role"] },
           "then": { "required": ["encounter_ref"] }
         },
         {
-          "if": { "properties": { "diagnosis_role": { "const": "problem_list" } }, "required": ["diagnosis_role"] },
+          "if": { "properties": {"diagnosis_role": {"const": "problem_list"}}, "required": ["diagnosis_role"] },
           "then": { "required": ["clinical_status"] }
         }
       ]
@@ -465,7 +746,7 @@
         "code": { "$ref": "#/$defs/coding" },
         "priority": { "enum": ["routine", "urgent", "asap", "stat"] },
         "encounter_ref": { "$ref": "#/$defs/actRef" },
-        "reason_refs": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/actRef" } },
+        "reason_refs": { "type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/actRef"} },
         "reason_text": { "type": "string", "minLength": 1, "maxLength": 4000 },
         "intended_performer_ref": { "$ref": "#/$defs/opaqueRef" },
         "release_at": { "$ref": "#/$defs/timestamp" },
@@ -475,16 +756,19 @@
     "prescriptionContent": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["medication", "controlled_substance_classification", "classification_source", "dosage_text", "transmission_status"],
+      "required": [
+        "medication",
+        "controlled_substance_classification",
+        "classification_source",
+        "dosage_text",
+        "transmission_status"
+      ],
       "properties": {
         "medication": {
           "type": "object",
           "additionalProperties": false,
           "required": ["text"],
-          "properties": {
-            "text": { "type": "string", "minLength": 1, "maxLength": 1000 },
-            "coding": { "$ref": "#/$defs/coding" }
-          }
+          "properties": { "text": {"type": "string", "minLength": 1, "maxLength": 1000}, "coding": {"$ref": "#/$defs/coding"} }
         },
         "controlled_substance_classification": {
           "description": "From practice-supplied data or the clinician. unknown is treated as controlled by every rule that reads it.",
@@ -500,13 +784,178 @@
         "days_supply": { "type": "integer", "minimum": 1 },
         "substitution_allowed": { "type": "boolean" },
         "encounter_ref": { "$ref": "#/$defs/actRef" },
-        "reason_refs": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/actRef" } },
+        "reason_refs": { "type": "array", "maxItems": 20, "items": {"$ref": "#/$defs/actRef"} },
         "release_at": { "$ref": "#/$defs/timestamp" },
         "transmission_status": {
           "description": "openChart records no transmission to, or dispense by, a pharmacy in 1.x. Transmission and dispense states are reserved for a later governed change and a new MINOR version.",
           "const": "none_recorded"
         }
       }
+    },
+    "missingAuthority": {
+      "description": "Why a decision was entered as a recommendation (AN-09; design call CD-45, PROPOSED).",
+      "enum": [
+        "no_grant_in_force",
+        "no_decision_authority",
+        "decision_maker_not_confirmed",
+        "no_practitioner_sign_off",
+        "wallet_not_bound",
+        "licence_verification_missing",
+        "attestation_not_verified",
+        "signing_service_unavailable"
+      ]
+    },
+    "proposedAct": {
+      "description": "The decision that was attempted: the action, the act class and type, and the content in full under this contract, or for an action on an existing act, that act's version.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "act_class", "act_type"],
+      "properties": {
+        "action": {
+          "enum": ["sign", "new_version", "cosign", "complete", "discontinue", "enter_in_error"]
+        },
+        "act_class": { "$ref": "#/$defs/actClass" },
+        "act_type": { "$ref": "#/$defs/codeToken" },
+        "content": { "type": "object" },
+        "target": { "$ref": "#/$defs/actVersionRef" },
+        "draft_ref": { "$ref": "#/$defs/actVersionRef" },
+        "reason_code": { "$ref": "#/$defs/codeToken" },
+        "declared_entry_class": {
+          "description": "The class the writer declared, kept as its declaration only; it never decides whether anything takes effect (AN-06).",
+          "enum": ["information", "decision"]
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": {"act_class": {"const": "encounter"}}, "required": ["act_class"] },
+          "then": { "properties": {"content": {"$ref": "#/$defs/encounterContent"}} }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "clinical_note"}}, "required": ["act_class"] },
+          "then": { "properties": {"content": {"$ref": "#/$defs/clinicalNoteContent"}} }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "diagnosis_of_record"}}, "required": ["act_class"] },
+          "then": { "properties": {"content": {"$ref": "#/$defs/diagnosisContent"}} }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "procedure_performed"}}, "required": ["act_class"] },
+          "then": { "properties": {"content": {"$ref": "#/$defs/procedureContent"}} }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "order"}}, "required": ["act_class"] },
+          "then": { "properties": {"content": {"$ref": "#/$defs/orderContent"}} }
+        },
+        {
+          "if": { "properties": {"act_class": {"const": "prescription"}}, "required": ["act_class"] },
+          "then": { "properties": {"content": {"$ref": "#/$defs/prescriptionContent"}} }
+        },
+        {
+          "if": { "properties": {"action": {"enum": ["sign", "new_version"]}}, "required": ["action"] },
+          "then": { "required": ["content"] }
+        },
+        {
+          "if": {
+            "properties": {
+              "action": {
+                "enum": ["new_version", "cosign", "complete", "discontinue", "enter_in_error"]
+              }
+            },
+            "required": ["action"]
+          },
+          "then": { "required": ["target"] }
+        }
+      ]
+    },
+    "recommendationReview": {
+      "description": "Where the recommendation stands with the clinician who holds the authority (AN-11). Adoption creates a new act of that clinician's own; either way the recommendation stays as written.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": { "enum": ["pending", "adopted", "declined"] },
+        "routed_to_ref": { "$ref": "#/$defs/opaqueRef" },
+        "due_at": { "$ref": "#/$defs/timestamp" },
+        "decided_by_ref": { "$ref": "#/$defs/opaqueRef" },
+        "decided_at": { "$ref": "#/$defs/timestamp" },
+        "adopted_act": { "$ref": "#/$defs/actRef" },
+        "reason_code": { "$ref": "#/$defs/codeToken" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": {"state": {"const": "adopted"}}, "required": ["state"] },
+          "then": { "required": ["decided_by_ref", "decided_at", "adopted_act"] }
+        },
+        {
+          "if": { "properties": {"state": {"const": "declined"}}, "required": ["state"] },
+          "then": { "required": ["decided_by_ref", "decided_at", "reason_code"] }
+        },
+        {
+          "if": { "properties": {"state": {"const": "pending"}}, "required": ["state"] },
+          "then": {
+            "properties": { "decided_by_ref": false, "decided_at": false, "adopted_act": false }
+          }
+        }
+      ]
+    },
+    "recommendationRecord": {
+      "description": "A decision made without authority, entered in full as a recommendation and not a decision (AN-09; owner ruling 80, clauses 13 to 17). It is never an act of record: it has no act status, no signature and no release, is never published or billed, and never satisfies a check or removes a warning. Wherever it is shown it says not an authorized decision and which authority was missing.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "record_kind",
+        "recommendation_id",
+        "patient",
+        "entry_class",
+        "not_authorized_decision",
+        "missing_authority",
+        "decision_maker",
+        "proposed",
+        "provenance",
+        "receipt",
+        "review"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "record_kind": true,
+        "recommendation_id": { "$ref": "#/$defs/opaqueRef" },
+        "patient": { "$ref": "#/$defs/openchartPatientRef" },
+        "entry_class": { "const": "information" },
+        "not_authorized_decision": { "const": true },
+        "missing_authority": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/missingAuthority" }
+        },
+        "decision_maker": { "$ref": "#/$defs/party" },
+        "claimed_decision_maker": { "$ref": "#/$defs/party" },
+        "proposed": { "$ref": "#/$defs/proposedAct" },
+        "provenance": { "$ref": "#/$defs/provenance" },
+        "receipt": {
+          "description": "What the submitter was told at once (AN-10).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "sent_at"],
+          "properties": { "code": {"const": "recorded_as_recommendation"}, "sent_at": {"$ref": "#/$defs/timestamp"} }
+        },
+        "review": { "$ref": "#/$defs/recommendationReview" },
+        "restricted": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "description": "A decision a system carried for someone the chart could not confirm names that claimed decision maker (AN-08).",
+          "if": {
+            "properties": { "missing_authority": {"contains": {"const": "decision_maker_not_confirmed"}} },
+            "required": ["missing_authority"]
+          },
+          "then": { "required": ["claimed_decision_maker"] }
+        }
+      ]
     }
   }
 }

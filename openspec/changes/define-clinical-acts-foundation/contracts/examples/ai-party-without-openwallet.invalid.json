@@ -1,0 +1,73 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "recommendation",
+  "recommendation_id": "SYN-REC-0001",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "entry_class": "information",
+  "not_authorized_decision": true,
+  "missing_authority": [
+    "no_decision_authority"
+  ],
+  "decision_maker": {
+    "kind": "ai",
+    "identity_basis": {
+      "basis": "asserted_by",
+      "asserted_by_system_id": "SYN-SYS-RELAY-01"
+    },
+    "model": "syn-medical-model",
+    "model_version": "2026.11"
+  },
+  "proposed": {
+    "action": "sign",
+    "act_class": "order",
+    "act_type": "laboratory_order",
+    "content": {
+      "order_category": "laboratory",
+      "text": "SYN synthetic laboratory panel suggested in a consult",
+      "priority": "routine"
+    },
+    "declared_entry_class": "information"
+  },
+  "provenance": {
+    "received_at": "2026-11-15T08:05:00Z",
+    "source": {
+      "kind": "ai_consult",
+      "ref": "SYN-CONSULT-0001"
+    },
+    "added_by": {
+      "kind": "system",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "system_id": "SYN-SYS-RELAY-01",
+      "operator_ref": "SYN-OPERATOR-01"
+    },
+    "occurred_at": "2026-11-15T08:00:00Z",
+    "on_behalf_of": [
+      {
+        "kind": "ai",
+        "identity_basis": {
+          "basis": "asserted_by",
+          "asserted_by_system_id": "SYN-SYS-RELAY-01"
+        },
+        "openwallet_id": "wal-agent-SYN-0007",
+        "model": "syn-medical-model",
+        "model_version": "2026.11"
+      }
+    ]
+  },
+  "receipt": {
+    "code": "recorded_as_recommendation",
+    "sent_at": "2026-11-15T08:05:00Z"
+  },
+  "review": {
+    "state": "pending",
+    "routed_to_ref": "SYN-USER-CLIN-0001",
+    "due_at": "2026-11-16T10:00:00Z"
+  }
+}

@@ -9,7 +9,11 @@ Checks:
   2. every examples/*.valid.json validates;
   3. every examples/*.invalid.json fails, and at least one error names the
      token recorded for it in examples/expected-failures.json;
-  4. every invalid fixture has an entry, and every entry has a fixture.
+  4. every invalid fixture has an entry, and every entry has a fixture;
+  5. every invalid fixture fails with exactly one error, so it fails for one
+     reason only;
+  6. the valid fixtures cover both record kinds, act_version and
+     recommendation (owner ruling 80).
 Exit status 0 only when every check passes.
 """
 import json
@@ -41,13 +45,16 @@ def main():
     failures = []
     valid = invalid = 0
     names = set()
+    kinds = set()
     for path in sorted(EXAMPLES.glob("*.json")):
         if path.name == "expected-failures.json":
             continue
         names.add(path.name)
-        errors = list(validator.iter_errors(json.loads(path.read_text())))
+        record = json.loads(path.read_text())
+        errors = list(validator.iter_errors(record))
         if path.name.endswith(".valid.json"):
             valid += 1
+            kinds.add(record.get("record_kind"))
             if errors:
                 failures.append(f"{path.name}: expected valid, got: {describe(errors[0])}")
         elif path.name.endswith(".invalid.json"):
@@ -61,8 +68,13 @@ def main():
                 failures.append(
                     f"{path.name}: failed, but not for its stated reason ({entry['reason']}); first error: {describe(errors[0])}"
                 )
+            elif len(errors) != 1:
+                failures.append(f"{path.name}: failed with {len(errors)} errors; each invalid fixture must break exactly one rule")
         else:
             failures.append(f"{path.name}: fixture name must end in .valid.json or .invalid.json")
+    for kind in ("act_version", "recommendation"):
+        if kind not in kinds:
+            failures.append(f"no valid fixture of record_kind {kind}")
     for name in expected:
         if name not in names:
             failures.append(f"expected-failures.json names a missing fixture: {name}")

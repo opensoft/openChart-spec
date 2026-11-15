@@ -1,6 +1,7 @@
 {
   "contract": "openchart-clinical-act-content",
   "contract_version": "1.0",
+  "record_kind": "act_version",
   "act_id": "SYN-ACT-DX-0002",
   "act_version": 2,
   "act_class": "diagnosis_of_record",
@@ -11,6 +12,7 @@
     "value": "OC-PAT-90001"
   },
   "status": "amended",
+  "entry_class": "decision",
   "author": {
     "author_type": "clinician",
     "author_ref": "SYN-USER-CLIN-0002",
@@ -18,6 +20,21 @@
     "authority_basis_ref": "SYN-GRANT-0002:v1"
   },
   "recorded_at": "2026-11-15T10:00:00Z",
+  "provenance": {
+    "received_at": "2026-11-15T10:00:00Z",
+    "source": {
+      "kind": "clinician_observation",
+      "ref": "SYN-ACT-ENC-0001"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-CLIN-0002",
+      "clinical_role": "clinician"
+    }
+  },
   "lifecycle": [
     {
       "event": "created",
@@ -60,7 +77,22 @@
         "version": "1"
       },
       "signed_at": "2026-11-15T10:30:00Z",
-      "content_sha256": "da52dcf89326bae5e17860ccba752677fbe38227749aaa1150253f06d25a1e2d"
+      "content_sha256": "da52dcf89326bae5e17860ccba752677fbe38227749aaa1150253f06d25a1e2d",
+      "sign_off": {
+        "openwallet_id": "wal-practitioner-SYN-0002",
+        "licence_verification": {
+          "ref": "SYN-LICVER-0002",
+          "covers": "synthetic-licence-scope",
+          "verified_at": "2026-10-01T00:00:00Z"
+        },
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0002",
+        "provenance_sha256": "c4864727dc4626ebfcc5be0be01e2ff481b150a3493e384df08e4e7034cc884c",
+        "custody_model": "syn_isolated_custody",
+        "check": {
+          "result": "passed",
+          "checked_at": "2026-11-15T10:30:00Z"
+        }
+      }
     }
   ],
   "amendment_reason": "SYN clinical status updated to resolved."

@@ -8,7 +8,7 @@ openChart SHALL define two clinical roles, `clinician` and `nurse`, and a medica
 
 **The first medical director.** While a practice has no medical director, nobody can record a grant, so the first designee gets a clinical role in one audited bootstrap act by the designating account. That act records three things: the designee's licensure attestation (AU-03, so recorded by a named human other than the designee); the `clinician` role resting on it; and the designation. The role confers no act-class authority. The medical director then needs a grant for each act class, under AU-02's self-grant rule.
 
-**Confirming the first designation (owner ruling 98; design call CD-38).** The first medical director's designation SHALL take effect only once it is confirmed by a second named human who is neither the designating account nor the designee. A practice with only one administrator SHALL instead record, with the designation, a licence verification against the licensing board's public record, naming who performed it, when, and a reference to the record consulted. openChart SHALL store that verification, SHALL NOT perform or judge it, and SHALL assert no rule about it.
+**Confirming the first designation (owner ruling 98; design call CD-38).** The first medical director's designation SHALL take effect only once it is confirmed by a second named human who is neither the designating account nor the designee. A practice with only one administrator SHALL instead record, with the designation, a licence verification against the licensing board's public record, naming who performed it, when, and a reference to the record consulted. openChart SHALL store that verification, SHALL NOT perform or judge it, and SHALL assert no rule about it. A designation is configuration, not an addition to a patient's chart (AN-01). The medical director's own sign-offs follow CA-04, and how this ruling-98 check relates to the licence verification in the medical director's openWallet (owner ruling 151) is tension CT-18, recorded, not resolved.
 
 Every designation, bootstrap act, confirmation and end of a designation SHALL be recorded with actor, time and effective interval. It SHALL be listed for the administrative role and, once a medical director is designated, for the medical director. When no medical director is designated, no role grant (AU-02) and no act-type registry entry (CA-09) SHALL be recorded, so nothing can be signed. This is the medical director designation that `define-ai-authored-clinical-records` AG-02 and `define-clinical-message-inbox` (both not yet on main) need (tension CT-9).
 
@@ -37,7 +37,7 @@ Every designation, bootstrap act, confirmation and end of a designation SHALL be
 - **THEN** openChart refuses the designation until the first one ends
 
 ### Requirement: AU-02 Authority to author, sign and co-sign is a role grant recorded in openChart, and a self-grant is shown and independently attested
-Who may draft, sign, co-sign, complete or discontinue each act class, and who may review AI consult records, SHALL be decided only by role grants recorded inside openChart (design calls CD-12 and CD-37). A grant SHALL name:
+Who may draft, sign, co-sign, complete or discontinue each act class, and who may review AI consult records, SHALL be decided only by role grants recorded inside openChart (design calls CD-12 and CD-37). For a sign-off, a grant confers authority only together with the licence verification in the practitioner's openWallet (CA-04; owner ruling 151). A grant SHALL name:
 - the person and the clinical role;
 - its scope: an act class with the permitted actions (`draft`, `sign`, `cosign`, `complete`, `discontinue`), optionally limited to a subset of act types; or the record class `ai_consult_record` with the single action `review`; or one of the inbox scopes of AU-06;
 - an effective interval;
@@ -68,15 +68,15 @@ Only the medical director SHALL record, widen or renew a grant. A grant the medi
 
 #### Scenario: Failure: a consult review without the grant
 - **WHEN** a clinician who holds sign scope for diagnoses, but no `review` grant over `ai_consult_record`, tries to record a review of an AI consult record
-- **THEN** openChart refuses the review, and the consult record's review status is unchanged
+- **THEN** the review takes no effect. It is recorded as a recommendation marked not an authorized decision, in the record `define-ai-authored-clinical-records` defines, and the consult record's review status is unchanged
 
 #### Scenario: Failure: a System Manager tries to sign an order
 - **WHEN** a user holding only `System Manager` tries to sign an order
-- **THEN** openChart refuses the signature
+- **THEN** no order takes effect, and openChart enters it as a recommendation marked not an authorized decision, with `no_grant_in_force`
 
 #### Scenario: Failure: a nurse signs outside the grant
 - **WHEN** a nurse whose grant permits only `draft` for orders tries to sign one
-- **THEN** openChart refuses the signature and the order stays `draft`
+- **THEN** no order takes effect. openChart enters the order as a recommendation with `no_grant_in_force`, closes the draft as `cancelled` naming it, and puts it before a clinician with order `sign` scope (AN-14)
 
 ### Requirement: AU-03 Licensure and prescriber facts are practice-supplied attestations, recorded by someone other than their subject, and not verified by openChart
 openChart SHALL record licensure, scope and prescriber facts only as attestations supplied by the practice (design calls CD-13 and CD-34). Each attestation SHALL hold:
@@ -87,7 +87,7 @@ openChart SHALL record licensure, scope and prescriber facts only as attestation
 - an expiry date;
 - an opaque reference to the practice's own evidence.
 
-The recorder SHALL hold the attestation-recording permission that planning names, and SHALL NOT be the attestation's subject. openChart SHALL refuse any attestation that a person records about themselves. Every attestation SHALL be listed for the administrative role and, once one is designated, for the medical director. openChart SHALL NOT verify attestations against any registry, and SHALL NOT state or imply that it has. It SHALL show each attestation as practice-supplied, naming its recorder.
+The recorder SHALL hold the attestation-recording permission that planning names, and SHALL NOT be the attestation's subject. openChart SHALL refuse any attestation that a person records about themselves. Every attestation SHALL be listed for the administrative role and, once one is designated, for the medical director. openChart SHALL NOT verify attestations against any registry, and SHALL NOT state or imply that it has. It SHALL show each attestation as practice-supplied, naming its recorder. A decision's sign-off also relies on the licence verification held in the practitioner's openWallet (owner ruling 151; CA-04). These attestations still underpin every grant and designation, and both SHALL hold for a sign-off to take effect. openChart SHALL show which licence verification a sign-off relied on and that it came from the practitioner's openWallet. It SHALL NOT state that it verified the licence itself (tension CT-18).
 
 A grant that includes `sign` for prescriptions SHALL require a prescriber attestation in force; without one, the grant SHALL be refused. When an attestation expires or is withdrawn, every grant and designation that rests on it SHALL stop conferring authority at once.
 
@@ -105,32 +105,49 @@ A grant that includes `sign` for prescriptions SHALL require a prescriber attest
 
 #### Scenario: Failure: an attestation expires
 - **WHEN** a clinician's prescriber attestation expires
-- **THEN** every prescription-signing grant resting on it stops conferring authority, and a later signing attempt is refused
+- **THEN** every prescription-signing grant resting on it stops conferring authority, and a later signing attempt takes no effect and is entered as a recommendation with `no_grant_in_force`, never refused for that reason
 
-### Requirement: AU-04 Every action is checked against the grant in force at that moment, and reductions apply at once
-openChart SHALL check every draft, signature, co-signature, completion, discontinuation, entered-in-error mark, AI consult review and inbox action under AU-06 against the actor's grants in force at that moment, and SHALL record the grant version relied on. A narrowing, suspension or end of a grant SHALL apply at once to every later action. Acts already signed SHALL keep their signatures, and SHALL show the grant version in force when signed. Grant history SHALL be kept; no grant version SHALL be deleted.
+### Requirement: AU-04 Every action is checked against its decision maker's authority in force at that moment, whatever kind of decision maker it is, and reductions apply at once
+openChart SHALL check every action below against its decision maker's authority in force at that moment, whatever kind of decision maker it is (owner ruling 80, clause 11):
+- every draft;
+- every sign-off: a signature, a new signed version, a co-signature, a completion, a discontinuation or an entered-in-error mark;
+- every AI consult review;
+- every inbox action under AU-06.
+
+The authority checked is:
+- for a human, their grants in force (AU-02) and, for a sign-off, the licence verification in their openWallet and the openSig attestation (CA-04; owner ruling 151);
+- for an AI, the mode and scope the medical director has approved, of which none can be switched on today (AN-12);
+- a device or a plain integration holds none.
+
+openChart SHALL record the authority relied on: the grant version, and for a sign-off the evidence of CA-04. For a decision added on someone's behalf, openChart SHALL judge the decision maker and SHALL confirm that they made it by their own sign-off (AN-08).
+
+An action without that authority SHALL take no effect, and SHALL NOT be refused for that reason (clause 18). openChart SHALL enter it as a recommendation (AN-09). For an AI consult review or an inbox action, the recommendation is held in the record its own change defines, and nothing is sent and no status or item changes (design call CD-50, PROPOSED). A narrowing, suspension or end of a grant SHALL apply at once to every later action. Acts already signed SHALL keep their signatures, and SHALL show the grant version in force when signed. Grant history SHALL be kept; no grant version SHALL be deleted.
 
 #### Scenario: A grant is narrowed mid-session
 - **WHEN** the medical director removes prescription signing from a clinician's grant while the clinician has a draft prescription open
-- **THEN** the clinician's next signing attempt is refused, and the draft stays `draft`
+- **THEN** the clinician's next signing attempt takes no effect. openChart enters the prescription as a recommendation with `no_grant_in_force`, closes the draft as `cancelled` naming it, and tells the clinician at once
 
 #### Scenario: Failure: a stale grant is relied on
 - **WHEN** a client submits a signature citing a grant version that has been superseded
-- **THEN** openChart checks the grant in force, refuses if it does not permit the action, and records the grant it checked
+- **THEN** openChart checks the grant in force and records the grant it checked. Where that grant does not permit the action, it enters the content as a recommendation instead of applying the signature
 
-### Requirement: AU-05 Only named humans author, sign or co-sign; no agent does
-Every author, signer and co-signer SHALL be a named human holding a grant in force. No AI system, agent, integration identity, scheduled job or other automated process SHALL author, sign, co-sign, complete, discontinue or mark an act entered in error, record an AI consult review, or hold or use an inbox scope of AU-06, in any role, in this change. Owner ruling 67 grants no AI clinical authority now; AI-authored acts remain specified, and off, in `define-ai-authored-clinical-records` (not yet on main).
+#### Scenario: Failure: an AI attempts a decision
+- **WHEN** a registered relay submits a prescription on behalf of an AI
+- **THEN** openChart checks the AI's authority, finds none in force, and enters the prescription as a recommendation with `no_decision_authority`
+
+### Requirement: AU-05 Only a named human practitioner signs off a decision; an AI, agent, device or plain integration holds no decision authority, and what it adds is information or a recommendation
+Every decision SHALL be signed off by a named human practitioner under CA-04 (owner ruling 151). Every author of an act, signer and co-signer SHALL be a named human holding a grant in force. In this change, no AI system, agent, device, integration identity, scheduled job or other automated process holds decision authority (owner ruling 80, clauses 11 and 19; owner ruling 67, second sentence). None of them SHALL sign off a decision, co-sign, complete, discontinue or mark an act entered in error, record an AI consult review, or hold a grant, including an inbox scope of AU-06. Each MAY add to the chart as an identified writer, registered where AN-03 requires (AN-01 to AN-03). What it adds is information, or, where it is a decision, a recommendation marked not an authorized decision (AN-09), never refused for that reason. Limited and full practice stay specified, and off, in `define-ai-authored-clinical-records` (not yet on main). An AI never manages an emergency, and the urgent hand-off to a human stays as it is (clause 20).
 
 #### Scenario: Failure: an agent tries to co-sign
-- **WHEN** an AI agent tries to co-sign a pending order
-- **THEN** openChart refuses it and the co-signature requirement stays pending
+- **WHEN** an AI agent's relay submits a co-signature of a pending order
+- **THEN** the co-signature takes no effect. openChart enters it as a recommendation marked not an authorized decision, with `no_decision_authority`, and the co-signature requirement stays pending
 
 #### Scenario: Failure: a scheduled job tries to complete orders
-- **WHEN** a scheduled job tries to mark released orders `completed`
-- **THEN** openChart refuses it and the orders are unchanged
+- **WHEN** a registered scheduled job submits completions for released orders
+- **THEN** the orders are unchanged, and each completion is entered as a recommendation marked not an authorized decision
 
 ### Requirement: AU-06 The single grant model carries the clinical message inbox's scopes, and none of them reaches an act
-Owner ruling 92 places inbox authority in this single grant model, set by the medical director. For `define-clinical-message-inbox` (not yet on main), an AU-02 grant MAY carry one of the scopes below (design calls CD-39 and CD-40). None of them is an act class or creates an act, and none gives authority over any act. No AI system, agent or integration identity SHALL hold one (AU-05). Every other rule of AU-02 to AU-05 applies, including the medical director's recording, the self-grant rule, attestations, and checks at the moment of action. This change defines only these grants; the inbox's behaviour stays in that change.
+Owner ruling 92 places inbox authority in this single grant model, set by the medical director. For `define-clinical-message-inbox` (not yet on main), an AU-02 grant MAY carry one of the scopes below (design calls CD-39 and CD-40). None of them is an act class or creates an act, and none gives authority over any act. No AI system, agent or integration identity SHALL hold one (AU-05). Every other rule of AU-02 to AU-05 applies, including the medical director's recording, the self-grant rule, attestations, and checks at the moment of action. This change defines only these grants; the inbox's behaviour stays in that change. An inbox action or patient reply attempted without the grant SHALL take no effect, and SHALL NOT be refused for that reason (owner ruling 80, clause 18). It SHALL be recorded as a recommendation marked not an authorized decision, in the record `define-clinical-message-inbox` defines for it: nothing is sent, and no item changes. Whether any inbox action or patient reply is a medical decision that needs a practitioner's sign-off under owner ruling 151 is Open Question 13.
 - **Inbox ownership:** the record class `clinical_inbox_item`, with one or more of the actions `own`, `acknowledge`, `reassign`, `raise`, `return`, `split` and `close`, and exactly one lane, `physician` or `nurse`. A `nurse`-lane grant SHALL name the nurse-lane scope that the medical director records, which sets what may be triaged or answered in that lane. A person with no ownership grant in force owns no inbox item. `close` covers recording the closing outcome that the inbox requires (#3 MT-24).
 - **Lanes follow roles:** a `physician`-lane grant, for any `clinical_inbox_item` action or for `reply` over `clinical_communication`, SHALL be recorded only for a person holding the `clinician` role. A person holding only the `nurse` role SHALL receive `clinical_inbox_item` and `reply` grants only in the `nurse` lane, bounded by the medical director's nurse-lane scope. openChart SHALL refuse any other grant.
 - **Patient reply:** the record class `clinical_communication`, with the action `reply`, for one clinical role and one lane, resting on an AU-03 attestation in force.
@@ -147,11 +164,11 @@ Owner ruling 92 places inbox authority in this single grant model, set by the me
 
 #### Scenario: Failure: closing without the close action
 - **WHEN** an owner whose `clinical_inbox_item` grant for the item's lane does not include `close` tries to close the item with an outcome
-- **THEN** openChart refuses the close, and the item stays open and owned
+- **THEN** the close takes no effect. It is recorded as a recommendation marked not an authorized decision, and the item stays open and owned
 
 #### Scenario: Failure: a reply without a reply grant
 - **WHEN** a clinician who owns an inbox item, but holds no `reply` grant over `clinical_communication` for that lane, tries to send a patient reply
-- **THEN** openChart refuses the reply action
+- **THEN** the reply is not sent. It is recorded as a recommendation marked not an authorized decision, for a holder of the reply grant
 
 #### Scenario: Failure: the roster names someone without an ownership grant
 - **WHEN** a roster change names a clinician with no `clinical_inbox_item` ownership grant in force for that lane and hour

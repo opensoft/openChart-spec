@@ -1,9 +1,9 @@
 ## ADDED Requirements
 
 ### Requirement: CA-01 One clinical act model covers six act classes under a published content schema
-openChart SHALL record clinician-authored clinical content as clinical acts of exactly six act classes: `encounter`, `clinical_note`, `diagnosis_of_record`, `procedure_performed`, `order` and `prescription`. Every act SHALL share one envelope: act identifier and version, act class, act type, the openChart patient, status, author, recording time, signatures, amendment links, co-signature, derivation provenance and lifecycle events (design call CD-1). Each act SHALL reference exactly one `OC Patient` through the openChart triple (openChart issuer, `openchart`, `OC Patient` identifier). An external identifier MUST NOT replace it.
+openChart SHALL record clinical acts of exactly six act classes: `encounter`, `clinical_note`, `diagnosis_of_record`, `procedure_performed`, `order` and `prescription`. Every act SHALL share one envelope: act identifier and version, act class, act type, the openChart patient, status, author, recording time, signatures, amendment links, co-signature, derivation provenance, lifecycle events, the class openChart determined (AN-06), the addition provenance of AN-04 and, for an act adopted from a recommendation, `adopted_from` (design call CD-1). Each act SHALL reference exactly one `OC Patient` through the openChart triple (openChart issuer, `openchart`, `OC Patient` identifier). An external identifier MUST NOT replace it.
 
-The canonical representation of one act version SHALL be contract `openchart-clinical-act-content/1.0`, schema `contracts/openchart-clinical-act-content-1.0.schema.json`, `$id` `urn:openchart:contract:openchart-clinical-act-content:1.0`, identified by the SHA-256 recorded in `contracts/SHA256SUMS`. Each class's clinical content SHALL be addressable as `$defs/<class>Content`, so that another governed contract can pin it by digest (design call CD-28). A breaking change SHALL need a new MAJOR version and a new digest. An act class not in this list SHALL be refused.
+The canonical representation of one act version SHALL be contract `openchart-clinical-act-content/1.0`, schema `contracts/openchart-clinical-act-content-1.0.schema.json`, `$id` `urn:openchart:contract:openchart-clinical-act-content:1.0`, identified by the SHA-256 recorded in `contracts/SHA256SUMS`. The same contract SHALL represent one recommendation record (AN-09), told apart by `record_kind`. Each class's clinical content SHALL be addressable as `$defs/<class>Content`, so that another governed contract can pin it by digest (design call CD-28). A breaking change SHALL need a new MAJOR version and a new digest. An act class not in this list SHALL be refused.
 
 #### Scenario: An act is stored and read back
 - **WHEN** a clinician signs a clinical note for a patient
@@ -13,20 +13,20 @@ The canonical representation of one act version SHALL be contract `openchart-cli
 - **WHEN** a client submits an act of class `treatment_plan_change` or `immunization`
 - **THEN** openChart refuses it with a coded reason and stores nothing
 
-### Requirement: CA-02 Every act has a named clinician author, and the author type accepts only clinician
-Every act version SHALL carry an author: an author type, the named author's reference, the author's clinical role and the reference of the role grant the author acted under (the authority basis). In this change the author type SHALL accept exactly one value, `clinician`: a named human who holds an openChart clinical role grant (AU-02) and acts through their own authenticated openChart session (design calls CD-2 and CD-3). openChart MUST refuse any act whose author type is anything else, including `ai`, `agent`, `system`, `patient` or `unknown`, and MUST refuse an act whose author is not a named human. Only a later governed change may add an author type, in a new MINOR version of the contract; this field is the hook that `define-ai-authored-clinical-records` (not yet on main) builds on.
+### Requirement: CA-02 Every act has a practitioner author; act content from any other author is entered as a recommendation, never refused for that reason
+Every act version SHALL carry an author: an author type, the named author's reference, the author's clinical role and the reference of the role grant the author acted under (the authority basis). Like every addition, it SHALL also carry its writer and provenance (AN-04). An act exists only as a practitioner's draft or as a decision the practitioner signed off (CA-04, AN-14). So its author type SHALL be `clinician`: a named human who holds an openChart clinical role grant, `clinician` or `nurse` (AU-02), acting through their own authenticated openChart session (design calls CD-2 and CD-3). Act content whose author is anyone else SHALL NOT become an act, and SHALL NOT be refused for that reason (owner ruling 80, clauses 13, 17 and 18). That covers a patient, an AI, a device, a system, and a human without the scope for it. openChart SHALL enter such content as a recommendation (AN-09) that names its author by `kind` (AN-02). Content whose writer cannot be identified SHALL be refused, and nothing stored (AN-01). Only a later governed change may add an author type for acts, once the owner answers Open Question 12. This field is the hook that `define-ai-authored-clinical-records` (not yet on main) builds on.
 
 #### Scenario: A clinician authors a diagnosis
 - **WHEN** a named clinician with a diagnosis grant records a diagnosis of record
-- **THEN** the act carries author type `clinician`, the clinician's reference, the role `clinician` and the grant version
+- **THEN** the act carries author type `clinician`, the clinician's reference, the role `clinician`, the grant version and its provenance
 
-#### Scenario: Failure: an act arrives with author type ai
-- **WHEN** any caller submits an act whose author type is `ai`
-- **THEN** openChart refuses it and stores nothing, whatever authority or grant the request claims
+#### Scenario: Failure: act content arrives from an AI
+- **WHEN** a registered relay submits an order whose author is an AI, whatever authority or grant the request claims
+- **THEN** openChart creates no act. It enters the order as a recommendation marked not an authorized decision, naming the AI by its openWallet ID, model and model version, with `no_decision_authority`
 
-#### Scenario: Failure: an integration identity tries to author an act
-- **WHEN** an integration identity or automated process with no named human author submits an order
-- **THEN** openChart refuses it and stores nothing
+#### Scenario: Failure: an unregistered integration tries to author an act
+- **WHEN** an integration identity that is not registered with the practice submits an order
+- **THEN** openChart refuses it and stores nothing, because it cannot identify the writer
 
 ### Requirement: CA-03 Each act class has a closed status lifecycle
 Every act SHALL have exactly one status from its class's closed list, and SHALL move only by the transitions below (design call CD-4). Each transition SHALL be recorded as an attributed, dated lifecycle event. openChart MUST refuse any other transition.
@@ -37,7 +37,7 @@ Every act SHALL have exactly one status from its class's closed list, and SHALL 
 | `clinical_note`, `diagnosis_of_record`, `procedure_performed` | `draft`, `final`, `amended`, `cancelled`, `entered_in_error` | `draft` → `final` (signed) or `cancelled`; `final` or `amended` → `amended` (new signed version) or `entered_in_error` |
 | `order`, `prescription` | `draft`, `pending_release`, `released`, `completed`, `discontinued`, `cancelled`, `entered_in_error` | `draft` → `pending_release` or `released` (signed) or `cancelled`; `pending_release` → `released`, `pending_release` (new signed version), `cancelled` or `entered_in_error`; `released` → `completed`, `discontinued` or `entered_in_error` |
 
-`amended` SHALL apply only to a version after the first. `cancelled` SHALL mean the act never took effect. `entered_in_error` SHALL mean the act was recorded in error (CA-06).
+`amended` SHALL apply only to a version after the first. `cancelled` SHALL mean the act never took effect. A draft submitted as final without the authority to sign it SHALL move to `cancelled`, with a lifecycle event whose reason is `recorded_as_recommendation` and which names the recommendation (AN-14). `entered_in_error` SHALL mean the act was recorded in error (CA-06).
 
 #### Scenario: A draft note is signed
 - **WHEN** the author signs a draft clinical note
@@ -47,23 +47,54 @@ Every act SHALL have exactly one status from its class's closed list, and SHALL 
 - **WHEN** a user tries to move a `completed` order back to `released`, or a `cancelled` note to `final`
 - **THEN** openChart refuses the transition and the act is unchanged
 
-### Requirement: CA-04 Signing is an explicit, attested act by the named signer
-An act SHALL take a signed status only when the named signer performs an explicit signing action through their own authenticated openChart session. openChart SHALL require re-authentication at the moment of signing; the mechanism is decided in planning (design call CD-10). A signature SHALL bind the signer, the signer's role, the role grant and its version, an attestation statement code and version, the signing time and the SHA-256 of the canonical content signed (design call CD-9). openChart SHALL check, at the moment of signing, that the signer holds a grant in force with sign scope for the act class and act type (AU-04). It MUST refuse a signature on content whose digest differs from the content shown to the signer, a signature applied by anyone on another person's behalf, and a signature by any non-human actor.
+### Requirement: CA-04 A decision takes effect only by the practitioner's own sign-off, made with their openWallet and openSig in their logged-in session
+Every medical decision SHALL need the practitioner's sign-off (owner ruling 151). An act SHALL take a signed status, and any other decision of AN-06 SHALL take effect, only when the practitioner signs it off as a logged-in user, with their openWallet and openSig signing and validating the entry. The practitioner MUST act through their own authenticated openChart session. Under ruling 151, the openWallet holds the verification of the practitioner's licence, and the openSig attests that the signature is from that wallet. openChart SHALL require re-authentication at the moment of signing; the mechanism is decided in planning (design call CD-10).
+
+Before it accepts a sign-off, openChart SHALL check all four of these at that moment (design call CD-48, PROPOSED):
+- the signer's account is bound to the `openwallet_id` that signs;
+- that wallet holds a current licence verification that covers this kind of decision;
+- the openSig attestation verifies against that wallet, over the SHA-256 of the canonical content and of its provenance;
+- the signer holds a grant in force with the action's scope for the act class and act type (AU-02, AU-04).
+
+openChart SHALL also accept a sign-off only from a wallet key whose declared custody evidences that the holder acted, and SHALL record the custody model in force. openWallet states that only custody isolating the key from the holder's execution context evidences that the holder acted.
+
+openWallet does not yet specify the licence verification that the second check reads, and openSig does not yet specify the attestation that the third check reads (tension CT-20; Open Questions 9 and 11). Until each is specified through its own project's governed change and the owner accepts it for this check, that check SHALL NOT pass, and every sign-off SHALL be entered as a recommendation. openChart SHALL NOT substitute a check of its own for either.
+
+A signature SHALL bind:
+- the signer, the signer's role and the role grant and its version;
+- an attestation statement code and version (design call CD-9);
+- the signing time;
+- the SHA-256 of the canonical content signed;
+- the sign-off evidence: the `openwallet_id`, the licence verification relied on (its reference, what it covers and when it was verified), the openSig attestation's reference, the SHA-256 of the provenance and the result of the check.
+
+When any check fails, or openWallet or openSig cannot be reached, the attempt SHALL NOT take effect and SHALL NOT be refused for that reason. openChart SHALL enter the content as a recommendation (AN-09) whose `missing_authority` names each failed check (AN-14). A sign-off attempted by a writer that holds no decision authority, or in another person's name, SHALL be entered the same way (AN-07, AN-08). openChart MUST refuse a signature on content whose digest differs from the content shown to the signer, because the signer did not see that content.
 
 #### Scenario: A clinician signs an encounter
-- **WHEN** a clinician with encounter sign scope re-authenticates and signs an encounter
-- **THEN** the signature records the clinician, role, grant version, attestation code and version, time and content digest
+- **WHEN** a clinician with encounter sign scope re-authenticates and signs an encounter with their openWallet and openSig, and all four checks pass
+- **THEN** the signature records the clinician, role, grant version, attestation code and version, time, content digest, openWallet ID, licence verification relied on, openSig attestation and the check's result
 
 #### Scenario: Failure: a signer's grant has lapsed
 - **WHEN** a clinician whose diagnosis grant ended yesterday tries to sign a diagnosis
-- **THEN** openChart refuses the signature, the diagnosis stays `draft`, and the refusal is recorded with a coded reason
+- **THEN** no diagnosis takes effect. openChart enters the content as a recommendation marked not an authorized decision, with `no_grant_in_force`, closes the draft as `cancelled` naming the recommendation, and tells the clinician at once
+
+#### Scenario: Failure: the wallet holds no current licence verification
+- **WHEN** a clinician with a grant in force signs off an order, but their openWallet holds no current licence verification covering it
+- **THEN** no order takes effect, and openChart enters the order as a recommendation with `licence_verification_missing`
+
+#### Scenario: Failure: the signature service cannot be reached
+- **WHEN** a clinician signs off a note while openSig cannot be reached
+- **THEN** the note does not become final, and openChart enters it as a recommendation with `signing_service_unavailable`, nothing being refused
+
+#### Scenario: Failure: openWallet and openSig do not yet specify the checks
+- **WHEN** a clinician signs off an encounter before openWallet specifies a licence verification and openSig an attestation
+- **THEN** the encounter does not become final, and openChart enters it as a recommendation with `licence_verification_missing` and `attestation_not_verified`
 
 #### Scenario: Failure: content changed after it was shown
 - **WHEN** the content digest at signing differs from the digest of the content displayed to the signer
 - **THEN** openChart refuses the signature and asks the signer to review the current content
 
 ### Requirement: CA-05 Signed content is never edited; an amendment is a new version
-The content of a signed act version MUST NOT be edited in place or deleted. A change to signed content SHALL be recorded as a new version of the same act that references the version it supersedes, states an amendment reason, and carries its own author and signature (design call CD-5). Every prior version SHALL remain stored and readable by authorized users, with the current version marked. A new version MAY be authored by any clinician who holds sign scope for that act class, and the original author SHALL be shown as the author of the superseded version. Before signing, a draft MAY be revised; every revision SHALL be audited, and an abandoned draft SHALL be closed as `cancelled`, never deleted (design call CD-8).
+The content of a signed act version MUST NOT be edited in place or deleted. A change to signed content SHALL be recorded as a new version of the same act that references the version it supersedes, states an amendment reason, and carries its own author and signature (design call CD-5). Every prior version SHALL remain stored and readable by authorized users, with the current version marked. A new version MAY be authored by any clinician who holds sign scope for that act class, and the original author SHALL be shown as the author of the superseded version. A new version is a decision. Its sign-off follows CA-04, and one attempted without the authority SHALL be entered as a recommendation (AN-09), leaving the current version unchanged. Before signing, a draft MAY be revised; every revision SHALL be audited, and an abandoned draft SHALL be closed as `cancelled`, never deleted (design call CD-8).
 
 #### Scenario: A clinician corrects a signed diagnosis code
 - **WHEN** a clinician amends a final diagnosis to a different code with a reason
@@ -78,7 +109,7 @@ The content of a signed act version MUST NOT be edited in place or deleted. A ch
 - **THEN** openChart refuses the deletion; only an entered-in-error mark, a discontinuation or an amendment can change its effect
 
 ### Requirement: CA-06 An act recorded in error is marked entered in error, never deleted
-openChart SHALL let the act's author, a clinician with sign scope for the act class, or the medical director mark a signed act `entered_in_error`, with actor, time and a coded reason, as an attributed lifecycle event (design call CD-7). The act's content and history SHALL stay stored for audit. An entered-in-error act SHALL stop having clinical effect, SHALL be shown labelled as entered in error wherever it appears, and SHALL NOT count as an active diagnosis, procedure, order or prescription. This mark is the void that `define-ai-authored-clinical-records` (not yet on main) names. A draft SHALL be cancelled instead.
+openChart SHALL let the act's author, a clinician with sign scope for the act class, or the medical director mark a signed act `entered_in_error`, with actor, time and a coded reason, as an attributed lifecycle event (design call CD-7). The mark is a decision. It is signed off under CA-04, and a mark attempted without the authority SHALL be entered as a recommendation (AN-09), leaving the act unchanged. The act's content and history SHALL stay stored for audit. An entered-in-error act SHALL stop having clinical effect, SHALL be shown labelled as entered in error wherever it appears, and SHALL NOT count as an active diagnosis, procedure, order or prescription. This mark is the void that `define-ai-authored-clinical-records` (not yet on main) names. A draft SHALL be cancelled instead.
 
 #### Scenario: An order on the wrong patient is voided
 - **WHEN** a clinician marks a released order `entered_in_error` with reason `wrong_patient`
@@ -94,9 +125,9 @@ openChart SHALL support a co-signature requirement on any act version, without c
 - **mode:** `before_effect`, where the act does not take effect until co-signed (in this change, only orders and prescriptions, which stay `pending_release`), or `after_the_fact`, where the act takes effect and is co-reviewed within a window;
 - **due time:** the signing time plus the window the source sets;
 - **co-signer:** a named clinician, other than the author, holding co-sign scope for the act class;
-- **outcome:** `cosigned` (the co-signer's signature is added); an amendment by the co-signer, which supersedes the version (CA-05); or an entered-in-error mark (CA-06).
+- **outcome:** `cosigned` (the co-signer's signature is added, signed off under CA-04); an amendment by the co-signer, which supersedes the version (CA-05); or an entered-in-error mark (CA-06).
 
-A requirement whose due time passes with no outcome SHALL escalate to the medical director at once, who becomes a co-signer, and SHALL keep alerting until a named clinician records an outcome. No timer, default or agent SHALL record an outcome or close the requirement. A co-signature of a prescription SHALL also need the prescribing-safety gate (RX-02). A later governed change MAY add another source in a new MINOR version; `define-ai-authored-clinical-records` (not yet on main) intends its authority grant to be that source for owner ruling 62's co-review.
+A requirement whose due time passes with no outcome SHALL escalate to the medical director at once, who becomes a co-signer, and SHALL keep alerting until a named clinician records an outcome. No timer, default or agent SHALL record an outcome or close the requirement. A co-signature attempted without the authority SHALL be entered as a recommendation (AN-09), and the requirement SHALL stay open (AN-14). A co-signature of a prescription SHALL also need the prescribing-safety gate (RX-02). A later governed change MAY add another source in a new MINOR version; `define-ai-authored-clinical-records` (not yet on main) intends its authority grant to be that source for owner ruling 62's co-review.
 
 #### Scenario: A nurse's order waits for co-signature
 - **WHEN** a nurse whose grant requires `before_effect` co-signature for orders signs a laboratory order
@@ -108,10 +139,10 @@ A requirement whose due time passes with no outcome SHALL escalate to the medica
 
 #### Scenario: Failure: the author tries to co-sign their own act
 - **WHEN** the author of an act tries to record its co-signature
-- **THEN** openChart refuses it and the requirement stays pending
+- **THEN** the co-signature does not count and the requirement stays pending; openChart enters the attempt as a recommendation with `no_grant_in_force`, because no grant lets an author co-sign their own act
 
-### Requirement: CA-08 Every act carries full provenance and an audit trail
-openChart SHALL record, for every act, an append-only trail of every creation, draft revision, signature, co-signature, release, completion, discontinuation, cancellation, entered-in-error mark, amendment and co-signature escalation, each with the actor, time and coded reason where one applies. It SHALL record every read of an act by an integration identity, with the identity, time and purpose. The trail MUST NOT be edited or deleted through any supported path. The provenance of an act SHALL be readable by every user authorized for the patient's chart.
+### Requirement: CA-08 Every act and every recommendation carries full provenance and an audit trail
+openChart SHALL record the provenance of AN-04 for every act and every recommendation record. For every act it SHALL also record an append-only trail of every creation, draft revision, signature, co-signature, release, completion, discontinuation, cancellation, entered-in-error mark, amendment and co-signature escalation. Each entry SHALL carry the actor, the time and the coded reason where one applies. Every sign-off in the trail SHALL carry the evidence of CA-04: the signer's `openwallet_id`, the licence verification relied on, the openSig attestation and the result of the check. For a recommendation, the trail SHALL record the receipt sent to its submitter (AN-10) and its adoption or decline (AN-11). It SHALL record every read of an act or recommendation by an integration identity, with the identity, time and purpose. The trail MUST NOT be edited or deleted through any supported path. The provenance of an act or recommendation SHALL be readable by anyone who can read the patient's chart (owner ruling 80, clause 8).
 
 #### Scenario: An auditor reviews an amended note
 - **WHEN** an authorized user opens the history of a note amended twice
@@ -122,7 +153,7 @@ openChart SHALL record, for every act, an append-only trail of every creation, d
 - **THEN** openChart refuses it and the trail is unchanged
 
 ### Requirement: CA-09 Act types are data in a registry with reserved and emergency flags
-openChart SHALL keep an act-type registry: for each act class, the act types a practice uses, each with a stable code, a display name, an effective interval, a version and two flags that SHALL be set explicitly on registration: `reserved` (an act reserved to a human clinician) and `emergency_management` (design call CD-14). Only the medical director SHALL add, change or retire an entry, and every change SHALL be a new registry version. Every act SHALL name an act type that is in force in the registry for its class. This change gives the two flags no effect on clinician-authored acts; they exist for `define-ai-authored-clinical-records` (not yet on main) and its allowlist, reserved-act and emergency rules.
+openChart SHALL keep an act-type registry: for each act class, the act types a practice uses, each with a stable code, a display name, an effective interval, a version and two flags that SHALL be set explicitly on registration: `reserved` (an act reserved to a human clinician) and `emergency_management` (design call CD-14). Only the medical director SHALL add, change or retire an entry, and every change SHALL be a new registry version. Every act SHALL name an act type that is in force in the registry for its class. The registry SHALL be the chart's list of what counts as a decision (owner ruling 80, clause 9; AN-06). Act content of an act type in force in it, and a sign-off of such an act, is a decision. This change gives the two flags no effect on clinician-authored acts; they exist for `define-ai-authored-clinical-records` (not yet on main) and its allowlist, reserved-act and emergency rules.
 
 #### Scenario: The medical director registers an act type
 - **WHEN** the medical director registers a laboratory order type with `reserved` false and `emergency_management` false
@@ -136,8 +167,12 @@ openChart SHALL keep an act-type registry: for each act class, the act types a p
 - **WHEN** a clinician tries to sign an order whose act type is not in force in the registry
 - **THEN** openChart refuses the signature with a coded reason
 
-### Requirement: CA-10 Acts are created only by a named clinician through the versioned service boundary
-openChart SHALL create and change acts only through its authenticated, versioned service boundary, authorized for subject, tenant, purpose and role as the ratified API requirement demands, and only on a named clinician's command (CA-02). Every client, mobile or workstation, SHALL use that boundary. Direct table writes SHALL be refused, as they are for intake today. No intake submission, patient-reported statement, clinical communication, API response, extension event, notification, timer or other automated process SHALL create an act or move it to a signed status. Extensions MAY read acts and receive pointer-only events through supported hooks, and MUST NOT create or sign one. This is how this change honors the ratified rule that "no intake, supplement statement, API response or extension event SHALL create a prescription, diagnosis, order…" (tension CT-1).
+### Requirement: CA-10 Additions arrive only through the versioned service boundary, and an act takes a signed status only by a practitioner's authorized sign-off
+openChart SHALL accept additions, and create and change acts, only through its authenticated, versioned service boundary, authorized for subject, tenant, purpose and role as the ratified API requirement demands. Every client, mobile or workstation, and every system writer SHALL use that boundary as an identified writer (AN-01 to AN-03). Direct table writes SHALL be refused, as they are for intake today. A draft act SHALL be created only on the command of a human with `draft` scope (AN-14). An act SHALL be moved to a signed status only by a practitioner's authorized sign-off (CA-04, AU-04). No intake submission, patient-reported statement, clinical communication, API response, extension event, notification, timer or other automated process SHALL create an act or move it to a signed status.
+
+Act content that an identified writer adds without the authority SHALL be entered as a recommendation (AN-09). A recommendation is not a prescription, diagnosis, order, administration or autonomous action, and it creates none of them. Extensions MAY read acts and receive pointer-only events through supported hooks. An extension that adds anything SHALL do so as a registered system writer through the boundary, and MUST NOT create or sign an act. An extension event adds nothing by itself.
+
+This is how this change honours the ratified rule that "no intake, supplement statement, API response or extension event SHALL create a prescription, diagnosis, order…" (tension CT-1, read narrowly under owner ruling 84). That sentence also names a "treatment recommendation", and how its words read on the recommendation record is recorded as tension CT-22, not resolved here.
 
 #### Scenario: Failure: an extension writes a diagnosis directly
 - **WHEN** an extension inserts a diagnosis row directly, outside the service boundary
@@ -145,10 +180,14 @@ openChart SHALL create and change acts only through its authenticated, versioned
 
 #### Scenario: Failure: an extension event tries to create an order
 - **WHEN** an extension event carries a payload shaped like an order
-- **THEN** no order is created, drafted or signed
+- **THEN** no order is created, drafted or signed, and nothing is added from the event
+
+#### Scenario: Failure: a registered system submits an order
+- **WHEN** a registered integration submits an order through the boundary
+- **THEN** no order exists. openChart enters the content as the integration's recommendation marked not an authorized decision, and tells it so at once
 
 ### Requirement: CA-11 A clinician creates a record from patient-reported content only by an explicit, attributed action
-A clinician MAY create a draft act from a patient-reported intake statement only by an explicit action, recorded with the clinician, the time and the source statement's identifier and version as derivation provenance (design call CD-22). The same SHALL hold for a clinical communication record under `define-clinical-message-inbox` (not yet on main), once it lands. The created act SHALL be a separate, clinician-authored act that follows every rule of this capability, including signing; nothing SHALL be created, drafted or signed automatically from a statement or a communication. The source statement SHALL stay unchanged and visibly patient-reported, keeping its assertion kind; openChart SHALL NOT set its `verification_state` to `clinician_verified` or change any of its fields (tension CT-3). This is the "authorized clinical workflow" that "records another assertion", in the words of the ratified requirement "Intake does not confer clinician or autonomous authority" (tension CT-2).
+A clinician MAY create a draft act from a patient-reported intake statement only by an explicit action, recorded with the clinician, the time and the source statement's identifier and version as derivation provenance (design call CD-22). The same SHALL hold for a clinical communication record under `define-clinical-message-inbox` (not yet on main), once it lands. The created act SHALL be a separate, clinician-authored act that follows every rule of this capability, including signing; nothing SHALL be created, drafted, signed or entered as a recommendation automatically from a statement or a communication. The source statement SHALL stay unchanged and visibly patient-reported, keeping its assertion kind; openChart SHALL NOT set its `verification_state` to `clinician_verified` or change any of its fields (tension CT-3). This is the "authorized clinical workflow" that "records another assertion", in the words of the ratified requirement "Intake does not confer clinician or autonomous authority" (tension CT-2).
 
 #### Scenario: A clinician confirms a reported condition as a diagnosis
 - **WHEN** a clinician reviews a patient-reported condition and chooses to record it as an encounter diagnosis
@@ -178,7 +217,7 @@ A coding on an act SHALL store the code system, the code, the code-system versio
 - **THEN** openChart refuses the coding with a coded reason
 
 ### Requirement: CA-13 Acts map to FHIR R4-compatible resources at contract level, with no conformance claim
-openChart SHALL define a FHIR R4-compatible mapping for acts at contract level: `encounter` to Encounter; `diagnosis_of_record` to Condition; `procedure_performed` to Procedure; `order` to ServiceRequest; `prescription` to MedicationRequest; `clinical_note` to DocumentReference; and authorship, signatures, co-signatures and derivation to Provenance (design `design.md`, "FHIR R4-compatible mapping"; design call CD-26). openChart MUST NOT claim FHIR certification, profile conformance or validation against any implementation guide. A draft, cancelled or restricted act SHALL NOT be exposed through any interoperability read.
+openChart SHALL define a FHIR R4-compatible mapping for acts at contract level: `encounter` to Encounter; `diagnosis_of_record` to Condition; `procedure_performed` to Procedure; `order` to ServiceRequest; `prescription` to MedicationRequest; `clinical_note` to DocumentReference; and authorship, signatures, co-signatures and derivation to Provenance (design `design.md`, "FHIR R4-compatible mapping"; design call CD-26). openChart MUST NOT claim FHIR certification, profile conformance or validation against any implementation guide. A draft, cancelled or restricted act, and any recommendation record (AN-09), SHALL NOT be exposed through any interoperability read. Provenance SHALL carry the writer and every party on whose behalf it wrote (AN-04).
 
 #### Scenario: A FHIR-compatible read of a final diagnosis
 - **WHEN** an authorized consumer reads a final encounter diagnosis through an interoperability surface
@@ -189,11 +228,11 @@ openChart SHALL define a FHIR R4-compatible mapping for acts at contract level: 
 - **THEN** the draft is omitted
 
 ### Requirement: CA-14 Acts work without any external system, and no PHI enters logs
-Every capability in this change SHALL operate with no openPractice, MedxFactory, MedxEHR, HealthLinc, medXfactory, external AI system or drug knowledge source configured, except that signing a prescription needs the gate of RX-02. The ratified standalone golden-intake tests SHALL keep passing. openChart's logs, error messages, diagnostics and coded reasons MUST NOT contain names, dates of birth, contact details, identifier values or clinical content; they SHALL reference acts by identifier and version only.
+Every capability in this change SHALL operate with no openPractice, MedxFactory, MedxEHR, HealthLinc, medXfactory, external AI system or drug knowledge source configured, with two exceptions. A decision's sign-off needs the practitioner's openWallet and openSig (CA-04; owner ruling 151). Whether they can run inside a standalone deployment is Open Question 10 and tension CT-19, and where they cannot be reached, a sign-off is entered as a recommendation and never refused. Signing a prescription also needs the gate of RX-02. The ratified standalone golden-intake tests SHALL keep passing. openChart's logs, error messages, diagnostics and coded reasons MUST NOT contain names, dates of birth, contact details, identifier values or clinical content; they SHALL reference acts by identifier and version only.
 
 #### Scenario: Standalone deployment
 - **WHEN** openChart runs with no external system configured
-- **THEN** a clinician can open, document and sign an encounter, record diagnoses, procedures and orders, and the golden-intake tests pass
+- **THEN** a clinician can open and document an encounter and record diagnoses, procedures and orders. Every addition is identified and recorded, a sign-off takes effect where the practitioner's openWallet and openSig can be reached, and the golden-intake tests pass
 
 #### Scenario: Failure: a refusal would log clinical content
 - **WHEN** openChart refuses to sign a diagnosis

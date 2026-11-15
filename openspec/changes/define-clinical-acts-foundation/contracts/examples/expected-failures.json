@@ -1,4 +1,12 @@
 {
+  "act-without-provenance.invalid.json": {
+    "expect_in_error": "'provenance' is a required property",
+    "reason": "every addition records its provenance (AN-04)"
+  },
+  "ai-party-without-openwallet.invalid.json": {
+    "expect_in_error": "'openwallet_id' is a required property",
+    "reason": "an AI is identified by its openWallet ID (AN-02)"
+  },
   "amended-first-version.invalid.json": {
     "expect_in_error": "act_version",
     "reason": "only a later version can carry the status amended"
@@ -9,15 +17,23 @@
   },
   "author-type-ai.invalid.json": {
     "expect_in_error": "author_type",
-    "reason": "author_type accepts only clinician in 1.x"
+    "reason": "an act's author type is clinician; act content from an AI is entered as a recommendation record instead (CA-02, AN-09)"
   },
   "derived-from-unknown-kind.invalid.json": {
     "expect_in_error": "source_kind",
     "reason": "derivation sources are intake statements and clinical communications only"
   },
+  "device-party-without-serial.invalid.json": {
+    "expect_in_error": "'serial' is a required property",
+    "reason": "a device is identified by make, model and serial, or a resolvable device ID (AN-02, AN-13)"
+  },
   "diagnosis-uncoded.invalid.json": {
     "expect_in_error": "'code' is a required property",
     "reason": "a diagnosis of record must be coded"
+  },
+  "draft-closed-without-recommendation.invalid.json": {
+    "expect_in_error": "'recommendation_ref' is a required property",
+    "reason": "a draft closed because it became a recommendation names that recommendation (AN-14)"
   },
   "encounter-diagnosis-without-encounter.invalid.json": {
     "expect_in_error": "'encounter_ref' is a required property",
@@ -43,6 +59,10 @@
     "expect_in_error": "order_category",
     "reason": "order category outside the closed list"
   },
+  "party-field-of-another-kind.invalid.json": {
+    "expect_in_error": "added_by/model",
+    "reason": "a party carries only its own kind's identifying fields (AN-02)"
+  },
   "patient-external-namespace.invalid.json": {
     "expect_in_error": "namespace",
     "reason": "the patient is always the openChart triple; an external identifier never replaces it"
@@ -55,8 +75,48 @@
     "expect_in_error": "transmission_status",
     "reason": "transmission and dispense states are reserved for a later governed change"
   },
+  "recommendation-adopted-without-act.invalid.json": {
+    "expect_in_error": "'adopted_act' is a required property",
+    "reason": "adoption creates a new act of the clinician's own, and the recommendation names it (AN-11)"
+  },
+  "recommendation-claim-without-claimant.invalid.json": {
+    "expect_in_error": "'claimed_decision_maker' is a required property",
+    "reason": "a decision a system carried for an unconfirmed decision maker names who was claimed (AN-08)"
+  },
+  "recommendation-marked-authorized.invalid.json": {
+    "expect_in_error": "not_authorized_decision",
+    "reason": "a recommendation is always marked not an authorized decision (AN-09)"
+  },
+  "recommendation-signed.invalid.json": {
+    "expect_in_error": "'signatures' was unexpected",
+    "reason": "a recommendation cannot be signed (AN-09)"
+  },
+  "recommendation-unknown-missing-authority.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "missing_authority uses the closed code list (AN-09, CD-45)"
+  },
+  "recommendation-with-act-status.invalid.json": {
+    "expect_in_error": "'status' was unexpected",
+    "reason": "a recommendation has no act status (AN-09)"
+  },
+  "recommendation-without-missing-authority.invalid.json": {
+    "expect_in_error": "'missing_authority' is a required property",
+    "reason": "a recommendation says which authority was missing (AN-09)"
+  },
+  "record-kind-missing.invalid.json": {
+    "expect_in_error": "'record_kind' is a required property",
+    "reason": "every record says whether it is an act version or a recommendation"
+  },
+  "signature-without-sign-off.invalid.json": {
+    "expect_in_error": "'sign_off' is a required property",
+    "reason": "a signature carries the practitioner's openWallet and openSig sign-off evidence (CA-04, ruling 151)"
+  },
   "unknown-property.invalid.json": {
     "expect_in_error": "Additional properties are not allowed",
     "reason": "every object is closed"
+  },
+  "writer-identity-asserted.invalid.json": {
+    "expect_in_error": "verified_by_chart",
+    "reason": "a writer's identity is always verified by the chart (AN-02, CD-42)"
   }
 }

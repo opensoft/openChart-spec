@@ -1,0 +1,83 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "recommendation",
+  "recommendation_id": "SYN-REC-0003",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "entry_class": "information",
+  "not_authorized_decision": true,
+  "missing_authority": [
+    "decision_maker_not_confirmed"
+  ],
+  "decision_maker": {
+    "kind": "system",
+    "identity_basis": {
+      "basis": "verified_by_chart"
+    },
+    "system_id": "SYN-SYS-INTEG-02",
+    "operator_ref": "SYN-OPERATOR-01"
+  },
+  "proposed": {
+    "action": "sign",
+    "act_class": "prescription",
+    "act_type": "outpatient_prescription",
+    "content": {
+      "medication": {
+        "text": "Synthexamol 10 unit tablet (SYNTHETIC, not a real product)"
+      },
+      "controlled_substance_classification": "not_controlled",
+      "classification_source": "clinician_entry",
+      "dosage_text": "SYN take one tablet daily",
+      "refills": 0,
+      "transmission_status": "none_recorded"
+    }
+  },
+  "provenance": {
+    "received_at": "2026-11-15T13:00:00Z",
+    "source": {
+      "kind": "external_record",
+      "ref": "SYN-EXT-DOC-0042"
+    },
+    "added_by": {
+      "kind": "system",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "system_id": "SYN-SYS-INTEG-02",
+      "operator_ref": "SYN-OPERATOR-01"
+    },
+    "on_behalf_of": [
+      {
+        "kind": "human",
+        "identity_basis": {
+          "basis": "asserted_by",
+          "asserted_by_system_id": "SYN-SYS-INTEG-02"
+        },
+        "account_ref": "SYN-EXT-CLIN-0099",
+        "clinical_role": "clinician"
+      }
+    ]
+  },
+  "receipt": {
+    "code": "recorded_as_recommendation",
+    "sent_at": "2026-11-15T13:00:00Z"
+  },
+  "review": {
+    "state": "pending",
+    "routed_to_ref": "SYN-USER-CLIN-0001",
+    "due_at": "2026-11-16T10:00:00Z"
+  },
+  "claimed_decision_maker": {
+    "kind": "human",
+    "identity_basis": {
+      "basis": "asserted_by",
+      "asserted_by_system_id": "SYN-SYS-INTEG-02"
+    },
+    "account_ref": "SYN-EXT-CLIN-0099",
+    "clinical_role": "clinician"
+  }
+}
