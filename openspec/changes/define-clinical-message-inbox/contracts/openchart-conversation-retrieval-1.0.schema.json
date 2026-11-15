@@ -292,6 +292,30 @@
         "seek_urgent_care"
       ]
     },
+    "aiIdentity": {
+      "description": "The identity of the AI that wrote an ai turn, as owner ruling 80 identifies an AI: its openWallet ID, plus the model and model version that produced the turn. The openWallet ID has the identifier shape of openWallet's wallet record, as the clinical-acts foundation's walletId gives it. It names the AI as the author of the turn, never a patient or a person, and nothing needs the wallet to be reachable to read the chart (owner ruling 183). openChart keeps an ai turn's text in the chart only when the turn carries this object and the holder's registration covers its openwallet_id; otherwise openChart shows the turn by reference only.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "openwallet_id",
+        "model",
+        "model_version"
+      ],
+      "properties": {
+        "openwallet_id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$"
+        },
+        "model": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/@+-]{1,128}$"
+        },
+        "model_version": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:+-]{1,64}$"
+        }
+      }
+    },
     "turn": {
       "description": "One turn of the conversation, keyed by turn_id, with its author type and source.",
       "type": "object",
@@ -382,6 +406,10 @@
             "$ref": "#/$defs/emergencyGuidanceCode"
           }
         },
+        "ai_identity": {
+          "description": "Optional, ai turns only: the AI's openWallet ID, model and model version (owner ruling 80, part B). Without it, or with an openwallet_id the holder's registration does not cover, openChart never keeps the turn's text in the chart and shows it by reference only.",
+          "$ref": "#/$defs/aiIdentity"
+        },
         "content": {
           "$ref": "#/$defs/textContent"
         }
@@ -466,6 +494,11 @@
                 {
                   "required": [
                     "emergency_guidance"
+                  ]
+                },
+                {
+                  "required": [
+                    "ai_identity"
                   ]
                 }
               ]
