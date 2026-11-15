@@ -131,7 +131,7 @@ Every author, signer and co-signer SHALL be a named human holding a grant in for
 
 ### Requirement: AU-06 The single grant model carries the clinical message inbox's scopes, and none of them reaches an act
 This requirement is PROPOSED pending owner decision 92 (design calls CD-39 and CD-40). For `define-clinical-message-inbox` (not yet on main), an AU-02 grant MAY carry one of the scopes below. None of them is an act class or creates an act, and none gives authority over any act. No AI system, agent or integration identity SHALL hold one (AU-05). Every other rule of AU-02 to AU-05 applies, including the medical director's recording, the self-grant rule, attestations, and checks at the moment of action. This change defines only these grants; the inbox's behaviour stays in that change.
-- **Inbox ownership:** the record class `clinical_inbox_item`, with one or more of the actions `own`, `acknowledge`, `reassign`, `raise`, `return` and `split`, and exactly one lane, `physician` or `nurse`. A `nurse`-lane grant SHALL name the nurse-lane scope that the medical director records, which sets what may be triaged or answered in that lane. A person with no ownership grant in force owns no inbox item.
+- **Inbox ownership:** the record class `clinical_inbox_item`, with one or more of the actions `own`, `acknowledge`, `reassign`, `raise`, `return`, `split` and `close`, and exactly one lane, `physician` or `nurse`. A `nurse`-lane grant SHALL name the nurse-lane scope that the medical director records, which sets what may be triaged or answered in that lane. A person with no ownership grant in force owns no inbox item. `close` covers recording the closing outcome that the inbox requires (#3 MT-24).
 - **Patient reply:** the record class `clinical_communication`, with the action `reply`, for one clinical role and one lane, resting on an AU-03 attestation in force.
 - **Clinical-need marker:** the record class `clinical_need_marker`, with the actions `mark` and `withdraw`, recorded only for a person holding the `clinician` role.
 - **On-call cover:** openChart SHALL define no on-call designation. The inbox's cover roster is a schedule. For each hour and lane it SHALL name only people holding an ownership grant in force for that lane, the medical director included as the last fallback. A roster entry for anyone else SHALL be refused, and a grant that lapses SHALL remove its holder from every later roster slot at once.
@@ -139,6 +139,10 @@ This requirement is PROPOSED pending owner decision 92 (design calls CD-39 and C
 #### Scenario: The medical director grants nurse-lane ownership
 - **WHEN** the medical director records a `clinical_inbox_item` grant with `own` and `acknowledge` in the `nurse` lane for a nurse, naming the nurse-lane scope the medical director recorded
 - **THEN** openChart records the grant, and the nurse gains no authority over any act
+
+#### Scenario: Failure: closing without the close action
+- **WHEN** an owner whose `clinical_inbox_item` grant for the item's lane does not include `close` tries to close the item with an outcome
+- **THEN** openChart refuses the close, and the item stays open and owned
 
 #### Scenario: Failure: a reply without a reply grant
 - **WHEN** a clinician who owns an inbox item, but holds no `reply` grant over `clinical_communication` for that lane, tries to send a patient reply
