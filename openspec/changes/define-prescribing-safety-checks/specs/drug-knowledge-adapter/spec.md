@@ -64,8 +64,10 @@ The medical director SHALL set a currency policy with two values, both measured 
 - **WHEN** a deployment has a verified source and no currency policy, or a policy without a staleness limit
 - **THEN** the source is not usable, and no prescription can be signed
 
-### Requirement: KA-05 An adapter failure makes the source unavailable and is never read as "no alerts"
+### Requirement: KA-05 An adapter failure makes the source unavailable, is never read as "no alerts", and a source that goes down alerts the medical director
 A timeout, an adapter error, a schema-invalid result, an unsupported version, or a result that omits a requested input SHALL make the source unavailable for that check, or for that input, and SHALL raise PC-02's warning for the input. openChart MUST NOT treat any of them as an empty result, and MUST NOT show "no alerts found" for a check that did not complete (design call PD-10).
+
+When a verified source becomes unavailable as a whole, because it is unreachable or every request to it fails, openChart SHALL alert the medical director, as it does when a source becomes stale (KA-04; owner ruling 82). So that a brief interruption is not noise, the alert SHALL be raised once for each period of unavailability, at the first of these: the source has stayed unavailable for longer than the practice's unavailability alert threshold, or a signature, co-signature or release takes the outage path (PG-02). The threshold is a policy value that the medical director sets. Until it is set, the alert SHALL be raised as soon as the source becomes unavailable. This bound is PROPOSED (design call PD-12).
 
 #### Scenario: Failure: the adapter times out at signing
 - **WHEN** the adapter does not answer the signing-time interaction lookup in time
@@ -74,6 +76,14 @@ A timeout, an adapter error, a schema-invalid result, an unsupported version, or
 #### Scenario: Failure: a result leaves out one medication
 - **WHEN** an interaction result lists neither a finding for, nor a `not_checked` entry for, one input medication
 - **THEN** openChart raises "could not be checked" for that medication
+
+#### Scenario: Failure: the verified source goes down
+- **WHEN** a verified source stops answering and stays unreachable past the practice's unavailability alert threshold
+- **THEN** openChart alerts the medical director once for that period of unavailability, not once for each failed request
+
+#### Scenario: Failure: an outage step comes before the threshold
+- **WHEN** a clinician takes the outage path while the source has been down for less than the alert threshold
+- **THEN** openChart alerts the medical director at once
 
 ### Requirement: KA-06 Adapter requests carry codes only, free text only under a recorded agreement, and no patient identity
 Requests to a source SHALL carry only codes, item references and a deployment reference (design calls PD-14 and PD-20). Normalized items sent back to the source SHALL carry ingredient and class codes, without labels. A free-text medication or allergen description, such as a patient's own wording, SHALL be sent only as an item's `free_text`, and only in a request that names the `free_text_agreement_ref` recorded in the source's verification (KA-03). Without that agreement, an uncoded entry SHALL NOT be sent and SHALL stay in openChart as "could not be checked" (PC-02). openChart SHALL send a coding only when its code system is one that the source's capability declaration lists (KA-02). A coding in any other system SHALL NOT be sent, and its entry SHALL stay local as "could not be checked". A coding's `version` SHALL be sent only as the version recorded for the practice-loaded code set that the coding references (`define-clinical-acts-foundation` CA-12), and a coding whose code set records no version SHALL be sent without one. A request whose coding carries any other version SHALL NOT be sent, and that entry SHALL stay local as "could not be checked". Item and allergen references SHALL be opaque identifiers that openChart mints. Requests SHALL carry no patient identifier, name, date of birth, contact detail or note text.

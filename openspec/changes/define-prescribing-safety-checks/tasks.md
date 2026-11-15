@@ -46,6 +46,7 @@
   - every gate refusal reason is reachable;
   - with no verified source there is no outage path;
   - a stale source takes the outage path and alerts the medical director, and past the staleness limit every signature, co-signature and release is refused with no outage path;
+  - a verified source that goes down alerts the medical director once per period of unavailability, after the alert threshold or at the first outage-path step, whichever comes first;
   - a `controlled` or `unknown` classification is refused at every step, and never takes the outage path;
   - the outage path accepts only a clinician who has answered, one entry at a time, every PC-01 input except the prescription (every active patient-reported statement, reconciled or not), every `draft` or `refuted` entry for the same substance, and any missing allergy status, and recorded the statement with code `prescribing.checks_unavailable_manual_review` on that step's check record; only signing sets the signed flag `checks_unavailable_at_signing`; co-signature and release change no signed content; a deferred release with the source unavailable stays `pending_release`; it re-checks on return;
   - the penicillin case of PG-02 shows both the reconciled statement and its refuted entry, tested with synthetic substitutes (KA-06);

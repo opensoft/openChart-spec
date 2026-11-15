@@ -76,7 +76,7 @@ None. The ratified `expanded-patient-intake` requirements are cited and left unc
   - list views that label each item's source;
   - a check engine over the adapter contract;
   - an immutable check record;
-  - a source verification record, a currency policy (maximum age and staleness limit) and a legal-review record, all kept by the medical director;
+  - a source verification record, a currency policy (maximum age and staleness limit), an unavailability alert threshold and a legal-review record, all kept by the medical director;
   - the gate decision;
   - outage-path flags and re-check work items.
 - **Governance:** openChart's constitution is still the unfilled template. A Constitution Check, and with it the plan phase, needs a constitution adopted through separate governance first.
