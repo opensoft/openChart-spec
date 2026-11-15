@@ -1,0 +1,13 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "record.readback",
+  "message_id": "c2b5e0a4-b8d9-4a1b-96d7-d2e3f405162d",
+  "sent_at": "2026-11-14T09:02:07Z",
+  "in_reply_to": "a0f3cde2-96b7-48f9-94b5-b0c1d2e3f40b",
+  "write_kind": "act",
+  "record_ref": "OC-AIA-99999",
+  "result": "not_found",
+  "read_at": "2026-11-14T09:02:07Z",
+  "stored_content_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+}

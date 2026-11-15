@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-ai-clinical-record-write:1.0",
   "title": "openchart-ai-clinical-record-write 1.0",
-  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which every 1.x receiver refuses with tier2_not_in_force until the clinical-acts foundation is ratified and a MINOR version pins its content schemas. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices and status messages carry identifiers and codes only, never clinical content. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
+  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which every 1.x receiver refuses with tier2_not_in_force until the clinical-acts foundation is ratified and a MINOR version pins its content schemas. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices, status messages and readbacks carry identifiers, digests and codes only, never clinical content; record.readback lets the writing source system confirm what openChart stored. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
   "oneOf": [
     { "$ref": "#/$defs/consultWrite" },
     { "$ref": "#/$defs/actWrite" },
@@ -10,6 +10,8 @@
     { "$ref": "#/$defs/writeReceipt" },
     { "$ref": "#/$defs/actStatus" },
     { "$ref": "#/$defs/consultReviewed" },
+    { "$ref": "#/$defs/readbackRequest" },
+    { "$ref": "#/$defs/readbackResult" },
     { "$ref": "#/$defs/messageAck" }
   ],
   "$defs": {
@@ -544,6 +546,73 @@
         "record_ref": { "$ref": "#/$defs/opaqueRef" },
         "outcome": { "enum": ["concur", "concur_with_note", "follow_up_required", "unsafe"] },
         "at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "readbackRequest": {
+      "description": "The source system that wrote a record, or the relay acting for it, asks openChart what it stored. Only the writing source system's integration identity may ask.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "write_kind", "record_ref"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "record.readback_request" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" },
+        "write_kind": { "enum": ["consult", "act"] },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "readbackResult": {
+      "description": "openChart's answer to a readback request: the stored record's identifiers, its stored content digest, the grant version it was checked against and its current state, as codes and digests only. For a consult, stored_content_sha256 is recomputed from the stored turns exactly as exchange.content_sha256 is defined; for an act, it is the SHA-256 of the RFC 8785 canonical JSON serialization of the stored act_content.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "write_kind", "record_ref", "result", "read_at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "record.readback" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "in_reply_to": { "$ref": "#/$defs/uuid" },
+        "write_kind": { "enum": ["consult", "act"] },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "result": { "enum": ["found", "not_found", "unauthorized"] },
+        "source_record_id": { "$ref": "#/$defs/opaqueRef" },
+        "source_record_version": { "type": "integer", "minimum": 1 },
+        "stored_content_sha256": { "$ref": "#/$defs/sha256" },
+        "grant_checked": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["grant_id", "grant_version"],
+          "properties": {
+            "grant_id": { "$ref": "#/$defs/opaqueRef" },
+            "grant_version": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "record_state": {
+          "enum": ["recorded", "superseded", "voided", "countermanded", "cancelled", "handed_to_clinician"]
+        },
+        "review_status": {
+          "enum": ["not_selected", "selected", "in_review", "reviewed", "co_review_pending", "co_review_overdue", "co_review_done"]
+        },
+        "read_at": { "$ref": "#/$defs/timestamp" }
+      },
+      "if": { "properties": { "result": { "const": "found" } }, "required": ["result"] },
+      "then": { "required": ["source_record_id", "source_record_version", "stored_content_sha256", "grant_checked", "record_state", "review_status"] },
+      "else": {
+        "not": {
+          "anyOf": [
+            { "required": ["source_record_id"] },
+            { "required": ["source_record_version"] },
+            { "required": ["stored_content_sha256"] },
+            { "required": ["grant_checked"] },
+            { "required": ["record_state"] },
+            { "required": ["review_status"] }
+          ]
+        }
       }
     },
     "messageAck": {

@@ -1,9 +1,9 @@
 ## 1. Ratification And Contract Alignment
 
 - [ ] 1.1 Run `openspec validate define-ai-authored-clinical-records --strict --no-interactive` on the exact revision proposed for ratification. Record the OpenSpec version, timestamp, revision, exit code and output.
-- [ ] 1.2 Run `sha256sum -c SHA256SUMS` in this change's `contracts/` directory, and run the schema self-test over `contracts/examples/` (10 fixtures must validate, 20 must fail, each for its stated reason). Record both outputs.
+- [ ] 1.2 Run `sha256sum -c SHA256SUMS` in this change's `contracts/` directory, and run the schema self-test over `contracts/examples/` (13 fixtures must validate, 22 must fail, each for its stated reason). Record both outputs.
 - [ ] 1.3 Obtain Brett Heap's ratification. He stamps `Ratified by` and changes `Status` from `draft` to `ratified` in `proposal.md`, in the same revision. The 2026-11-14 rulings recorded in `design.md` are not ratification. No Spec Kit feature is created before this task is complete.
-- [ ] 1.4 Record Brett Heap's disposition of tensions AT-1 to AT-9 and design calls AD-1 to AD-27, including proposed decision 65 (AD-1). Where a disposition needs an amendment elsewhere, name the change that must carry it: `define-clinical-message-inbox` for AT-5, AT-6 and AT-7; `define-openpractice-boundary` or the clinical-acts foundation for AT-8; the AI system's change for AT-9; and, if the owner reads AT-1 as governing every openChart API, a MODIFIED delta to `expanded-patient-intake` in this change or in the foundation.
+- [ ] 1.4 Record Brett Heap's disposition of tensions AT-1 to AT-9 and design calls AD-1 to AD-28, including proposed decision 65 (AD-1). Where a disposition needs an amendment elsewhere, name the change that must carry it: `define-clinical-message-inbox` for AT-5, AT-6 and AT-7; `define-openpractice-boundary` or the clinical-acts foundation for AT-8; the AI system's change for AT-9; and, if the owner reads AT-1 as governing every openChart API, a MODIFIED delta to `expanded-patient-intake` in this change or in the foundation.
 - [ ] 1.5 Compare this change with `MedxSoft/MedxEHR-spec` change `define-medical-ai-record-overlay` on the contract id `openchart-ai-clinical-record-write`, version `1.0`, the schema digest in `contracts/SHA256SUMS`, and every term in `design.md` "Terms used in both changes". Record both revisions. A mismatch blocks the handoff.
 
 ## 2. Governance Prerequisites (Routed Open Questions)
@@ -17,7 +17,7 @@
 ## 3. Spec Kit Handoff
 
 - [ ] 3.1 Create the single openChart Spec Kit feature for `define-ai-authored-clinical-records` from the assembly root. Record immutable two-way links between the feature and this change. The feature's task list builds Tier 1 first and holds Tier 2 behind task 2.4.
-- [ ] 3.2 Verify that the feature maps every requirement (AW-01 to AW-11, AG-01 to AG-10, AC-01 to AC-10 and AA-01 to AA-12) and every scenario to executable tasks, without copying them here. The plan must decide these points:
+- [ ] 3.2 Verify that the feature maps every requirement (AW-01 to AW-12, AG-01 to AG-10, AC-01 to AC-10 and AA-01 to AA-12) and every scenario to executable tasks, without copying them here. The plan must decide these points:
   - the name and scope of the write-path integration role, and how an AI system is registered;
   - the medical-director designation and the clinician roles used for review and co-review;
   - the storage of the grant, legal-review, review-policy and refusal records;
@@ -42,6 +42,7 @@ Ruling 63 sets the build order: advice only, then limited practice, then full pr
   - AI authorship is labelled on every surface, the patient's included, and is never shown as clinician-authored;
   - no consult record becomes a diagnosis, statement or billable fact;
   - every `act.write` is refused with `tier2_not_in_force`;
+  - a readback answers only the writing source system, with digests and codes only;
   - no PHI appears in logs, receipts, notifications or keys;
   - all fixtures are synthetic.
 - [ ] 4.3 **Tier 2, limited practice. BLOCKED until task 2.4 is complete.** After the foundation is ratified and built, a governed revision of this change pins the foundation's content schemas in a MINOR version of the contract. Then complete the Tier 2 layer for `limited_practice`: acceptance under a current grant, allowlist and condition checks, the reserved list, emergency refusal, the co-review queue and its escalation, void and countermand, the bar on superseding clinician content, and narrowing and pause.

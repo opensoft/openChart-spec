@@ -1,0 +1,14 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "record.readback_request",
+  "message_id": "a0f3cde2-96b7-48f9-94b5-b0c1d2e3f40b",
+  "sent_at": "2026-11-14T09:02:05Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "write_kind": "consult",
+  "record_ref": "OC-AIC-00001"
+}

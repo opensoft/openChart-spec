@@ -4,7 +4,7 @@
 openChart SHALL accept content authored by an external clinical AI system only as messages under contract `openchart-ai-clinical-record-write/1.0`, owned by this change. Its canonical schema is:
 - `openspec/changes/define-ai-authored-clinical-records/contracts/openchart-ai-clinical-record-write-1.0.schema.json`, `$id` `urn:openchart:contract:openchart-ai-clinical-record-write:1.0`, at the SHA-256 recorded in this change's `contracts/SHA256SUMS`.
 
-The digest identifies the schema even after archival moves the file. openChart SHALL validate every message it receives or sends under the contract against the schema at that digest. The messages are `consult.write`, `act.write`, `authority.notice`, `write.receipt`, `act.status`, `consult.reviewed` and `message.ack`. Implementations are compatible exactly when they share the MAJOR version. openChart SHALL accept a `1.x` message at a MINOR version it has declared, refuse a message whose MAJOR version it does not support with reason `unsupported_major_version`, and refuse a message that fails the schema with reason `schema_invalid`. A refusal SHALL store no clinical content. A breaking change SHALL require a new MAJOR version and a new digest, recorded in this change and in every companion that cites it.
+The digest identifies the schema even after archival moves the file. openChart SHALL validate every message it receives or sends under the contract against the schema at that digest. The messages are `consult.write`, `act.write`, `authority.notice`, `write.receipt`, `act.status`, `consult.reviewed`, `record.readback_request`, `record.readback` and `message.ack`. Implementations are compatible exactly when they share the MAJOR version. openChart SHALL accept a `1.x` message at a MINOR version it has declared, refuse a message whose MAJOR version it does not support with reason `unsupported_major_version`, and refuse a message that fails the schema with reason `schema_invalid`. A refusal SHALL store no clinical content. A breaking change SHALL require a new MAJOR version and a new digest, recorded in this change and in every companion that cites it.
 
 #### Scenario: Failure: a write carries a property the schema does not define
 - **WHEN** a `consult.write` arrives with a property the schema does not define, such as `diagnosis`
@@ -110,7 +110,7 @@ openChart SHALL operate fully with no external clinical AI system registered and
 - **THEN** openChart refuses it with reason `unauthorized`, stores no clinical content, and every other operation is unaffected
 
 ### Requirement: AW-11 The write path is covered by contract tests written first
-The write path SHALL be covered by contract tests, written first, that validate every message against the schema at the digest recorded in `contracts/SHA256SUMS`, run against an AI-system double, and use synthetic data only. The fixtures in this change's `contracts/examples/` SHALL be part of the suite. The tests SHALL cover: every reason code; idempotency, duplicates and conflicting duplicates; every patient-link case; scenario and simulation refusal; every grant check in AG-06; the always-review triggers; review and co-review outcomes; narrowing and pause; refusal of every `act.write` while Tier 2 is not in force; the AI-authorship labels; and the absence of PHI in logs, receipts, notifications and keys. The standalone golden-intake tests SHALL pass with the write path unconfigured.
+The write path SHALL be covered by contract tests, written first, that validate every message against the schema at the digest recorded in `contracts/SHA256SUMS`, run against an AI-system double, and use synthetic data only. The fixtures in this change's `contracts/examples/` SHALL be part of the suite. The tests SHALL cover: every reason code; idempotency, duplicates and conflicting duplicates; every patient-link case; scenario and simulation refusal; every grant check in AG-06; the always-review triggers; review and co-review outcomes; narrowing and pause; refusal of every `act.write` while Tier 2 is not in force; readback by digest; the AI-authorship labels; and the absence of PHI in logs, receipts, notifications, readbacks and keys. The standalone golden-intake tests SHALL pass with the write path unconfigured.
 
 #### Scenario: CI runs the write-path suite
 - **WHEN** CI runs the write-path contract tests
@@ -119,3 +119,18 @@ The write path SHALL be covered by contract tests, written first, that validate 
 #### Scenario: Failure: a fixture adds clinical text to a receipt
 - **WHEN** a test builds an `act.status` that carries free text
 - **THEN** schema validation fails, and the test expects that failure
+
+### Requirement: AW-12 The writing source system can read back what openChart stored, by digest and code only
+openChart SHALL answer a `record.readback_request` with exactly one `record.readback`, so that the source system that wrote a record, or a relay acting for it, can confirm what openChart stored (design call AD-28). Only the integration identity of the source system that wrote the record SHALL be answered with `found`. For a found record, the answer SHALL carry only: the record reference; the source system's record identifier and version; the stored content digest, recomputed by openChart from what it stored (for a consult, as `exchange.content_sha256` is defined; for an act, over its stored `act_content`); the grant version it was checked against; its current state; and its review or co-review status. A readback MUST NOT carry exchange text, summary text, act content, patient identifiers or any other clinical content. A request from any other identity SHALL be answered `unauthorized`, and one for an unknown record `not_found`, each with no record detail.
+
+#### Scenario: A relay confirms a stored consult
+- **WHEN** the writing source system requests a readback of a consult it wrote and openChart accepted
+- **THEN** openChart answers `found` with the record identifiers, the stored content digest, the grant version checked, the state and the review status, and no clinical text
+
+#### Scenario: Failure: another system asks for a readback
+- **WHEN** an integration identity registered for a different source system requests a readback of that record
+- **THEN** openChart answers `unauthorized` and discloses no record detail
+
+#### Scenario: Failure: the record does not exist
+- **WHEN** a readback names a record reference openChart does not hold
+- **THEN** openChart answers `not_found` with no digest, state or status
