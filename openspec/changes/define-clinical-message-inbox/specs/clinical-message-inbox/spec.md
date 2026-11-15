@@ -293,7 +293,11 @@ A repeated callback for the same reply SHALL change nothing further. Under the h
 - **THEN** openChart sends no `reply.deliver`, keeps the reply, and keeps the item open and owned, and the owner is told to use a permitted channel
 
 ### Requirement: MI-12 A clinical communication is recorded with its author type and provenance, and is never a diagnosis or a clinical fact of record
-openChart SHALL record every inbox item as one clinical communication record. This requirement is the single definition of that record in openChart. Other openChart changes reference it rather than defining a second record; that includes `define-ai-authored-clinical-records` (ruling 64).
+This requirement is the single definition of the clinical communication record in openChart. Other openChart changes reference it rather than defining a second record; that includes `define-ai-authored-clinical-records` (openChart-spec#4; ruling 64). Every record SHALL carry one origin (design call MD-28):
+- **`handoff`:** an inbox item. openChart SHALL record every inbox item as one clinical communication record of this origin, with the provenance stated below.
+- **`ai_consult`:** a consult record that `define-ai-authored-clinical-records` writes through its `consult.write` (its AC-01). That change defines this origin's provenance, among it the model identifiers and versions, the evidence references, the mode in force, the authority and the exchange's content digest (its AC-01 and AC-03), and the record holds the full exchange. Its turns carry only the author types `patient`, `representative` and `ai` (its AC-02). The handoff references below are absent for this origin. An `ai_consult` record exists whether or not the inbox is enabled, and needs no openPractice (MI-20).
+
+The author types, the rule that a communication is never a fact of record, and the versioning rule below apply to both origins. The provenance list, MI-20's inertness and MI-24's no-copy rule apply to `handoff` records only.
 
 **Author type.** Every piece of content in a clinical communication SHALL carry exactly one author type:
 - `patient`, for the patient. Content from the patient's representative carries `representative`, and is treated like `patient` content under every rule in this capability. A patient's or representative's own turn SHALL never be recorded or shown as AI content, whichever system holds the conversation.
@@ -307,7 +311,7 @@ openChart SHALL record every inbox item as one clinical communication record. Th
 
 **Urgency sources.** Every urgency change SHALL be recorded with its source and an author type. `coach_triage`, `medical_ai_triage` and `agent_proposal` are `ai` (ruling 51, amending ruling 44). `staff` is `staff`, `routing_rule` is `system`, and a clinician's raise inside openChart is `clinician`. `patient_checklist`, the patient's own answers to HealthLinc's red-flag checklist (ruling 71), is `patient` and SHALL never be recorded as `ai` (MI-02).
 
-**Provenance.** The record SHALL hold:
+**Provenance of a `handoff` record.** The record SHALL hold:
 - the handoff references: `handoff_id`, `link_id` when present, `identity_state`, `healthlinc_message_ref`, `conversation_source`, `conversation_ref`, `reply_path_ref`, the origin and any split-group reference;
 - for an `unlinked` item, the `unlinked_identity` as received: `legal_name`, `birth_date` and `administrative_sex`. It is marked unverified, is never projected onto an `OC Patient`, and is never used to match (MI-17, MI-18);
 - every urgency change with its source, every owner change, every clock event, every acknowledgment, every status sent, every clinician urgency raise and clinical-need marker sent, and every reply delivery failure reported (MI-10, MI-11, MI-25);
@@ -319,7 +323,7 @@ openChart SHALL record every inbox item as one clinical communication record. Th
 
 **Not a fact of record.** A clinical communication SHALL NOT be a diagnosis, problem, order, prescription, encounter, intake statement or other clinical fact of record, whoever wrote it. Nothing in it SHALL become one through this capability. Only a separately governed clinical workflow may record such a fact (MI-14, MI-26).
 
-A recorded communication MUST NOT be silently overwritten or deleted. A correction SHALL create a new version that references its predecessor, with actor, reason and time. This is consistent with the ratified rule that amendments preserve accepted history. The record SHALL be filed to an `OC Patient` only when MI-17 resolves the patient; otherwise it stays unfiled under MI-18. The storage shape SHALL be decided in planning.
+A recorded communication MUST NOT be silently overwritten or deleted. A correction SHALL create a new version that references its predecessor, with actor, reason and time. This is consistent with the ratified rule that amendments preserve accepted history. A `handoff` record SHALL be filed to an `OC Patient` only when MI-17 resolves the patient; otherwise it stays unfiled under MI-18. How an `ai_consult` record names its patient is for `define-ai-authored-clinical-records` to define. The storage shape SHALL be decided in planning.
 
 #### Scenario: A patient's message is recorded
 - **WHEN** HealthLinc returns a conversation turn that the patient wrote
@@ -340,6 +344,10 @@ A recorded communication MUST NOT be silently overwritten or deleted. A correcti
 #### Scenario: A checklist urgency is recorded
 - **WHEN** a `handoff.urgency_raised` with source `patient_checklist` arrives
 - **THEN** the record holds the urgency change with author type `patient`, never `ai`
+
+#### Scenario: An AI consult record exists without the inbox
+- **WHEN** `define-ai-authored-clinical-records` records an accepted `consult.write` at a site with no openPractice gateway and the inbox not enabled
+- **THEN** the consult is a clinical communication record of origin `ai_consult`, holding the full exchange with that change's provenance, and the inbox's absence blocks nothing
 
 #### Scenario: A clinician's reply is recorded
 - **WHEN** a named physician sends a reply and HealthLinc accepts it
@@ -498,7 +506,7 @@ openChart MUST NOT request, receive, store or show payment-hold status, balances
 - **THEN** openChart handles it like any other `urgent` item and keeps no record that a hold exists
 
 ### Requirement: MI-20 openChart operates without openPractice, and without a gateway the inbox is inert
-openChart MUST operate without MedxFactory, MedxEHR or openPractice, as the ratified `expanded-patient-intake` requirement states; PL-15 restates the openPractice part. This requirement restates that rule and does not weaken it. openChart SHALL also operate fully with no HealthLinc or medXfactory integration, and with no conversation source configured under `openchart-conversation-retrieval/1.0`. The inbox is optional. With no openPractice gateway configured, the inbox SHALL accept no handoff, and no other openChart operation SHALL depend on it.
+openChart MUST operate without MedxFactory, MedxEHR or openPractice, as the ratified `expanded-patient-intake` requirement states; PL-15 restates the openPractice part. This requirement restates that rule and does not weaken it. openChart SHALL also operate fully with no HealthLinc or medXfactory integration, and with no conversation source configured under `openchart-conversation-retrieval/1.0`. The inbox is optional. With no openPractice gateway configured, the inbox SHALL accept no handoff, and no other openChart operation SHALL depend on it. This inertness applies to the inbox only, not to the clinical communication record that MI-12 defines: an `ai_consult` record needs neither the inbox nor openPractice.
 
 The inbox SHALL NOT be enabled until all of these are configured:
 - an openPractice integration identity;
@@ -557,7 +565,7 @@ The inbox SHALL be covered by contract tests, written first, that validate every
 - capability declaration, with `capabilities.request` and `capabilities.result`, and no message sent for an undeclared capability;
 - `consent_ref`, withheld turns shown as a partial view, turns shared for an urgent escalation, and a `consent_not_granted` refusal;
 - every author type of MI-12, per turn by `turn_id`, with its source token, including `unknown`, `openpractice_agent` turns with an answer type or an approver, a clinician claim without a matching `reply_id`, patient turns never shown as AI content, and medical-AI content never filed through the inbox;
-- AI-authored orders, prescriptions and diagnoses held as communication, with no clinical act created (MI-26);
+- AI-authored orders, prescriptions and diagnoses in inbox items held as communication, with no clinical act created (MI-26);
 - `clinical_need.marker`: mark and withdraw under one `need_id`, the `valid_until` and `origin` rules, `related_handoff_id` for `urgent_escalation`, and the handling of `origin_not_verified`;
 - acknowledgment, rejection, replay and duplicate offers;
 - every status code, including `clock_expired` sent the moment the clock runs out and `responded` sent as soon as HealthLinc accepts a reply;
@@ -585,9 +593,9 @@ The standalone golden-intake tests SHALL pass with the inbox unconfigured.
 - **THEN** schema validation fails, and the test expects that failure
 
 ### Requirement: MI-24 A medical-AI exchange reaches the chart only through MedxEHR's relay, and the inbox keeps it by reference
-The medical AI's records SHALL reach openChart only through MedxEHR, which relays them with receipts (ruling 70, refining ruling 53). medXfactory does not write to openChart directly, and the records SHALL never pass through openPractice, which holds no clinical content (ruling 53). That write path belongs to openChart-spec change `define-ai-authored-clinical-records`. This change cites it and defines no part of it (Open Question 4).
+The medical AI's records SHALL reach openChart only through MedxEHR, which relays them with receipts (ruling 70, refining ruling 53). medXfactory does not write to openChart directly, and the records SHALL never pass through openPractice, which holds no clinical content (ruling 53). That write path belongs to openChart-spec change `define-ai-authored-clinical-records` (openChart-spec#4). This change cites it and defines no part of it (Open Question 4).
 
-When medXfactory holds an inbox item's conversation, openChart SHALL retrieve it with `conversation.retrieve` for the clinician (MI-03). It SHALL record in the item only what MI-12 states for a conversation medXfactory holds: per-turn metadata keyed by `turn_id`, the `snapshot_ref`, the `consent_ref` and the retrieval provenance, with no copy of any turn's text. It SHALL NOT file the exchange to an `OC Patient` through the inbox (design call MD-17). openChart MUST NOT accept medical-AI content from openPractice, and nothing in this change lets medXfactory write to openChart directly.
+When medXfactory holds an inbox item's conversation, openChart SHALL retrieve it with `conversation.retrieve` for the clinician (MI-03). It SHALL record in the item only what MI-12 states for a conversation medXfactory holds: per-turn metadata keyed by `turn_id`, the `snapshot_ref`, the `consent_ref` and the retrieval provenance, with no copy of any turn's text. It SHALL NOT file the exchange to an `OC Patient` through the inbox (design call MD-17). This no-copy rule applies to inbox items only. It does not apply to an `ai_consult` record, which holds the full exchange under `define-ai-authored-clinical-records` (MI-12). When an inbox item names a conversation that an `ai_consult` record also references, the item may show that association by reference, as that change's AC-01 provides, and still files no copy. openChart MUST NOT accept medical-AI content from openPractice, and nothing in this change lets medXfactory write to openChart directly.
 
 #### Scenario: A clinician answers an escalated medical-AI conversation
 - **WHEN** a clinician answers an item whose conversation medXfactory holds
@@ -650,26 +658,36 @@ openChart SHALL write each marker message to the durable outbound store of PL-14
 - **WHEN** a clinician tries to record a marker for a patient whose `openpractice` link is in `identity_review`
 - **THEN** the marker is refused with a coded reason, and the clinician sees that reason
 
-### Requirement: MI-26 AI-authored content is communication only until `define-ai-authored-clinical-records` is ratified
-openChart SHALL treat all AI-authored content that reaches the chart as communication only, by any path, until openChart-spec change `define-ai-authored-clinical-records` is ratified. That change is being drafted (ruling 64). The paths include inbox retrieval and MedxEHR's relay of the medical AI's records (ruling 70). This change does not cover AI-authored orders, prescriptions or diagnoses.
+### Requirement: MI-26 AI-authored content is communication only until Tier 2 of `define-ai-authored-clinical-records` is in force for its act type
+openChart SHALL treat AI-authored content as communication only, and SHALL NOT record, act on or present it as an order, prescription or diagnosis of an act type, until Tier 2 of openChart-spec change `define-ai-authored-clinical-records` (openChart-spec#4, being drafted under ruling 64) is in force for that act type. Ratifying that change does not end this hold. Its AA-01 keeps Tier 2 out of force, and refuses every `act.write` with `tier2_not_in_force`, until its required prerequisite `define-clinical-acts-foundation` (openChart-spec#5) is ratified and built and a future governed amendment puts Tier 2 in force (ruling 67). This change does not cover AI-authored orders, prescriptions or diagnoses.
 
 The practice's medical director sets medXfactory's AI to one of three modes: advice only, full practice or limited practice (ruling 59). medXfactory's change `define-patient-medical-ai-connection` owns the mode framework and its gates (rulings 56 to 58). Ruling 59 stands, so this requirement fails closed. The never-grantable rule stays, and limited and full practice stay specified but off (ruling 67). An answer in medXfactory's advice-only class, which may reach the patient without prior sign-off (ruling 66), is AI-authored communication like any other. The chart's own record of the medical director's authorization, and the check of every AI write against it, belong to `define-ai-authored-clinical-records` (ruling 65); this change defines neither.
 
-Until `define-ai-authored-clinical-records` is ratified, these rules apply:
-- openChart MUST NOT record, act on or present AI-authored content as an order, prescription or diagnosis, whatever mode, configuration or authority the content claims.
-- The content SHALL stay distinguishable from clinician-authored content, with its author type `ai` and its source system named (MI-12, MI-13).
-- Content that presents itself as an AI-authored order, prescription or diagnosis SHALL be held as AI-authored communication, marked by code as not accepted as a clinical act (design call MD-20). It SHALL NOT create an order, prescription, diagnosis or other clinical fact.
-- When such content appears in an inbox item, the owner SHALL see it labelled that way.
-- The limited-practice and full-practice modes SHALL NOT be built in openChart.
+**Paths.** On the paths this change controls, inbox retrieval and the inbox's `handoff` records, content that presents itself as an AI-authored order, prescription or diagnosis SHALL be held as AI-authored communication, marked by code as not accepted as a clinical act (design call MD-20). On the write path of `define-ai-authored-clinical-records`, by which MedxEHR relays the medical AI's records (ruling 70), this change defers to that change: an `act.write` is refused and stores no content (its AD-7), and act-like content inside an `ai_consult` record is handled by its AC-05.
 
-#### Scenario: Failure: an AI-authored prescription reaches openChart
-- **WHEN** content from medXfactory's medical AI that presents itself as a prescription, and claims full-practice authority, reaches openChart
+Until Tier 2 is in force for an act type, these rules apply:
+- openChart MUST NOT record, act on or present AI-authored content as an order, prescription or diagnosis of that type, whatever mode, configuration or authority the content claims.
+- The content SHALL stay distinguishable from clinician-authored content, with its author type `ai` and its source system named (MI-12, MI-13).
+- In an inbox item, content that presents itself as an AI-authored order, prescription or diagnosis SHALL be held as AI-authored communication, marked by code as not accepted as a clinical act. It SHALL NOT create an order, prescription, diagnosis or other clinical fact.
+- When such content appears in an inbox item, the owner SHALL see it labelled that way.
+- The limited-practice and full-practice modes SHALL NOT be built in openChart until the conditions of that change's AA-01 hold.
+
+#### Scenario: Failure: an AI-authored prescription appears in a retrieved conversation
+- **WHEN** a conversation retrieved for an inbox item holds a turn from medXfactory's medical AI that presents itself as a prescription and claims full-practice authority
 - **THEN** openChart holds it as AI-authored communication, names medXfactory's medical AI as its source, marks it as not accepted as a clinical act, and creates no prescription, order or diagnosis
+
+#### Scenario: Failure: an AI act write arrives before Tier 2 is in force
+- **WHEN** an AI system sends an `act.write` for a prescription on the write path of `define-ai-authored-clinical-records` before Tier 2 is in force
+- **THEN** that change refuses it with `tier2_not_in_force` and stores no content, and the inbox neither holds nor recreates the refused content
+
+#### Scenario: Failure: the hold outlasts ratification
+- **WHEN** `define-ai-authored-clinical-records` is ratified, but no governed amendment has put Tier 2 in force for prescriptions
+- **THEN** AI-authored content that presents itself as a prescription is still held as communication in an inbox item, and no prescription is created
 
 #### Scenario: Failure: an AI-authored diagnosis appears in an inbox item
 - **WHEN** a retrieved conversation in an inbox item contains an AI turn stating a diagnosis
 - **THEN** the owner sees the turn labelled as AI-authored communication that was not accepted as a clinical act, and no condition or diagnosis is recorded
 
 #### Scenario: Failure: a plan proposes building a practice mode
-- **WHEN** a plan proposes building limited-practice or full-practice mode in openChart before `define-ai-authored-clinical-records` is ratified
+- **WHEN** a plan proposes building limited-practice or full-practice mode in openChart before the conditions of the AA-01 requirement of `define-ai-authored-clinical-records` hold
 - **THEN** the plan is out of scope, and the work waits for that change

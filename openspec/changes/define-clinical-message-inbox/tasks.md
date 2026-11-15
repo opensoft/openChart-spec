@@ -12,7 +12,7 @@
   - ER-06 and ER-03 at the compared revision, against MI-18 and MI-10.
 
   Record both revisions and each digest pair. A mismatch blocks the handoff. When that change's schema changes, update MI-02's pin in a governed revision of this change.
-- [ ] 1.4 Record Brett Heap's disposition of tensions MT-3 to MT-10, MT-12, MT-15 and MT-16, and of design calls MD-1 to MD-27. MT-1, MT-2, MT-11 and MT-13 are resolved by the openPractice change's text as it stands at `0a82fc2`, and MT-14 by ruling 67; record that confirmation. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-5, MT-6 and MT-15, and `define-openpractice-boundary` for MT-3 (the follow-up the openPractice change's T-11 proposes). Otherwise this change yields.
+- [ ] 1.4 Record Brett Heap's disposition of tensions MT-3 to MT-10, MT-12, MT-15 and MT-16, and of design calls MD-1 to MD-28. MT-1, MT-2, MT-11 and MT-13 are resolved by the openPractice change's text as it stands at `0a82fc2`, and MT-14 by ruling 67; record that confirmation. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-5, MT-6 and MT-15, and `define-openpractice-boundary` for MT-3 (the follow-up the openPractice change's T-11 proposes). Otherwise this change yields. Record also that tensions AT-5, AT-6 and AT-7 of openChart-spec#4 are addressed here, by MI-26, by MI-12 with MD-28, and by MD-20.
 - [ ] 1.5 Run `sha256sum -c contracts/SHA256SUMS` in this change's directory, and confirm that the digest of `openchart-conversation-retrieval-1.0.schema.json` matches MI-02. Compare it with the digest that each implementing change records: the HealthLinc companion (H-1 to H-3) and the medXfactory companion (M-1). A mismatch blocks interoperation with that holder. Any change to the retrieval schema is a governed revision of this change that records the new digest in MI-02 and in `contracts/SHA256SUMS`.
 
 ## 2. Governance Prerequisites (Routed Open Questions)
@@ -23,7 +23,7 @@
 - [ ] 2.4 The HealthLinc companion change (items H-1 to H-5 in `design.md`), which implements `openchart-conversation-retrieval/1.0`, is ratified. Open Question 3: record which openChart change defines openChart's HealthLinc link contract (ruling 39). This gate blocks enabling the inbox live.
 - [ ] 2.5 The medXfactory companion change (items M-1 and M-2) is ratified. This gate blocks medXfactory retrieval only. Open Question 4 is answered by ruling 70: openChart's receiving side of MedxEHR's relay belongs to `define-ai-authored-clinical-records` (task 2.7).
 - [ ] 2.6 Open Questions 5 to 14 are routed to their owners as `design.md` states. Each fails closed meanwhile, so none blocks the build.
-- [ ] 2.7 Track openChart-spec change `define-ai-authored-clinical-records`, which is being drafted under ruling 64, with MedxEHR-spec change `define-medical-ai-record-overlay`. This gate blocks only the limited-practice and full-practice modes of ruling 59, which are not buildable in openChart until that change is ratified. MI-26 applies meanwhile. Confirm that the change references MI-12 rather than defining a second clinical-communication record. Confirm also that it carries the chart's own record of the medical director's authorization and the check of AI writes against it (ruling 65), and openChart's side of MedxEHR's relay (ruling 70).
+- [ ] 2.7 Track openChart-spec change `define-ai-authored-clinical-records`, which is being drafted under ruling 64, with MedxEHR-spec change `define-medical-ai-record-overlay`. This gate blocks only the limited-practice and full-practice modes of ruling 59, which are not buildable in openChart until the conditions of that change's AA-01 hold, among them `define-clinical-acts-foundation` (openChart-spec#5) ratified and built. MI-26 applies until Tier 2 is in force for the act type. Confirm that the change references MI-12, with origin `ai_consult`, rather than defining a second clinical-communication record. Confirm also that it carries the chart's own record of the medical director's authorization and the check of AI writes against it (ruling 65), and openChart's side of MedxEHR's relay (ruling 70).
 
 ## 3. Spec Kit Handoff
 
@@ -50,7 +50,8 @@
   - no message is sent for a capability a holder has not declared;
   - a view that the patient's consent leaves partial is shown as partial, with its count;
   - no medical-AI exchange is filed through the inbox;
-  - an AI-authored order, prescription or diagnosis is held as communication, and creates no clinical act;
+  - an AI-authored order, prescription or diagnosis in an inbox item is held as communication, and creates no clinical act;
+  - the inbox's inertness and MI-24's no-copy rule apply to inbox items only, never to an `ai_consult` record;
   - a `priority` offer is never rejected for identity, `unlinked_identity` is never matched or filed, and no message about an `unlinked` handoff carries a `link_id`;
   - a clinician's raise is sent as `handoff.clinician_urgency_raised`, and a failed delivery reopens its item, escalating it when it is urgent;
   - no billable fact or statement comes from an item;
