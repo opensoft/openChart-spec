@@ -19,8 +19,8 @@ A patient-reported entry MUST NOT be ignored because no clinician has confirmed 
 - **THEN** the check raises an allergy alert labelled as resting on an unconfirmed entry that is not an authorized decision
 
 #### Scenario: An allergy from another organization's record raises an alert only
-- **WHEN** the chart holds a penicillin allergy only as unconfirmed information from another organization's record, the patient's allergy status is not recorded, and a clinician drafts a prescription for amoxicillin
-- **THEN** the check raises an allergy alert labelled as resting on an unconfirmed entry, the allergy does not count as confirmed, and the "allergy status not recorded" warning stays
+- **WHEN** another organization's record of a penicillin allergy reaches the chart through an integration and is entered as a recommendation, since an integration holds no decision authority (`define-clinical-acts-foundation` AN-09), the patient's allergy status is not recorded, and a clinician drafts a prescription for amoxicillin
+- **THEN** the check raises an allergy alert labelled as resting on an unconfirmed entry that is not an authorized decision, the allergy does not count as confirmed, and the "allergy status not recorded" warning stays
 
 #### Scenario: Failure: a recommendation would suppress an alert
 - **WHEN** a pending recommendation proposes marking a patient's confirmed penicillin allergy `refuted`, and a clinician drafts amoxicillin

@@ -8,7 +8,7 @@ These facts about what is built were checked at `opensoft/openChart-code` revisi
 - There is no clinician-confirmed allergy list, no medication list, no prescription, no drug knowledge and no check.
 
 **Related drafts, none on main:**
-- `define-clinical-acts-foundation` (openChart-spec#5, head `d9a9c63`) specifies the prescription record (RX-01 to RX-04), its signing gate (RX-02), the act model (CA-01 to CA-15) and authority (AU-01 to AU-07). It names this change as required before any prescription is signed, with minimum contents (checked below). At `d9a9c63` it also holds the general rule for additions to the chart under owner ruling 80 (`chart-additions` AN-01 to AN-14), including the recommendation record (AN-09), and the practitioner's sign-off of owner ruling 151 (CA-04).
+- `define-clinical-acts-foundation` (openChart-spec#5, head `e497b03`, content schema digest `d10cb6ddd8c5b2f93a7179d7d4ba00061c4b87461a22bc4fb71983468a9483b2`) specifies the prescription record (RX-01 to RX-04), its signing gate (RX-02), the act model (CA-01 to CA-15) and authority (AU-01 to AU-07). It names this change as required before any prescription is signed, with minimum contents (checked below). At `e497b03` it also holds the general rule for additions to the chart under owner ruling 80 (`chart-additions` AN-01 to AN-14), including the recommendation record (AN-09), and the practitioner's sign-off of owner ruling 151 (CA-04), which at `e497b03` follows the unratified openWallet and openSig drafts, PROPOSED there, and sorts a failed sign-off into four kinds (its AN-14).
 - `define-ai-authored-clinical-records` (openChart-spec#4, read at `dbb1fc5` and in part at `6989780`) has a Tier 2 that would accept AI-authored prescriptions. PG-01 covers that acceptance, and it needs `open`.
 - `define-openpractice-boundary` (openChart-spec#2, `e7c3090`) has CF-03.
 
@@ -185,7 +185,7 @@ The value sets are to be checked in planning against the FHIR R4 specification (
 | 5 | Checks at drafting, at each change and at signing; severities; overrides with reasons; individual critical overrides; a record of each check; labels as advice | PC-04 to PC-08 |
 | 6 | No bundled knowledge; a versioned adapter contract with schema and SHA256SUMS; nothing asserted about vendors; synthetic fixtures | KA-01, KA-02, KA-06 |
 | 7 | Gates: a verified source, and none for a practice that never had one; a verified source that is stale or down on the outage path, until a staleness limit set by policy stops signing (ruling 82); the outage path for clinicians only; a recorded legal and regulatory review; controlled and unknown classifications refused (ruling 83) | KA-03, KA-04, PG-01, PG-02, PG-04 |
-| 8 | One gate decision per signing attempt that RX-02 relies on; an attempt entered as a recommendation, or stopped before the gate by a sign-off failure the author can cure, gets none | PG-01 |
+| 8 | One gate decision per signing attempt that RX-02 relies on; an attempt entered as a recommendation, or stopped before the gate by a sign-off failure that leaves the draft open, gets none | PG-01 |
 | 9 | Boundaries: no source needed except for signing; nothing to openPractice; FHIR mapping | BD-01 to BD-03 |
 
 All nine are met.
