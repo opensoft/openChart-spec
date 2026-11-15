@@ -1,0 +1,26 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "medication.normalize.request",
+  "message_id": "a0000000-0000-4000-8000-000000000005",
+  "sent_at": "2026-11-15T10:00:00Z",
+  "deployment_ref": "SYN-DEPLOYMENT-0001",
+  "items": [
+    {
+      "item_ref": "SYN-ITEM-RX-0001",
+      "coding": {
+        "system": "patient words",
+        "code": "SYN-MED-0001"
+      },
+      "item_kind": "drug"
+    },
+    {
+      "item_ref": "SYN-ITEM-MED-0002",
+      "coding": {
+        "system": "urn:example:synthetic:medication",
+        "code": "SYN-MED-0002"
+      },
+      "item_kind": "drug"
+    }
+  ]
+}

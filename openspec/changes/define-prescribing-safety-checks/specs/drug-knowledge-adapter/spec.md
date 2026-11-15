@@ -72,7 +72,9 @@ A timeout, an adapter error, a schema-invalid result, an unsupported version, or
 - **THEN** openChart raises "could not be checked" for that medication
 
 ### Requirement: KA-06 Adapter requests carry codes only, free text only under a recorded agreement, and no patient identity
-Requests to a source SHALL carry only codes, item references and a deployment reference (design calls PD-14 and PD-20). Normalized items sent back to the source SHALL carry ingredient and class codes, without labels. A free-text medication or allergen description, such as a patient's own wording, SHALL be sent only as an item's `free_text`, and only in a request that names the `free_text_agreement_ref` recorded in the source's verification (KA-03). Without that agreement, an uncoded entry SHALL NOT be sent and SHALL stay in openChart as "could not be checked" (PC-02). Requests SHALL carry no patient identifier, name, date of birth, contact detail or note text. The schema enforces all of this: every object is closed, no message has a patient field, request items have no label, and `free_text` requires the agreement reference. The contract's fixtures and every test SHALL use clearly synthetic substance names, classes, codes and rules, and SHALL contain no real drug data.
+Requests to a source SHALL carry only codes, item references and a deployment reference (design calls PD-14 and PD-20). Normalized items sent back to the source SHALL carry ingredient and class codes, without labels. A free-text medication or allergen description, such as a patient's own wording, SHALL be sent only as an item's `free_text`, and only in a request that names the `free_text_agreement_ref` recorded in the source's verification (KA-03). Without that agreement, an uncoded entry SHALL NOT be sent and SHALL stay in openChart as "could not be checked" (PC-02). openChart SHALL send a coding only when its code system is one that the source's capability declaration lists (KA-02). A coding in any other system SHALL NOT be sent, and its entry SHALL stay local as "could not be checked". Item and allergen references SHALL be opaque identifiers that openChart mints. Requests SHALL carry no patient identifier, name, date of birth, contact detail or note text.
+
+The schema enforces what a schema can: every object is closed; no message has a patient field; request items carry no label; a code holds no whitespace; a code system is a URI; a version is a token without spaces; and `free_text` requires the agreement reference. openChart enforces the rest at runtime: the declared-systems rule, and opaque references. The contract's fixtures and every test SHALL use clearly synthetic substance names, classes, codes and rules, and SHALL contain no real drug data.
 
 #### Scenario: Failure: a request would carry the patient
 - **WHEN** an implementation adds a patient reference to an interaction lookup request
@@ -81,6 +83,14 @@ Requests to a source SHALL carry only codes, item references and a deployment re
 #### Scenario: Failure: patient wording would be sent without an agreement
 - **WHEN** a patient-reported allergy is free text, and the source's verification records no free-text agreement
 - **THEN** openChart does not send the text, a request carrying it would fail the schema, and the clinician sees "could not be checked" for that allergy
+
+#### Scenario: Failure: patient words disguised as a coding
+- **WHEN** an implementation sends a coding with system `urn:intake:patient-words` and code `Jane Roe rash pen 1980`, with no agreement reference
+- **THEN** the request fails the schema, because a code may not contain whitespace, and nothing is sent
+
+#### Scenario: Failure: a coding in an undeclared system
+- **WHEN** an entry's coding uses a code system that the source's capability declaration does not list
+- **THEN** openChart does not send it, and the clinician sees "could not be checked" for that entry
 
 #### Scenario: Failure: a fixture uses real drug data
 - **WHEN** a contributor adds a fixture naming a real medicine or interaction

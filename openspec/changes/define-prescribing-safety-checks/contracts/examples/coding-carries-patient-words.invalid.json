@@ -1,0 +1,18 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "medication.normalize.request",
+  "message_id": "a0000000-0000-4000-8000-000000000005",
+  "sent_at": "2026-11-15T10:00:00Z",
+  "deployment_ref": "SYN-DEPLOYMENT-0001",
+  "items": [
+    {
+      "item_ref": "SYN-ITEM-PR-0005",
+      "coding": {
+        "system": "urn:intake:patient-words",
+        "code": "Jane Roe rash pen 1980"
+      },
+      "item_kind": "unknown"
+    }
+  ]
+}

@@ -7,6 +7,14 @@
     "expect_in_error": "'severity_mapping' is a required property",
     "reason": "a capability declaration must map every source severity"
   },
+  "coding-carries-patient-words.invalid.json": {
+    "expect_in_error": "does not match",
+    "reason": "the reviewer's probe: a code may not contain whitespace, so free text cannot travel as a coding"
+  },
+  "coding-system-not-uri.invalid.json": {
+    "expect_in_error": "does not match",
+    "reason": "a code system must be a URI"
+  },
   "error-unknown-code.invalid.json": {
     "expect_in_error": "error_code",
     "reason": "error codes are closed; an error is never 'no alerts'"

@@ -1,7 +1,7 @@
 ## 1. Ratification And Contract Alignment
 
 - [ ] 1.1 Run `openspec validate define-prescribing-safety-checks --strict --no-interactive` on the exact revision proposed for ratification. Record the OpenSpec version, timestamp, revision, exit code and output.
-- [ ] 1.2 In this change's `contracts/` directory, run `sha256sum -c SHA256SUMS` and `python3 -I selftest.py`. The self-test needs `jsonschema` 4.18 or later. All 11 valid fixtures must validate, and all 12 invalid fixtures must fail, each for the reason stated in `examples/expected-failures.json`. Record both outputs.
+- [ ] 1.2 In this change's `contracts/` directory, run `sha256sum -c SHA256SUMS` and `python3 -I selftest.py`. The self-test needs `jsonschema` 4.18 or later. All 11 valid fixtures must validate, and all 14 invalid fixtures must fail, each for the reason stated in `examples/expected-failures.json`. Record both outputs.
 - [ ] 1.3 Obtain Brett Heap's ratification. He stamps `Ratified by` and changes `Status` from `draft` to `ratified` in `proposal.md`, in the same revision. The rulings recorded in `design.md` are not ratification. No Spec Kit feature is created before this task is complete.
 - [ ] 1.4 Record Brett Heap's disposition of tensions PT-1 to PT-5 and design calls PD-1 to PD-22. Where a disposition needs an amendment elsewhere, name the change that must carry it:
   - `define-clinical-acts-foundation` for PT-3 (CA-01 wording and a MINOR content-schema version);
@@ -14,7 +14,7 @@
 
 - [ ] 2.1 Open Question 1: adopt openChart's constitution through separate governance. Then perform a meaningful Constitution Check before planning. This gate blocks planning.
 - [ ] 2.2 Open Question 2: owner dispositions (task 1.4). This gate blocks ratification.
-- [ ] 2.3 `define-clinical-acts-foundation` is ratified, and its feature (1) has landed. This gate blocks this change's build.
+- [ ] 2.3 `define-clinical-acts-foundation` is ratified, and its features (1), clinical authority, and (2), the act model, have landed. This gate blocks this change's build.
 - [ ] 2.4 Open Questions 3 and 4: in each deployment, the medical director records the legal and regulatory review (PG-04), the source verification (KA-03) and the currency policy (KA-04). This gate blocks go-live in that deployment, not the build; until it is met, PG-01 refuses every signature.
 - [ ] 2.5 Open Questions 5 to 8 are routed as `design.md` states. Each fails closed meanwhile, so none blocks the build.
 
@@ -27,7 +27,7 @@
   - the gate decision interface that foundation RX-02 calls;
   - how outage-path work items are routed;
   - the reason-code list for overrides.
-- [ ] 3.3 Confirm with the foundation's feature (4) that its signing path calls PG-01, and that this change's capability is enabled before, or together with, that feature in every deployment (PG-05).
+- [ ] 3.3 Confirm with the foundation's feature (5) that its signature, co-signature and release paths call PG-01, and that this change's capability is enabled before, or together with, that feature in every deployment (PG-05).
 
 ## 4. openChart Realization
 
@@ -42,10 +42,10 @@
   - checks re-run at co-signature and release; the co-signer sees earlier overrides; a new finding at release holds the prescription; pending prescriptions are inputs;
   - every check record holds inputs, source and version, alerts and responses, and cannot be edited;
   - adapter failures never show "no alerts";
-  - no request carries patient identity or labels, and free text is never sent without the recorded agreement;
+  - no request carries patient identity or labels; a code never holds whitespace; a coding is sent only in a declared system; free text is never sent without the recorded agreement;
   - every gate refusal reason is reachable;
   - with no verified source there is no outage path;
-  - the outage path accepts only a clinician who has answered every local input individually and recorded the statement with code `prescribing.checks_unavailable_manual_review`; it sets the signed flag `checks_unavailable_at_signing` and re-checks on return;
+  - the outage path accepts only a clinician who has answered every PC-01 input that needs no source, one entry at a time, and recorded the statement with code `prescribing.checks_unavailable_manual_review` on that step's check record; only signing sets the signed flag `checks_unavailable_at_signing`; co-signature and release change no signed content; a deferred release with the source unavailable stays `pending_release`; it re-checks on return;
   - no non-clinician author uses the outage path;
   - `System Manager` cannot bypass the gate;
   - a lapsed legal review refuses every signature;
@@ -55,5 +55,5 @@
 
 ## 5. Consumer Handoff And Archive
 
-- [ ] 5.1 Publish the passing openChart revision, the supported adapter contract version (MAJOR 1 and the declared MINOR), and the gate decision interface, for the foundation's feature (4) and for adapter implementers.
+- [ ] 5.1 Publish the passing openChart revision, the supported adapter contract version (MAJOR 1 and the declared MINOR), and the gate decision interface, for the foundation's feature (5) and for adapter implementers.
 - [ ] 5.2 Land the code and spec leg pull requests and the assembly root pin bump. Then archive this change and promote its capabilities, after re-running strict validation on the final revision.
