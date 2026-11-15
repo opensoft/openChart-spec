@@ -1,0 +1,169 @@
+{
+  "conversation-result-healthlinc-mixed-turns.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-medxfactory-patient-confirmed-only.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-urgent-escalation-patient-told.valid.json": {
+    "ai_turns": {}
+  },
+  "conversation-result-urgent-with-withheld-turns.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-priority-representative-request.valid.json": {
+    "ai_turns": {}
+  },
+  "conversation-result-routine-only-the-request-turn.valid.json": {
+    "ai_turns": {},
+    "answers": "conversation-retrieve-routine.valid.json"
+  },
+  "conversation-result-ai-turn-with-all-four-provenance-fields.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0003": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-origin-ref-and-emergency-guidance.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0003": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-origin-ref-at-the-same-holder.valid.json": {
+    "ai_turns": {}
+  },
+  "conversation-result-request-text-padded-with-whitespace.valid.json": {
+    "ai_turns": {}
+  },
+  "conversation-result-request-over-two-turns-with-one-request-ref.valid.json": {
+    "ai_turns": {}
+  },
+  "conversation-result-coach-turn-with-its-ai-identity.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "identified",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-openpractice-agent-turn-with-its-ai-identity.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0003": "identified",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-medxfactory-ai-turn-with-ai-identity-and-the-four-fields.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "identified",
+      "SYN-TURN-0003": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-without-model-version.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_identity_incomplete",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-without-model.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_identity_incomplete",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-without-openwallet-id.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-empty-object.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-openwallet-id-with-spaces.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_identity_malformed",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-openwallet-id-starting-with-a-separator.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_identity_malformed",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-empty-openwallet-id.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_identity_malformed",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-model-version-with-a-space.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_identity_malformed",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-model-version-with-a-slash.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_identity_malformed",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-empty-model.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_identity_malformed",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-not-covered-by-the-registration.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "openwallet_id_not_covered",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-ai-identity-model-with-spaces-as-the-foundation-forms-it.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "identified",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    }
+  },
+  "conversation-result-one-identified-and-one-badly-formed-ai-turn.valid.json": {
+    "ai_turns": {
+      "SYN-TURN-0002": "identified",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "ai_identity_malformed"
+    }
+  },
+  "conversation-result-residual-placeholder-with-the-matching-request-ref.valid.json": {
+    "ai_turns": {},
+    "answers": "conversation-retrieve-routine.valid.json"
+  },
+  "conversation-result-residual-greeting-with-the-matching-request-ref.valid.json": {
+    "ai_turns": {},
+    "answers": "conversation-retrieve-routine.valid.json"
+  }
+}

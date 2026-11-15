@@ -1,0 +1,80 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000039",
+  "message_type": "conversation.result",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-medxfactory-a",
+  "payload": {
+    "acked_message_id": "9a1b2c3d-0000-4000-8000-000000000038",
+    "handoff_id": "3f0c2a0e-1111-4c4c-8a8a-000000000001",
+    "conversation_ref": {
+      "issuer": "synthetic-medxfactory-a",
+      "namespace": "medxfactory",
+      "value": "SYN-CONV-0002"
+    },
+    "urgency": "urgent",
+    "consent_ref": "SYN-CONSENT-MX-0005",
+    "snapshot_ref": "SYN-SNAP-0008",
+    "as_of": "2026-11-15T10:00:00Z",
+    "origin_conversation_ref": {
+      "issuer": "synthetic-healthlinc-a",
+      "namespace": "healthlinc",
+      "value": "SYN-CONV-0000"
+    },
+    "turns": [
+      {
+        "turn_id": "SYN-TURN-0001",
+        "position": 1,
+        "author_type": "patient",
+        "source": "medxfactory",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": true,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 1."
+        },
+        "request_ref": {
+          "issuer": "synthetic-healthlinc-a",
+          "namespace": "healthlinc",
+          "value": "SYN-MSG-0001"
+        },
+        "shared_basis": "urgent_escalation"
+      },
+      {
+        "turn_id": "SYN-TURN-0002",
+        "position": 2,
+        "author_type": "ai",
+        "source": "medxfactory",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 2."
+        },
+        "shared_basis": "urgent_escalation",
+        "emergency_guidance": "seek_urgent_care",
+        "ai_mode": "advice_only",
+        "disclosure_code": "ai_consult_disclosure_v2",
+        "model_ref": "synthetic-vendor/model-a@2026.10",
+        "advice_statement_ref": "SYN-STMT-ADVICE-0003"
+      },
+      {
+        "turn_id": "SYN-TURN-0003",
+        "position": 3,
+        "author_type": "ai",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 3."
+        },
+        "emergency_guidance": [
+          "seek_urgent_care"
+        ]
+      }
+    ],
+    "patient_told_at": "2026-11-15T10:00:00Z"
+  }
+}

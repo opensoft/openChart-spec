@@ -1,0 +1,479 @@
+{
+  "ack-received-with-error-code.invalid.json": {
+    "expect_in_error": "[7, 'properties', 'payload', 'allOf', 0, 'else', 'not']",
+    "reason": "only a refusal carries a code (MD-22)"
+  },
+  "ack-rejected-without-error-code.invalid.json": {
+    "expect_in_error": "'error_code' is a required property",
+    "reason": "a refusal carries its code (MD-22)"
+  },
+  "ack-with-unknown-error-code.invalid.json": {
+    "expect_in_error": "'patient_not_found_synthetic' is not one of ['schema_invalid', 'unsupported_major_version', 'unauthorized', 'idempotency_conflict', 'capability_not_supported', 'conversation_not_found', 'reference_not_found', 'result_mismatch', 'consent_not_granted', 'reply_path_invalid', 'temporarily_unavailable', 'recipient_link_revoked', 'account_closed', 'conversation_unavailable', 'placement_failed', 'no_permitted_notification_channel', 'service_suspended']",
+    "reason": "error codes are the contract's one set (MD-22)"
+  },
+  "advice-statement-ref-on-a-staff-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "AI-turn fields only on an ai turn (MD-30)"
+  },
+  "advice-statement-ref-with-free-text.invalid.json": {
+    "expect_in_error": "'Not medical advice!' does not match '^[A-Za-z0-9:_./-]{1,128}$'",
+    "reason": "advice_statement_ref is an opaque reference (MD-30)"
+  },
+  "agent-turn-authored-as-clinician.invalid.json": {
+    "expect_in_error": "'ai' was expected",
+    "reason": "an openPractice agent's turn is an ai turn (MD-24)"
+  },
+  "agent-turn-authored-as-patient.invalid.json": {
+    "expect_in_error": "'ai' was expected",
+    "reason": "an openPractice agent's turn is an ai turn (MD-24)"
+  },
+  "agent-turn-with-both-answer-type-and-approver.invalid.json": {
+    "expect_in_error": "[1, 'not']",
+    "reason": "an openPractice agent's turn carries exactly one of its answer type and its approver (MD-24)"
+  },
+  "agent-turn-with-neither-answer-type-nor-approver.invalid.json": {
+    "expect_in_error": "'approved_by' is a required property",
+    "reason": "an openPractice agent's turn carries exactly one of its answer type and its approver (MD-24)"
+  },
+  "ai-fields-on-a-patient-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "AI-turn fields only on an ai turn (MD-30)"
+  },
+  "ai-identity-as-a-bare-string.invalid.json": {
+    "expect_in_error": "'SYN-WALLET-AI-COACH-0001' is not of type 'object'",
+    "reason": "ai_identity is an object (MD-37)"
+  },
+  "ai-identity-model-of-129-characters.invalid.json": {
+    "expect_in_error": "'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm' is too long",
+    "reason": "each ai_identity value has a length bound (MD-37)"
+  },
+  "ai-identity-model-version-of-65-characters.invalid.json": {
+    "expect_in_error": "'11111111111111111111111111111111111111111111111111111111111111111' is too long",
+    "reason": "each ai_identity value has a length bound (MD-37)"
+  },
+  "ai-identity-on-a-clinician-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "ai_identity only on an ai turn (MD-37)"
+  },
+  "ai-identity-on-a-patient-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "ai_identity only on an ai turn (MD-37)"
+  },
+  "ai-identity-on-an-unknown-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "ai_identity only on an ai turn (MD-37)"
+  },
+  "ai-identity-openwallet-id-of-201-characters.invalid.json": {
+    "expect_in_error": "'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW' is too long",
+    "reason": "each ai_identity value has a length bound (MD-37)"
+  },
+  "ai-identity-with-an-extra-property.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('patient_name' was unexpected)",
+    "reason": "ai_identity stays closed, which keeps PHI out (MD-37)"
+  },
+  "ai-identity-with-an-integer-model-version.invalid.json": {
+    "expect_in_error": "7 is not of type 'string'",
+    "reason": "each ai_identity value is a string (MD-37)"
+  },
+  "answer-type-version-zero.invalid.json": {
+    "expect_in_error": "0 is less than the minimum of 1",
+    "reason": "an answer type's version starts at 1 (MD-24)"
+  },
+  "as-of-with-hour-24.invalid.json": {
+    "expect_in_error": "'2026-11-15T24:00:00Z' does not match '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$'",
+    "reason": "a time's hour is 00 to 23, checked by pattern (MD-22)"
+  },
+  "authored-at-without-a-time-zone.invalid.json": {
+    "expect_in_error": "'2026-11-15T10:00:00' does not match '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$'",
+    "reason": "a time carries its time zone, checked by pattern (MD-22)"
+  },
+  "capabilities-from-openpractice-agent.invalid.json": {
+    "expect_in_error": "'openpractice_agent' is not one of ['healthlinc', 'medxfactory']",
+    "reason": "only a holder declares capabilities (MD-22)"
+  },
+  "capabilities-with-no-versions.invalid.json": {
+    "expect_in_error": "[1, 'properties', 'payload', 'properties', 'supported_versions', 'minItems']",
+    "reason": "a holder declares at least one version (MD-22)"
+  },
+  "capability-not-in-the-list.invalid.json": {
+    "expect_in_error": "'retrieval' is not one of ['reply_delivery', 'delivery_failure_callback', 'split']",
+    "reason": "retrieval is required, not declared; only three capabilities exist (MD-22)"
+  },
+  "clinician-turn-without-reply-id.invalid.json": {
+    "expect_in_error": "'reply_id' is a required property",
+    "reason": "a clinician turn carries the reply_id of the reply that carried it (MD-24)"
+  },
+  "consent-ref-carries-a-name.invalid.json": {
+    "expect_in_error": "'Synthetic Name' does not match '^[A-Za-z0-9:_./-]{1,128}$'",
+    "reason": "references are opaque and carry no PHI (MI-21)"
+  },
+  "conversation-ref-in-openpractice-namespace.invalid.json": {
+    "expect_in_error": "'openpractice' is not one of ['healthlinc', 'medxfactory']",
+    "reason": "a conversation is never held by openPractice (MI-03)"
+  },
+  "delivery-failure-extra-field.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('urgency' was unexpected)",
+    "reason": "every object is closed (MD-26)"
+  },
+  "delivery-failure-missing-reply-message-id.invalid.json": {
+    "expect_in_error": "'reply_message_id' is a required property",
+    "reason": "a delivery failure names the reply message (MD-26)"
+  },
+  "delivery-failure-with-a-non-delivery-code.invalid.json": {
+    "expect_in_error": "'schema_invalid' is not one of ['recipient_link_revoked', 'account_closed', 'conversation_unavailable', 'placement_failed', 'no_permitted_notification_channel', 'service_suspended']",
+    "reason": "failure_reason is one of the six delivery-failure codes (MD-26)"
+  },
+  "delivery-failure-with-free-text.invalid.json": {
+    "expect_in_error": "'synthetic phone off' is not one of ['recipient_link_revoked', 'account_closed', 'conversation_unavailable', 'placement_failed', 'no_permitted_notification_channel', 'service_suspended']",
+    "reason": "failure_reason is a code, never free text (MD-26); the one value fails both the contract's error set and the delivery-failure subset of it",
+    "error_count": 2
+  },
+  "disclosure-code-carries-a-name-and-date-of-birth.invalid.json": {
+    "expect_in_error": "'synthetic_name_1980_01_01' does not match '^[a-z]+(_[a-z]+)*(_v[0-9]{1,3})?$'",
+    "reason": "a disclosure code has no digits outside its version suffix (MD-30, KL-2)"
+  },
+  "disclosure-code-on-a-representative-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "AI-turn fields only on an ai turn (MD-30)"
+  },
+  "disclosure-code-with-a-date-as-its-version.invalid.json": {
+    "expect_in_error": "'notice_v19800101' does not match '^[a-z]+(_[a-z]+)*(_v[0-9]{1,3})?$'",
+    "reason": "a version suffix has one to three digits (MD-30)"
+  },
+  "disclosure-code-with-a-run-together-name-and-date.invalid.json": {
+    "expect_in_error": "'syntheticname19800101' does not match '^[a-z]+(_[a-z]+)*(_v[0-9]{1,3})?$'",
+    "reason": "a disclosure code has no digits outside its version suffix (MD-30, KL-2)"
+  },
+  "duplicate-capability.invalid.json": {
+    "expect_in_error": "['split', 'split'] has non-unique elements",
+    "reason": "a capability is declared once (MD-22)"
+  },
+  "ehr-patient-in-medx-namespace.invalid.json": {
+    "expect_in_error": "'openchart' was expected",
+    "reason": "a holder's patient reference is openChart's own, never a Medx reference (MD-19)"
+  },
+  "emergency-guidance-as-a-single-string.invalid.json": {
+    "expect_in_error": "'seek_urgent_care' is not of type 'array'",
+    "reason": "emergency guidance is an array of codes (MD-33)"
+  },
+  "emergency-guidance-as-an-empty-list.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'properties', 'emergency_guidance', 'minItems']",
+    "reason": "emergency guidance holds at least one code (MD-33)"
+  },
+  "emergency-guidance-on-a-clinician-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "emergency guidance only on an ai turn (MD-33)"
+  },
+  "emergency-guidance-on-a-patient-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "emergency guidance only on an ai turn (MD-33)"
+  },
+  "emergency-guidance-with-a-duplicate-code.invalid.json": {
+    "expect_in_error": "['seek_urgent_care', 'seek_urgent_care'] has non-unique elements",
+    "reason": "each emergency guidance code appears once (MD-33)"
+  },
+  "emergency-guidance-with-an-unknown-code.invalid.json": {
+    "expect_in_error": "'take_aspirin_now' is not one of ['call_emergency_services', 'go_to_emergency_department', 'contact_crisis_line', 'contact_poison_control', 'seek_urgent_care']",
+    "reason": "emergency guidance codes are a closed neutral list (MD-33)"
+  },
+  "emergency-guidance-with-empty-text.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 2, 'then', 'properties', 'content', 'properties', 'text', 'minLength']",
+    "reason": "a turn with emergency guidance keeps its text (MD-33)"
+  },
+  "empty-turns-with-withheld-count.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'minItems']",
+    "reason": "a result carries at least one turn, whatever it withholds (MD-29); an empty list is both too short and without a request turn",
+    "error_count": 2
+  },
+  "empty-turns.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'minItems']",
+    "reason": "a result carries at least one turn (MD-29); an empty list is both too short and without a request turn",
+    "error_count": 2
+  },
+  "free-text-disclosure-code.invalid.json": {
+    "expect_in_error": "'Shown AI notice' does not match '^[a-z]+(_[a-z]+)*(_v[0-9]{1,3})?$'",
+    "reason": "a disclosure code is a code, never free text (MD-30)"
+  },
+  "handoff-id-in-braces.invalid.json": {
+    "expect_in_error": "'{3f0c2a0e-1111-4c4c-8a8a-000000000001}' does not match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'",
+    "reason": "a UUID is in its hyphenated form, checked by pattern (MD-22)"
+  },
+  "healthlinc-turn-with-an-answer-type.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 3, 'else', 'not']",
+    "reason": "only an openPractice agent's turn carries an answer type (MD-24)"
+  },
+  "issued-at-not-a-date-time.invalid.json": {
+    "expect_in_error": "'yesterday' does not match '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$'",
+    "reason": "issued_at is an RFC 3339 date-time, checked by pattern (MD-22)"
+  },
+  "major-version-2-0.invalid.json": {
+    "expect_in_error": "'2.0' does not match '^1\\\\.[0-9]+$'",
+    "reason": "a MAJOR version other than 1 (MI-02)"
+  },
+  "message-id-not-a-uuid.invalid.json": {
+    "expect_in_error": "'SYN-MSG-1' does not match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'",
+    "reason": "message_id is a random UUID, checked by pattern (MI-04, MD-22)"
+  },
+  "message-type-does-not-match-payload.invalid.json": {
+    "expect_in_error": "'request_ref' is a required property",
+    "reason": "a message's payload is the one its message_type names (MD-22); the reply's payload, read as a split request, lacks request_ref and carries the reply's fields",
+    "error_count": 2
+  },
+  "missing-consent-ref.invalid.json": {
+    "expect_in_error": "'consent_ref' is a required property",
+    "reason": "a result carries the patient's sharing-consent reference (MD-25)"
+  },
+  "missing-snapshot-ref.invalid.json": {
+    "expect_in_error": "'snapshot_ref' is a required property",
+    "reason": "a result names the snapshot the clinician saw (MD-22)"
+  },
+  "model-ref-on-a-clinician-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
+    "reason": "AI-turn fields only on an ai turn (MD-30)"
+  },
+  "model-ref-with-a-space.invalid.json": {
+    "expect_in_error": "'model a v1' does not match '^[A-Za-z0-9._:/@+-]{1,128}$'",
+    "reason": "model_ref is one reference (MD-30)"
+  },
+  "negative-turns-withheld.invalid.json": {
+    "expect_in_error": "-1 is less than the minimum of 0",
+    "reason": "turns_withheld is a count (MD-25)"
+  },
+  "no-request-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'contains']",
+    "reason": "a result carries at least one request turn (MI-03, MD-29)"
+  },
+  "origin-ref-as-a-bare-string.invalid.json": {
+    "expect_in_error": "'SYN-CONV-0000' is not of type 'object'",
+    "reason": "an origin reference is a triple, never a bare value (MD-32)"
+  },
+  "origin-ref-in-the-openchart-namespace.invalid.json": {
+    "expect_in_error": "'openchart' is not one of ['healthlinc', 'medxfactory']",
+    "reason": "an origin conversation is held by a holder (MD-32)"
+  },
+  "origin-ref-missing-its-value.invalid.json": {
+    "expect_in_error": "'value' is a required property",
+    "reason": "an origin reference is a full triple (MD-32)"
+  },
+  "origin-ref-value-with-a-name-and-date-of-birth.invalid.json": {
+    "expect_in_error": "'Synthetic Name 1980-01-01' does not match '^[A-Za-z0-9:_./-]{1,128}$'",
+    "reason": "an origin reference's value is an opaque token (MD-32, KL-3)"
+  },
+  "origin-ref-value-with-free-text.invalid.json": {
+    "expect_in_error": "'conversation with a synthetic patient' does not match '^[A-Za-z0-9:_./-]{1,128}$'",
+    "reason": "an origin reference's value is an opaque token (MD-32, KL-3)"
+  },
+  "origin-ref-with-an-extra-field.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('note' was unexpected)",
+    "reason": "every object is closed (MD-32)"
+  },
+  "patient-turn-with-an-approver.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 3, 'else', 'not']",
+    "reason": "only an openPractice agent's turn carries an approver (MD-24)"
+  },
+  "patient-turn-with-reply-id.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 4, 'else', 'not']",
+    "reason": "only a clinician turn carries a reply_id (MD-24)"
+  },
+  "placeholder-request-turn-without-request-ref.invalid.json": {
+    "expect_in_error": "'request_ref' is a required property",
+    "reason": "a request turn carries request_ref (MI-03, MD-29)"
+  },
+  "placeholder-whose-request-ref-does-not-match.mismatch-invalid.json": {
+    "expect_in_error": "request_ref",
+    "retrieve": "conversation-retrieve-routine.valid.json",
+    "reason": "no request turn carries the retrieve's request_ref, so a placeholder sent under another reference fails (MI-03, MD-29)"
+  },
+  "priority-without-an-urgent-escalation-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'allOf', 1, 'then', 'properties', 'turns', 'contains']",
+    "reason": "a priority item's request turns are shared as urgent_escalation (MD-25)"
+  },
+  "priority-without-patient-told-at.invalid.json": {
+    "expect_in_error": "'patient_told_at' is a required property",
+    "reason": "a priority result says when the patient was told (MD-25); two rules require patient_told_at: the escalation share and the priority urgency",
+    "error_count": 2
+  },
+  "reply-authored-as-ai.invalid.json": {
+    "expect_in_error": "'clinician' was expected",
+    "reason": "a reply is clinician-authored (MI-11, MI-13)"
+  },
+  "reply-clinician-ref-with-a-space.invalid.json": {
+    "expect_in_error": "'Dr Synthetic' does not match '^[A-Za-z0-9:_-]{1,128}$'",
+    "reason": "a clinician reference is opaque, never a name (MI-11)"
+  },
+  "reply-with-free-text-restriction.invalid.json": {
+    "expect_in_error": "'Do not text the synthetic patient' does not match '^[a-z][a-z0-9_]{1,63}$'",
+    "reason": "restrictions are codes, never free text (MI-22)"
+  },
+  "reply-with-unknown-delivery-scope.invalid.json": {
+    "expect_in_error": "'email_only' is not one of ['standard', 'conversation_only']",
+    "reason": "delivery_scope is standard or conversation_only (MD-13)"
+  },
+  "reply-without-channel-restrictions.invalid.json": {
+    "expect_in_error": "'channel_restrictions' is a required property",
+    "reason": "a reply carries its restriction codes, even when there are none (MI-22)"
+  },
+  "request-ref-as-a-bare-string.invalid.json": {
+    "expect_in_error": "'SYN-MSG-0001' is not of type 'object'",
+    "reason": "a request reference is a triple (MI-03)"
+  },
+  "request-ref-from-another-issuer.mismatch-invalid.json": {
+    "expect_in_error": "request_ref",
+    "retrieve": "conversation-retrieve-routine.valid.json",
+    "reason": "references are compared as (issuer, namespace, value) triples (MD-29)"
+  },
+  "request-ref-on-a-non-request-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 0, 'else', 'not']",
+    "reason": "only a request turn carries request_ref (MI-03)"
+  },
+  "request-turn-authored-by-ai.invalid.json": {
+    "expect_in_error": "'ai' is not one of ['patient', 'representative']",
+    "reason": "a request turn is the patient's or a representative's (MI-03)"
+  },
+  "request-turn-authored-by-an-openpractice-agent.invalid.json": {
+    "expect_in_error": "'ai' is not one of ['patient', 'representative']",
+    "reason": "a request turn is the patient's or a representative's (MI-03)"
+  },
+  "request-turn-authored-by-clinician.invalid.json": {
+    "expect_in_error": "'clinician' is not one of ['patient', 'representative']",
+    "reason": "a request turn is the patient's or a representative's (MI-03)"
+  },
+  "request-turn-with-a-single-space.invalid.json": {
+    "expect_in_error": "' ' does not match '\\\\S'",
+    "reason": "a request turn's text has a character that is not whitespace (MD-29)"
+  },
+  "request-turn-with-empty-text.invalid.json": {
+    "expect_in_error": "'' does not match '\\\\S'",
+    "reason": "a request turn's text is not empty (MI-03, MD-29); empty text is both too short and without a character that is not whitespace",
+    "error_count": 2
+  },
+  "request-turn-with-whitespace-only-text.invalid.json": {
+    "expect_in_error": "' \\t\\n  ' does not match '\\\\S'",
+    "reason": "a request turn's text has a character that is not whitespace (MD-29)"
+  },
+  "result-authored-on-30-february.calendar-invalid.json": {
+    "expect_in_error": "2026-02-30T10:00:00Z names no real calendar day",
+    "reason": "30 February passes the timestamp pattern; openChart refuses it beside the schema (Decision 14)"
+  },
+  "result-mismatch-as-a-delivery-failure-reason.invalid.json": {
+    "expect_in_error": "'result_mismatch' is not one of ['recipient_link_revoked', 'account_closed', 'conversation_unavailable', 'placement_failed', 'no_permitted_notification_channel', 'service_suspended']",
+    "reason": "result_mismatch is not a delivery failure (MD-26, MD-29)"
+  },
+  "result-with-unknown-urgency.invalid.json": {
+    "expect_in_error": "'emergency' is not one of ['routine', 'priority', 'urgent']",
+    "reason": "urgency is routine, priority or urgent (MI-10)"
+  },
+  "result-without-urgency.invalid.json": {
+    "expect_in_error": "'urgency' is a required property",
+    "reason": "a result echoes the urgency it applied (MD-29)"
+  },
+  "retrieve-request-ref-in-the-openchart-namespace.invalid.json": {
+    "expect_in_error": "'openchart' is not one of ['healthlinc', 'medxfactory']",
+    "reason": "a request reference is the holder's (MI-03)"
+  },
+  "retrieve-with-another-purpose.invalid.json": {
+    "expect_in_error": "'clinical_handoff' was expected",
+    "reason": "1.0 retrieves only for a clinical handoff (MD-32)"
+  },
+  "retrieve-without-request-ref.invalid.json": {
+    "expect_in_error": "'request_ref' is a required property",
+    "reason": "a retrieve names the request it serves (MI-03)"
+  },
+  "retrieve-without-urgency.invalid.json": {
+    "expect_in_error": "'urgency' is a required property",
+    "reason": "a retrieve carries the item's urgency (MI-03)"
+  },
+  "split-request-ref-in-openchart-namespace.invalid.json": {
+    "expect_in_error": "'openchart' is not one of ['healthlinc', 'medxfactory']",
+    "reason": "a request reference is the holder's (MI-16)"
+  },
+  "turn-missing-author-type.invalid.json": {
+    "expect_in_error": "'author_type' is a required property",
+    "reason": "every turn carries its author type (MI-12)"
+  },
+  "turn-missing-request-turn.invalid.json": {
+    "expect_in_error": "'request_turn' is a required property",
+    "reason": "every turn says whether it is a request turn (MI-03)"
+  },
+  "turn-missing-source.invalid.json": {
+    "expect_in_error": "'source' is a required property",
+    "reason": "every turn carries its source token (MI-12)"
+  },
+  "turn-missing-turn-id.invalid.json": {
+    "expect_in_error": "'turn_id' is a required property",
+    "reason": "every turn is keyed by its turn_id (MI-12)"
+  },
+  "turn-position-zero.invalid.json": {
+    "expect_in_error": "0 is less than the minimum of 1",
+    "reason": "a turn's position starts at 1"
+  },
+  "turn-unknown-author-type.invalid.json": {
+    "expect_in_error": "'doctor_ai' is not one of ['patient', 'representative', 'ai', 'clinician', 'staff', 'system', 'unknown']",
+    "reason": "author types are MI-12's closed list; the value fails the author-type list and, on this request turn, the request-turn authors too",
+    "error_count": 2
+  },
+  "turn-unknown-source-token.invalid.json": {
+    "expect_in_error": "'hermes' is not one of ['healthlinc', 'medxfactory', 'openpractice_agent']",
+    "reason": "a source token is added only in a MINOR version (Decision 14)"
+  },
+  "turn-with-an-attachment.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('attachment_ref' was unexpected)",
+    "reason": "no attachments in 1.0 (MD-27)"
+  },
+  "turn-with-html-content.invalid.json": {
+    "expect_in_error": "'text/plain' was expected",
+    "reason": "content is plain text only in 1.0 (MD-27)"
+  },
+  "unknown-ai-mode.invalid.json": {
+    "expect_in_error": "'autonomous' is not one of ['advice_only', 'limited_practice', 'full_practice']",
+    "reason": "ai_mode is one of ruling 59's three modes (MD-30)"
+  },
+  "unknown-envelope-field.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('handoff_note' was unexpected)",
+    "reason": "every object is closed (MD-22)"
+  },
+  "unknown-message-type.invalid.json": {
+    "expect_in_error": "'message.ack' was expected",
+    "reason": "the contract has eight message types (Decision 14); the message_type names no message kind, so the error is the message kinds' own",
+    "no_message_kind": true
+  },
+  "unknown-payload-field.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('summary' was unexpected)",
+    "reason": "every object is closed (MD-22)"
+  },
+  "unknown-shared-basis.invalid.json": {
+    "expect_in_error": "'whatever' is not one of ['consent_scope', 'patient_confirmed', 'urgent_escalation']",
+    "reason": "shared_basis is one of three codes (MD-25)"
+  },
+  "urgency-differs-from-the-one-sent.mismatch-invalid.json": {
+    "expect_in_error": "urgency",
+    "retrieve": "conversation-retrieve-routine.valid.json",
+    "reason": "a result echoes the urgency openChart sent (MD-29)"
+  },
+  "urgent-escalation-share-without-patient-told-at.invalid.json": {
+    "expect_in_error": "'patient_told_at' is a required property",
+    "reason": "an urgent_escalation share needs patient_told_at (MD-25); two rules require patient_told_at: the escalation share and the urgent urgency",
+    "error_count": 2
+  },
+  "urgent-request-turn-without-any-shared-basis.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'allOf', 1, 'then', 'properties', 'turns', 'contains']",
+    "reason": "an urgent item's request turn carries the urgent_escalation basis (MD-25)"
+  },
+  "urgent-with-escalation-basis-only-on-a-non-request-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'allOf', 1, 'then', 'properties', 'turns', 'contains']",
+    "reason": "the urgent_escalation share is on a request turn (MD-25)"
+  },
+  "urgent-without-an-urgent-escalation-turn.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'payload', 'allOf', 1, 'then', 'properties', 'turns', 'contains']",
+    "reason": "an urgent item's request turns are shared as urgent_escalation (MD-25)"
+  },
+  "urgent-without-patient-told-at.invalid.json": {
+    "expect_in_error": "'patient_told_at' is a required property",
+    "reason": "an urgent result says when the patient was told (MD-25); two rules require patient_told_at: the escalation share and the urgent urgency",
+    "error_count": 2
+  },
+  "wrong-contract-id.invalid.json": {
+    "expect_in_error": "'openchart-conversation-retrieval' was expected",
+    "reason": "a message of another contract (MI-02)"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000041",
+  "message_type": "conversation.result",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-healthlinc-a",
+  "payload": {
+    "acked_message_id": "9a1b2c3d-0000-4000-8000-000000000040",
+    "handoff_id": "3f0c2a0e-1111-4c4c-8a8a-000000000001",
+    "conversation_ref": {
+      "issuer": "synthetic-healthlinc-a",
+      "namespace": "healthlinc",
+      "value": "SYN-CONV-0001"
+    },
+    "urgency": "routine",
+    "consent_ref": "SYN-CONSENT-HL-0004",
+    "snapshot_ref": "SYN-SNAP-0009",
+    "as_of": "2026-11-15T10:00:00Z",
+    "origin_conversation_ref": {
+      "issuer": "synthetic-healthlinc-a",
+      "namespace": "healthlinc",
+      "value": "Synthetic Name 1980-01-01"
+    },
+    "turns": [
+      {
+        "turn_id": "SYN-TURN-0001",
+        "position": 1,
+        "author_type": "patient",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": true,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 1."
+        },
+        "request_ref": {
+          "issuer": "synthetic-healthlinc-a",
+          "namespace": "healthlinc",
+          "value": "SYN-MSG-0001"
+        }
+      }
+    ]
+  }
+}

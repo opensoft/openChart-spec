@@ -1,0 +1,149 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000007",
+  "message_type": "conversation.result",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-healthlinc-a",
+  "payload": {
+    "acked_message_id": "9a1b2c3d-0000-4000-8000-000000000006",
+    "handoff_id": "3f0c2a0e-1111-4c4c-8a8a-000000000001",
+    "conversation_ref": {
+      "issuer": "synthetic-healthlinc-a",
+      "namespace": "healthlinc",
+      "value": "SYN-CONV-0001"
+    },
+    "urgency": "routine",
+    "consent_ref": "SYN-CONSENT-HL-0001",
+    "snapshot_ref": "SYN-SNAP-0001",
+    "as_of": "2026-11-15T10:00:00Z",
+    "turns": [
+      {
+        "turn_id": "SYN-TURN-0001",
+        "position": 1,
+        "author_type": "patient",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": true,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 1."
+        },
+        "request_ref": {
+          "issuer": "synthetic-healthlinc-a",
+          "namespace": "healthlinc",
+          "value": "SYN-MSG-0001"
+        },
+        "approved_by": "SYN-STAFF-0003"
+      },
+      {
+        "turn_id": "SYN-TURN-0002",
+        "position": 2,
+        "author_type": "ai",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 2."
+        },
+        "in_reply_to": "SYN-TURN-0001"
+      },
+      {
+        "turn_id": "SYN-TURN-0003",
+        "position": 3,
+        "author_type": "ai",
+        "source": "openpractice_agent",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 3."
+        },
+        "agent_answer_type": {
+          "answer_type_id": "patient_answer_hours",
+          "version": 2
+        }
+      },
+      {
+        "turn_id": "SYN-TURN-0004",
+        "position": 4,
+        "author_type": "ai",
+        "source": "openpractice_agent",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 4."
+        },
+        "approved_by": "SYN-STAFF-0001"
+      },
+      {
+        "turn_id": "SYN-TURN-0005",
+        "position": 5,
+        "author_type": "representative",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 5."
+        }
+      },
+      {
+        "turn_id": "SYN-TURN-0006",
+        "position": 6,
+        "author_type": "clinician",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 6."
+        },
+        "reply_id": "3f0c2a0e-1111-4c4c-8a8a-000000000002"
+      },
+      {
+        "turn_id": "SYN-TURN-0007",
+        "position": 7,
+        "author_type": "unknown",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 7."
+        }
+      },
+      {
+        "turn_id": "SYN-TURN-0008",
+        "position": 8,
+        "author_type": "system",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 8."
+        }
+      },
+      {
+        "turn_id": "SYN-TURN-0009",
+        "position": 9,
+        "author_type": "staff",
+        "source": "healthlinc",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 9."
+        }
+      }
+    ],
+    "ehr_patient": {
+      "issuer": "synthetic-openchart-site-a",
+      "namespace": "openchart",
+      "value": "SYN-OCP-0001"
+    }
+  }
+}

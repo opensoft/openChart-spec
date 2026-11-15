@@ -1,0 +1,21 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000003",
+  "message_type": "capabilities.result",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-healthlinc-a",
+  "payload": {
+    "acked_message_id": "9a1b2c3d-0000-4000-8000-000000000002",
+    "source": "openpractice_agent",
+    "supported_versions": [
+      "1.0"
+    ],
+    "capabilities": [
+      "reply_delivery",
+      "delivery_failure_callback",
+      "split"
+    ],
+    "declared_at": "2026-11-15T10:00:00Z"
+  }
+}
