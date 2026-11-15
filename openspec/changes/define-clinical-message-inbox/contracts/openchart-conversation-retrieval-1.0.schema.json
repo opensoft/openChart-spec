@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-conversation-retrieval:1.0",
   "title": "openchart-conversation-retrieval 1.0",
-  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token, and an ai turn may carry its mode, disclosure code, model reference, advice-statement reference and emergency-guidance codes. A result may name the earlier conversation it began from, which openChart never retrieves on its own. The result carries the patient's sharing-consent reference and always at least one request turn. For a priority or urgent item the request turns are always shared on the urgent_escalation basis with the patient told; a holder may withhold other turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
+  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token, and an ai turn may carry its mode, disclosure code, model reference, advice-statement reference and emergency-guidance codes. A result may name the earlier conversation it began from, by an opaque reference that openChart never retrieves on its own and never uses to resolve a patient. A retrieve names the request it serves in request_ref. The result carries the patient's sharing-consent reference and always at least one request turn, which carries that request_ref and holds the request itself, never a placeholder. For a priority or urgent item the request turns are always shared on the urgent_escalation basis with the patient told; a holder may withhold other turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
   "oneOf": [
     {
       "$ref": "#/$defs/capabilitiesRequest"
@@ -117,6 +117,27 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 128
+        }
+      }
+    },
+    "originConversationRef": {
+      "description": "Reference to an earlier conversation, in the shape of conversationRef, whose value is an opaque token. It carries no name, date of birth, contact detail or other PHI, and it never resolves, links or files a patient.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer",
+        "namespace",
+        "value"
+      ],
+      "properties": {
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "namespace": {
+          "$ref": "#/$defs/holderToken"
+        },
+        "value": {
+          "$ref": "#/$defs/opaqueRef"
         }
       }
     },
@@ -294,8 +315,12 @@
           "minimum": 1
         },
         "request_turn": {
-          "description": "True for a turn of the escalated request: what the patient or representative asked the doctor. Such a turn is authored by the patient or a representative and has non-empty text.",
+          "description": "True for a turn of the escalated request: what the patient or representative asked the doctor. Such a turn is authored by the patient or a representative, carries request_ref, and has text with at least one non-whitespace character. It holds the request itself as written, never a placeholder, summary or redaction marker.",
           "type": "boolean"
+        },
+        "request_ref": {
+          "description": "On a request turn, and only there: the request_ref of the conversation.retrieve this result answers. openChart refuses a result with result_mismatch when no request turn carries a matching request_ref.",
+          "$ref": "#/$defs/requestRef"
         },
         "author_type": {
           "$ref": "#/$defs/authorType"
@@ -334,9 +359,10 @@
           "$ref": "#/$defs/aiMode"
         },
         "disclosure_code": {
-          "description": "Optional, ai turns only: the code of the AI disclosure the patient was shown with the turn.",
+          "description": "Optional, ai turns only: the code of the AI disclosure the patient was shown with the turn, from the holder's catalogue of disclosure texts. Lowercase words joined by underscores, with an optional version suffix such as _v2. It is the same for every patient shown that text, and carries no name, date of birth or other PHI.",
           "type": "string",
-          "pattern": "^[a-z][a-z0-9_]{1,63}$"
+          "maxLength": 64,
+          "pattern": "^[a-z]+(_[a-z]+)*(_v[0-9]{1,3})?$"
         },
         "model_ref": {
           "description": "Optional, ai turns only: the model identifier and version that wrote the turn, as one reference.",
@@ -373,6 +399,9 @@
             ]
           },
           "then": {
+            "required": [
+              "request_ref"
+            ],
             "properties": {
               "author_type": {
                 "enum": [
@@ -383,10 +412,18 @@
               "content": {
                 "properties": {
                   "text": {
-                    "minLength": 1
+                    "minLength": 1,
+                    "pattern": "\\S"
                   }
                 }
               }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "request_ref"
+              ]
             }
           }
         },
@@ -710,6 +747,7 @@
           "required": [
             "handoff_id",
             "conversation_ref",
+            "request_ref",
             "urgency",
             "purpose"
           ],
@@ -720,6 +758,10 @@
             },
             "conversation_ref": {
               "$ref": "#/$defs/conversationRef"
+            },
+            "request_ref": {
+              "description": "The offer's request reference (healthlinc_message_ref in openpractice-clinical-handoff/1.0), passed through unchanged. Every request turn of the result carries it, and at least one must match it.",
+              "$ref": "#/$defs/requestRef"
             },
             "urgency": {
               "description": "The item's urgency when openChart asks. For priority or urgent, the holder must share the request turns on the urgent_escalation basis and tell the patient.",
@@ -733,7 +775,7 @@
       }
     },
     "conversationResult": {
-      "description": "The holder returns the conversation's shareable turns, each with its turn_id, author type and source, under the patient's sharing consent. The result always carries at least one request turn: what the patient or representative asked. For a priority or urgent item, the request turns are always shared on the urgent_escalation basis and the patient is told, whatever else the patient's consent withholds. A holder may withhold other turns that consent does not allow, and then reports how many it withheld. A result that does not answer its retrieve is refused with result_mismatch.",
+      "description": "The holder returns the conversation's shareable turns, each with its turn_id, author type and source, under the patient's sharing consent. The result always carries at least one request turn: what the patient or representative asked, as written, never a placeholder. Every request turn carries request_ref, and a result in which no request turn's request_ref matches the retrieve's is refused with result_mismatch. For a priority or urgent item, the request turns are always shared on the urgent_escalation basis and the patient is told, whatever else the patient's consent withholds. A holder may withhold other turns that consent does not allow, and then reports how many it withheld. A result that does not answer its retrieve is refused with result_mismatch.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -836,8 +878,8 @@
               "$ref": "#/$defs/ehrPatientRef"
             },
             "origin_conversation_ref": {
-              "description": "Optional. The earlier conversation this one began from, at the same holder or another. openChart never retrieves it on its own; reading it is a separate retrieval from the holder it names, under that holder's consent rules.",
-              "$ref": "#/$defs/conversationRef"
+              "description": "Optional. The earlier conversation this one began from, at the same holder or another, with an opaque value. openChart never retrieves it on its own, and never uses it to resolve, link or file a patient; reading it is a separate retrieval from the holder it names, under that holder's consent rules.",
+              "$ref": "#/$defs/originConversationRef"
             }
           },
           "allOf": [
