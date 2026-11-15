@@ -6,10 +6,10 @@
   - the schema digest in MI-02 against `sha256sum -c contracts/SHA256SUMS` at the compared revision;
   - the contract identifier `openpractice-clinical-handoff/1.0`, its message set, its reject codes and its status codes;
   - the namespaces `healthlinc`, `openpractice` and `openchart`, and the issuer handling;
-  - the conversation-source field (ruling 51) and the clinician-decision channel (ruling 50 and the payment-hold marker), once that change's next revision adds them.
+  - `conversation_source` and `conversation_ref` (ruling 51), and `clinical_need.marker` with its `origin_not_verified` rejection (openPractice ER-18), as pinned at `097278c`.
 
   Record both revisions and each digest pair. A mismatch blocks the handoff. When that change's schema changes, update MI-02's pin in a governed revision of this change.
-- [ ] 1.4 Record Brett Heap's disposition of tensions MT-1 to MT-14 and design calls MD-1 to MD-20. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-1, MT-2, MT-5, MT-6, MT-11 and MT-13; `define-openpractice-boundary` for MT-3; and medXfactory's `define-patient-medical-ai-connection` for MT-14. Otherwise this change yields.
+- [ ] 1.4 Record Brett Heap's disposition of tensions MT-1 to MT-10, MT-12 and MT-14, and of design calls MD-1 to MD-20. MT-11 and MT-13 were resolved by the re-pin to `097278c`; record that confirmation. Where a disposition needs an amendment elsewhere, name the change that must carry it: the openPractice change for MT-1, MT-2, MT-5 and MT-6; `define-openpractice-boundary` for MT-3; and medXfactory's `define-patient-medical-ai-connection` for MT-14. Otherwise this change yields.
 
 ## 2. Governance Prerequisites (Routed Open Questions)
 
@@ -19,7 +19,7 @@
 - [ ] 2.4 The HealthLinc companion change (items H-1 to H-5 in `design.md`) is ratified. Open Question 3: record which openChart change defines openChart's HealthLinc link contract (ruling 39). This gate blocks enabling the inbox live.
 - [ ] 2.5 The medXfactory companion change (items M-1 and M-2) is ratified. Open Question 4: record which openChart change defines openChart's receiving side of medXfactory's governed chart path (ruling 53). This gate blocks medXfactory retrieval only.
 - [ ] 2.6 Open Questions 5 to 14 are routed to their owners as `design.md` states. Each fails closed meanwhile, so none blocks the build.
-- [ ] 2.7 Record the separately governed openChart change for AI practice modes (ruling 59; items P-1 and P-2 in `design.md`). It is required and not drafted here. This gate blocks only the limited-practice and full-practice modes, which are not buildable in openChart until it is ratified. MI-26 applies meanwhile.
+- [ ] 2.7 Track openChart-spec change `define-ai-authored-clinical-records`, which is being drafted under ruling 64, with MedxEHR-spec change `define-medical-ai-record-overlay`. This gate blocks only the limited-practice and full-practice modes of ruling 59, which are not buildable in openChart until that change is ratified. MI-26 applies meanwhile. Confirm that the change references MI-12 rather than defining a second clinical-communication record.
 
 ## 3. Spec Kit Handoff
 
