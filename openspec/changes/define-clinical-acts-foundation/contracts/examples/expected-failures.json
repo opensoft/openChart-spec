@@ -1,0 +1,62 @@
+{
+  "amended-first-version.invalid.json": {
+    "expect_in_error": "act_version",
+    "reason": "only a later version can carry the status amended"
+  },
+  "amendment-without-supersedes.invalid.json": {
+    "expect_in_error": "'supersedes' is a required property",
+    "reason": "a later version must reference the version it supersedes"
+  },
+  "author-type-ai.invalid.json": {
+    "expect_in_error": "author_type",
+    "reason": "author_type accepts only clinician in 1.x"
+  },
+  "derived-from-unknown-kind.invalid.json": {
+    "expect_in_error": "source_kind",
+    "reason": "derivation sources are intake statements and clinical communications only"
+  },
+  "diagnosis-uncoded.invalid.json": {
+    "expect_in_error": "'code' is a required property",
+    "reason": "a diagnosis of record must be coded"
+  },
+  "encounter-diagnosis-without-encounter.invalid.json": {
+    "expect_in_error": "'encounter_ref' is a required property",
+    "reason": "an encounter diagnosis must reference its encounter"
+  },
+  "encounter-final-without-end.invalid.json": {
+    "expect_in_error": "'end' is a required property",
+    "reason": "a signed encounter has an end time"
+  },
+  "entered-in-error-without-event.invalid.json": {
+    "expect_in_error": "lifecycle",
+    "reason": "an entered-in-error act must carry the attributed entered_in_error event with a reason code"
+  },
+  "final-without-signature.invalid.json": {
+    "expect_in_error": "'signatures' is a required property",
+    "reason": "a signed status needs the author's signature"
+  },
+  "note-request-status.invalid.json": {
+    "expect_in_error": "status",
+    "reason": "a clinical note has no release lifecycle"
+  },
+  "order-unknown-category.invalid.json": {
+    "expect_in_error": "order_category",
+    "reason": "order category outside the closed list"
+  },
+  "patient-external-namespace.invalid.json": {
+    "expect_in_error": "namespace",
+    "reason": "the patient is always the openChart triple; an external identifier never replaces it"
+  },
+  "prescription-missing-classification.invalid.json": {
+    "expect_in_error": "'controlled_substance_classification' is a required property",
+    "reason": "a prescription must carry its controlled-substance classification"
+  },
+  "prescription-transmission-state.invalid.json": {
+    "expect_in_error": "transmission_status",
+    "reason": "transmission and dispense states are reserved for a later governed change"
+  },
+  "unknown-property.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed",
+    "reason": "every object is closed"
+  }
+}

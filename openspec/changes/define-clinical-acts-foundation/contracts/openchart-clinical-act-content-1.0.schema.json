@@ -1,0 +1,512 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openchart:contract:openchart-clinical-act-content:1.0",
+  "title": "openchart-clinical-act-content 1.0",
+  "description": "Canonical content schema for one version of a clinician-authored clinical act in openChart. Owned by opensoft/openChart-spec change define-clinical-acts-foundation. One record shape covers six act classes: encounter, clinical_note, diagnosis_of_record, procedure_performed, order and prescription. The shared envelope carries authorship, the status lifecycle, signatures with attestation, amendment by new versions, entered-in-error handling, the co-signature hook and provenance. author_type accepts only clinician in 1.x; a later governed change may add another value only in a new MINOR version. Each class's clinical content is addressable as $defs/<class>Content, so that another contract, such as openchart-ai-clinical-record-write, can pin it by this schema's digest. Codings carry the code system, code, version where the practice-supplied code set declares one, display and the practice-supplied code-set reference; openChart bundles no code set. Every object is closed. All examples are synthetic.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "contract_version",
+    "act_id",
+    "act_version",
+    "act_class",
+    "act_type",
+    "patient",
+    "status",
+    "author",
+    "recorded_at",
+    "lifecycle",
+    "content"
+  ],
+  "properties": {
+    "contract": { "const": "openchart-clinical-act-content" },
+    "contract_version": { "$ref": "#/$defs/contractVersion" },
+    "act_id": { "$ref": "#/$defs/opaqueRef" },
+    "act_version": { "type": "integer", "minimum": 1 },
+    "act_class": { "$ref": "#/$defs/actClass" },
+    "act_type": { "$ref": "#/$defs/codeToken" },
+    "patient": { "$ref": "#/$defs/openchartPatientRef" },
+    "status": { "$ref": "#/$defs/codeToken" },
+    "author": { "$ref": "#/$defs/author" },
+    "recorded_at": { "$ref": "#/$defs/timestamp" },
+    "supersedes": { "$ref": "#/$defs/actVersionRef" },
+    "superseded_by": { "$ref": "#/$defs/actVersionRef" },
+    "amendment_reason": { "type": "string", "minLength": 1, "maxLength": 2000 },
+    "signatures": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10,
+      "items": { "$ref": "#/$defs/signature" }
+    },
+    "cosignature": { "$ref": "#/$defs/cosignature" },
+    "derived_from": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": { "$ref": "#/$defs/derivedFrom" }
+    },
+    "restricted": {
+      "description": "Proposed default pending counsel (design call CD-27): a restricted act, and any encounter carrying one, is never published or exposed outside openChart's chart view.",
+      "type": "boolean"
+    },
+    "lifecycle": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 200,
+      "items": { "$ref": "#/$defs/lifecycleEvent" }
+    },
+    "content": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "act_class": { "const": "encounter" } }, "required": ["act_class"] },
+      "then": {
+        "properties": {
+          "status": { "$ref": "#/$defs/encounterStatus" },
+          "content": { "$ref": "#/$defs/encounterContent" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "act_class": { "const": "clinical_note" } }, "required": ["act_class"] },
+      "then": {
+        "properties": {
+          "status": { "$ref": "#/$defs/documentationStatus" },
+          "content": { "$ref": "#/$defs/clinicalNoteContent" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "act_class": { "const": "diagnosis_of_record" } }, "required": ["act_class"] },
+      "then": {
+        "properties": {
+          "status": { "$ref": "#/$defs/documentationStatus" },
+          "content": { "$ref": "#/$defs/diagnosisContent" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "act_class": { "const": "procedure_performed" } }, "required": ["act_class"] },
+      "then": {
+        "properties": {
+          "status": { "$ref": "#/$defs/documentationStatus" },
+          "content": { "$ref": "#/$defs/procedureContent" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "act_class": { "const": "order" } }, "required": ["act_class"] },
+      "then": {
+        "properties": {
+          "status": { "$ref": "#/$defs/requestStatus" },
+          "content": { "$ref": "#/$defs/orderContent" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "act_class": { "const": "prescription" } }, "required": ["act_class"] },
+      "then": {
+        "properties": {
+          "status": { "$ref": "#/$defs/requestStatus" },
+          "content": { "$ref": "#/$defs/prescriptionContent" }
+        }
+      }
+    },
+    {
+      "description": "A signed encounter has an end time (EN-04).",
+      "if": {
+        "properties": { "act_class": { "const": "encounter" }, "status": { "enum": ["final", "amended"] } },
+        "required": ["act_class", "status"]
+      },
+      "then": {
+        "properties": { "content": { "properties": { "period": { "required": ["end"] } } } }
+      }
+    },
+    {
+      "description": "Every signed status carries the author's signature.",
+      "if": {
+        "properties": { "status": { "enum": ["final", "amended", "pending_release", "released", "completed", "discontinued", "entered_in_error"] } },
+        "required": ["status"]
+      },
+      "then": {
+        "required": ["signatures"],
+        "properties": {
+          "signatures": { "contains": { "properties": { "signature_role": { "const": "author" } }, "required": ["signature_role"] } }
+        }
+      }
+    },
+    {
+      "description": "A version after the first supersedes its predecessor and states why.",
+      "if": { "properties": { "act_version": { "minimum": 2 } }, "required": ["act_version"] },
+      "then": { "required": ["supersedes", "amendment_reason"] }
+    },
+    {
+      "description": "Only a later version can carry the status amended.",
+      "if": { "properties": { "status": { "const": "amended" } }, "required": ["status"] },
+      "then": { "properties": { "act_version": { "minimum": 2 } } }
+    },
+    {
+      "description": "A cancelled, discontinued or entered-in-error act carries the attributed lifecycle event, with its reason code.",
+      "if": { "properties": { "status": { "enum": ["cancelled", "discontinued", "entered_in_error"] } }, "required": ["status"] },
+      "then": {
+        "properties": {
+          "lifecycle": {
+            "contains": {
+              "properties": { "event": { "enum": ["cancelled", "discontinued", "entered_in_error"] } },
+              "required": ["event", "reason_code"]
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "contractVersion": {
+      "description": "MAJOR.MINOR. Only MAJOR 1 is defined by this schema.",
+      "type": "string",
+      "pattern": "^1\\.(0|[1-9][0-9]*)$"
+    },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "date": { "type": "string", "format": "date" },
+    "issuer": {
+      "description": "A deployment's configured, stable issuer identifier, unique across deployments and never derived from a host path.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 255
+    },
+    "namespaceToken": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+    "codeToken": { "type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,63}$" },
+    "opaqueRef": {
+      "description": "Opaque reference. Carries no name, date of birth, contact detail or clinical content.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9:_./-]{1,128}$"
+    },
+    "versionLabel": { "type": "string", "pattern": "^[A-Za-z0-9._:+-]{1,64}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "actClass": {
+      "enum": ["encounter", "clinical_note", "diagnosis_of_record", "procedure_performed", "order", "prescription"]
+    },
+    "encounterStatus": { "enum": ["in_progress", "final", "amended", "cancelled", "entered_in_error"] },
+    "documentationStatus": { "enum": ["draft", "final", "amended", "cancelled", "entered_in_error"] },
+    "requestStatus": {
+      "enum": ["draft", "pending_release", "released", "completed", "discontinued", "cancelled", "entered_in_error"]
+    },
+    "clinicalRole": {
+      "description": "The openChart clinical role under which a person acts. The medical director is a designation held by a person with one of these roles.",
+      "enum": ["clinician", "nurse"]
+    },
+    "openchartPatientRef": {
+      "description": "The openChart patient triple: openChart issuer, namespace openchart, OC Patient identifier. External identifiers never replace it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace", "value"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": { "const": "openchart" },
+        "value": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "externalRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace", "value"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": { "$ref": "#/$defs/namespaceToken" },
+        "value": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "actRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["act_id"],
+      "properties": { "act_id": { "$ref": "#/$defs/opaqueRef" } }
+    },
+    "actVersionRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["act_id", "act_version"],
+      "properties": {
+        "act_id": { "$ref": "#/$defs/opaqueRef" },
+        "act_version": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "author": {
+      "description": "The named author of this version. author_type accepts only clinician in 1.x: a named human holding an openChart clinical role grant, acting through an authenticated openChart session.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["author_type", "author_ref", "author_role", "authority_basis_ref"],
+      "properties": {
+        "author_type": { "enum": ["clinician"] },
+        "author_ref": { "$ref": "#/$defs/opaqueRef" },
+        "author_role": { "$ref": "#/$defs/clinicalRole" },
+        "authority_basis_ref": {
+          "description": "The role grant, and its version, under which the author acted.",
+          "$ref": "#/$defs/opaqueRef"
+        }
+      }
+    },
+    "signature": {
+      "description": "A signature binds the signer, the signer's role and grant version, the attestation statement and version, the time and the SHA-256 of the canonical content signed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["signature_role", "signer_ref", "signer_role", "authority_basis_ref", "attestation", "signed_at", "content_sha256"],
+      "properties": {
+        "signature_role": { "enum": ["author", "cosigner"] },
+        "signer_ref": { "$ref": "#/$defs/opaqueRef" },
+        "signer_role": { "$ref": "#/$defs/clinicalRole" },
+        "authority_basis_ref": { "$ref": "#/$defs/opaqueRef" },
+        "attestation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "version"],
+          "properties": {
+            "code": { "$ref": "#/$defs/codeToken" },
+            "version": { "$ref": "#/$defs/versionLabel" }
+          }
+        },
+        "signed_at": { "$ref": "#/$defs/timestamp" },
+        "content_sha256": {
+          "description": "SHA-256 of the RFC 8785 canonical JSON serialization of this version's content object.",
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "cosignature": {
+      "description": "The co-signature hook. A requirement attaches to one version. In 1.x its only source is the author's role grant; a later governed change may add a source in a MINOR version.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "mode", "due_at", "state"],
+      "properties": {
+        "source": { "enum": ["role_grant"] },
+        "source_ref": { "$ref": "#/$defs/opaqueRef" },
+        "mode": { "enum": ["before_effect", "after_the_fact"] },
+        "due_at": { "$ref": "#/$defs/timestamp" },
+        "state": { "enum": ["pending", "cosigned", "superseded_by_amendment", "entered_in_error", "overdue_escalated"] },
+        "escalated_to_ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "derivedFrom": {
+      "description": "Provenance for an act a clinician created from a source record by an explicit, attributed action. The source record is never changed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_kind", "source_ref", "derived_by_ref", "derived_at"],
+      "properties": {
+        "source_kind": { "enum": ["intake_statement", "clinical_communication"] },
+        "source_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_version": { "type": "integer", "minimum": 1 },
+        "derived_by_ref": { "$ref": "#/$defs/opaqueRef" },
+        "derived_at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "lifecycleEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event", "by_ref", "at"],
+      "properties": {
+        "event": {
+          "enum": [
+            "created",
+            "revised",
+            "signed",
+            "released",
+            "cosigned",
+            "cosignature_overdue_escalated",
+            "completed",
+            "discontinued",
+            "cancelled",
+            "entered_in_error",
+            "amended"
+          ]
+        },
+        "by_ref": { "$ref": "#/$defs/opaqueRef" },
+        "at": { "$ref": "#/$defs/timestamp" },
+        "reason_code": { "$ref": "#/$defs/codeToken" },
+        "note": { "type": "string", "minLength": 1, "maxLength": 2000 }
+      }
+    },
+    "coding": {
+      "description": "A code from a practice-supplied code set. openChart bundles no code set and asserts no license status for any code system.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["system", "code", "code_set_ref"],
+      "properties": {
+        "system": { "type": "string", "minLength": 1, "maxLength": 255 },
+        "code": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "version": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "display": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "code_set_ref": {
+          "description": "The practice-supplied code-set import the code came from, with its identity and version.",
+          "$ref": "#/$defs/opaqueRef"
+        }
+      }
+    },
+    "quantity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "unit"],
+      "properties": {
+        "value": { "type": "number", "exclusiveMinimum": 0 },
+        "unit": { "type": "string", "minLength": 1, "maxLength": 64 }
+      }
+    },
+    "encounterContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["period", "participants"],
+      "properties": {
+        "encounter_type": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/coding" } },
+        "period": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["start"],
+          "properties": {
+            "start": { "$ref": "#/$defs/timestamp" },
+            "end": { "$ref": "#/$defs/timestamp" }
+          }
+        },
+        "participants": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 20,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["practitioner_ref", "participation"],
+            "properties": {
+              "practitioner_ref": { "$ref": "#/$defs/opaqueRef" },
+              "participation": { "enum": ["primary_performer", "participant", "supervising"] }
+            }
+          }
+        },
+        "location_ref": { "$ref": "#/$defs/opaqueRef" },
+        "appointment_ref": {
+          "description": "An optional reference to the administrative appointment held by its system of record. openChart performs no appointment operation.",
+          "$ref": "#/$defs/externalRef"
+        },
+        "reason_codings": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/coding" } }
+      }
+    },
+    "clinicalNoteContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["encounter_ref", "note_kind", "text", "text_format"],
+      "properties": {
+        "encounter_ref": { "$ref": "#/$defs/actRef" },
+        "note_kind": { "$ref": "#/$defs/codeToken" },
+        "note_type": { "$ref": "#/$defs/coding" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 200000 },
+        "text_format": { "enum": ["text/plain", "text/markdown"] },
+        "addendum_to": { "$ref": "#/$defs/actRef" },
+        "attachment_refs": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["ref", "sha256", "media_type"],
+            "properties": {
+              "ref": { "$ref": "#/$defs/opaqueRef" },
+              "sha256": { "$ref": "#/$defs/sha256" },
+              "media_type": { "type": "string", "pattern": "^[a-z]+/[a-z0-9.+-]+$" }
+            }
+          }
+        }
+      }
+    },
+    "diagnosisContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["diagnosis_role", "code", "verification_status"],
+      "properties": {
+        "diagnosis_role": { "enum": ["encounter_diagnosis", "problem_list"] },
+        "code": { "$ref": "#/$defs/coding" },
+        "verification_status": { "enum": ["unconfirmed", "provisional", "differential", "confirmed", "refuted"] },
+        "clinical_status": { "enum": ["active", "recurrence", "relapse", "inactive", "remission", "resolved"] },
+        "encounter_ref": { "$ref": "#/$defs/actRef" },
+        "rank": { "type": "integer", "minimum": 1 },
+        "onset_date": { "$ref": "#/$defs/date" },
+        "abatement_date": { "$ref": "#/$defs/date" },
+        "note": { "type": "string", "minLength": 1, "maxLength": 4000 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "diagnosis_role": { "const": "encounter_diagnosis" } }, "required": ["diagnosis_role"] },
+          "then": { "required": ["encounter_ref"] }
+        },
+        {
+          "if": { "properties": { "diagnosis_role": { "const": "problem_list" } }, "required": ["diagnosis_role"] },
+          "then": { "required": ["clinical_status"] }
+        }
+      ]
+    },
+    "procedureContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["encounter_ref", "code", "performed_at", "performer_ref"],
+      "properties": {
+        "encounter_ref": { "$ref": "#/$defs/actRef" },
+        "code": { "$ref": "#/$defs/coding" },
+        "performed_at": { "$ref": "#/$defs/timestamp" },
+        "performer_ref": { "$ref": "#/$defs/opaqueRef" },
+        "quantity": { "type": "number", "exclusiveMinimum": 0 },
+        "body_site": { "$ref": "#/$defs/coding" },
+        "note": { "type": "string", "minLength": 1, "maxLength": 4000 }
+      }
+    },
+    "orderContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["order_category", "text", "priority"],
+      "properties": {
+        "order_category": { "enum": ["laboratory", "imaging", "referral", "procedure", "other"] },
+        "text": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "code": { "$ref": "#/$defs/coding" },
+        "priority": { "enum": ["routine", "urgent", "asap", "stat"] },
+        "encounter_ref": { "$ref": "#/$defs/actRef" },
+        "reason_refs": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/actRef" } },
+        "reason_text": { "type": "string", "minLength": 1, "maxLength": 4000 },
+        "intended_performer_ref": { "$ref": "#/$defs/opaqueRef" },
+        "release_at": { "$ref": "#/$defs/timestamp" },
+        "instructions": { "type": "string", "minLength": 1, "maxLength": 4000 }
+      }
+    },
+    "prescriptionContent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["medication", "controlled_substance_classification", "classification_source", "dosage_text", "transmission_status"],
+      "properties": {
+        "medication": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text"],
+          "properties": {
+            "text": { "type": "string", "minLength": 1, "maxLength": 1000 },
+            "coding": { "$ref": "#/$defs/coding" }
+          }
+        },
+        "controlled_substance_classification": {
+          "description": "From practice-supplied data or the clinician. unknown is treated as controlled by every rule that reads it.",
+          "enum": ["controlled", "not_controlled", "unknown"]
+        },
+        "classification_source": { "enum": ["practice_code_set", "clinician_entry"] },
+        "dosage_text": { "type": "string", "minLength": 1, "maxLength": 2000 },
+        "dose": { "$ref": "#/$defs/quantity" },
+        "route": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "frequency": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "dispense_quantity": { "$ref": "#/$defs/quantity" },
+        "refills": { "type": "integer", "minimum": 0 },
+        "days_supply": { "type": "integer", "minimum": 1 },
+        "substitution_allowed": { "type": "boolean" },
+        "encounter_ref": { "$ref": "#/$defs/actRef" },
+        "reason_refs": { "type": "array", "maxItems": 20, "items": { "$ref": "#/$defs/actRef" } },
+        "release_at": { "$ref": "#/$defs/timestamp" },
+        "transmission_status": {
+          "description": "openChart records no transmission to, or dispense by, a pharmacy in 1.x. Transmission and dispense states are reserved for a later governed change and a new MINOR version.",
+          "const": "none_recorded"
+        }
+      }
+    }
+  }
+}

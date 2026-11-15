@@ -1,0 +1,73 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "act_id": "SYN-ACT-ORD-0001",
+  "act_version": 1,
+  "act_class": "order",
+  "act_type": "laboratory_order",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "pending_release",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-NURSE-0001",
+    "author_role": "nurse",
+    "authority_basis_ref": "SYN-GRANT-0010:v2"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-NURSE-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-NURSE-0001",
+      "at": "2026-11-15T10:30:00Z"
+    }
+  ],
+  "content": {
+    "order_category": "pharmacy",
+    "text": "SYN synthetic laboratory panel",
+    "code": {
+      "system": "urn:example:synthetic:code-system:lab",
+      "code": "SYN-LAB-0007",
+      "display": "Synthetic panel seven",
+      "code_set_ref": "SYN-CODESET-LAB:3"
+    },
+    "priority": "routine",
+    "encounter_ref": {
+      "act_id": "SYN-ACT-ENC-0001"
+    },
+    "reason_refs": [
+      {
+        "act_id": "SYN-ACT-DX-0001"
+      }
+    ]
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-NURSE-0001",
+      "signer_role": "nurse",
+      "authority_basis_ref": "SYN-GRANT-0010:v2",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "4948e1d9acb555b084872b9f5c44cd835537dc4d40642e6305ddf2afe45e7a29"
+    }
+  ],
+  "cosignature": {
+    "source": "role_grant",
+    "source_ref": "SYN-GRANT-0010:v2",
+    "mode": "before_effect",
+    "due_at": "2026-11-15T18:00:00Z",
+    "state": "pending"
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "act_id": "SYN-ACT-RX-0001",
+  "act_version": 1,
+  "act_class": "prescription",
+  "act_type": "outpatient_prescription",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "draft",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0001",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0001:v3"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:00:00Z"
+    }
+  ],
+  "content": {
+    "medication": {
+      "text": "Synthexamol 10 unit tablet (SYNTHETIC, not a real product)"
+    },
+    "controlled_substance_classification": "not_controlled",
+    "classification_source": "clinician_entry",
+    "dosage_text": "SYN take one tablet daily",
+    "refills": 0,
+    "transmission_status": "none_recorded"
+  }
+}

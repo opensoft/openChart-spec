@@ -1,0 +1,73 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "act_id": "SYN-ACT-ENC-0001",
+  "act_version": 1,
+  "act_class": "encounter",
+  "act_type": "office_visit",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "final",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0001",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0001:v3"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
+    }
+  ],
+  "content": {
+    "encounter_type": [
+      {
+        "system": "urn:example:synthetic:code-system:encounter-type",
+        "code": "SYN-ENC-OFFICE",
+        "display": "Synthetic office visit",
+        "code_set_ref": "SYN-CODESET-ENC:1"
+      }
+    ],
+    "period": {
+      "start": "2026-11-15T09:00:00Z",
+      "end": "2026-11-15T09:40:00Z"
+    },
+    "participants": [
+      {
+        "practitioner_ref": "SYN-USER-CLIN-0001",
+        "participation": "primary_performer"
+      }
+    ],
+    "location_ref": "SYN-LOC-0001",
+    "appointment_ref": {
+      "issuer": "SYN-OPENPRACTICE-ISSUER-01",
+      "namespace": "openpractice",
+      "value": "SYN-APPT-0001"
+    }
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-CLIN-0001",
+      "signer_role": "clinician",
+      "authority_basis_ref": "SYN-GRANT-0001:v3",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "f4e33e801acdb2a904848282530a6b1acb217d7910c5b6d21c8cd7959e4d32f8"
+    }
+  ]
+}

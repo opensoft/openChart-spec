@@ -1,0 +1,57 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "act_id": "SYN-ACT-ORD-0002",
+  "act_version": 1,
+  "act_class": "order",
+  "act_type": "imaging_order",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "entered_in_error",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0001",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0001:v3"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
+    },
+    {
+      "event": "released",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
+    }
+  ],
+  "content": {
+    "order_category": "imaging",
+    "text": "SYN synthetic imaging study",
+    "priority": "routine"
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-CLIN-0001",
+      "signer_role": "clinician",
+      "authority_basis_ref": "SYN-GRANT-0001:v3",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "aee91dc275c7c7892b12f57cd9d34483832c7fe40ae93cd3c1b330d5e77f3b47"
+    }
+  ]
+}

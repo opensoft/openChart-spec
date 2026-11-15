@@ -1,0 +1,71 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "act_id": "SYN-ACT-DX-0002",
+  "act_version": 2,
+  "act_class": "diagnosis_of_record",
+  "act_type": "problem_list_condition",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "amended",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0002",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0002:v1"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0002",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-CLIN-0002",
+      "at": "2026-11-15T10:30:00Z"
+    },
+    {
+      "event": "amended",
+      "by_ref": "SYN-USER-CLIN-0002",
+      "at": "2026-11-15T10:30:00Z"
+    }
+  ],
+  "content": {
+    "diagnosis_role": "problem_list",
+    "code": {
+      "system": "urn:example:synthetic:code-system:dx",
+      "code": "SYN-DX-0001",
+      "version": "2026.1",
+      "display": "Synthetic diagnosis one",
+      "code_set_ref": "SYN-CODESET-DX:2026.1"
+    },
+    "verification_status": "confirmed",
+    "clinical_status": "resolved",
+    "onset_date": "2026-01-10",
+    "abatement_date": "2026-11-01"
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-CLIN-0002",
+      "signer_role": "clinician",
+      "authority_basis_ref": "SYN-GRANT-0002:v1",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "da52dcf89326bae5e17860ccba752677fbe38227749aaa1150253f06d25a1e2d"
+    }
+  ],
+  "supersedes": {
+    "act_id": "SYN-ACT-DX-0002",
+    "act_version": 1
+  },
+  "amendment_reason": "SYN clinical status updated to resolved."
+}

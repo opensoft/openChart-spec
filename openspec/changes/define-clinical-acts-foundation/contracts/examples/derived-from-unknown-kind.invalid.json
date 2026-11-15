@@ -1,0 +1,71 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "act_id": "SYN-ACT-DX-0001",
+  "act_version": 1,
+  "act_class": "diagnosis_of_record",
+  "act_type": "encounter_diagnosis",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "final",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0001",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0001:v3"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
+    }
+  ],
+  "content": {
+    "diagnosis_role": "encounter_diagnosis",
+    "code": {
+      "system": "urn:example:synthetic:code-system:dx",
+      "code": "SYN-DX-0001",
+      "version": "2026.1",
+      "display": "Synthetic diagnosis one",
+      "code_set_ref": "SYN-CODESET-DX:2026.1"
+    },
+    "verification_status": "confirmed",
+    "encounter_ref": {
+      "act_id": "SYN-ACT-ENC-0001"
+    },
+    "rank": 1
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-CLIN-0001",
+      "signer_role": "clinician",
+      "authority_basis_ref": "SYN-GRANT-0001:v3",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "1e317b7d060243f8952f507932d8416f930013a752982952184370e7fecf0b45"
+    }
+  ],
+  "derived_from": [
+    {
+      "source_kind": "ai_consult",
+      "source_ref": "OC-CONDST-90001",
+      "source_version": 1,
+      "derived_by_ref": "SYN-USER-CLIN-0001",
+      "derived_at": "2026-11-15T09:20:00Z"
+    }
+  ]
+}
