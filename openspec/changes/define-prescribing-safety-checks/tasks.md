@@ -7,7 +7,7 @@
   - `define-clinical-acts-foundation` for PT-3 (CA-01 wording and a MINOR content-schema version);
   - `define-ai-authored-clinical-records` for PT-4.
 
-  Ruling 84's clarifying amendment is proposed in `define-clinical-acts-foundation`, for the owner to apply to the ratified feature text at ratification. This change adds no MODIFIED delta.
+  Ruling 84's clarifying amendment is proposed in `define-clinical-acts-foundation`, for the owner to apply to the ratified `expanded-patient-intake` requirement at ratification. This change adds no MODIFIED delta.
 - [ ] 1.5 Compare this change with `define-clinical-acts-foundation`: its "Required later change: prescribing-safety checks" list against the table in `design.md`, and its RX-02 against PG-01. Record both revisions. A mismatch blocks the handoff.
 
 ## 2. Governance Prerequisites (Routed Open Questions)
