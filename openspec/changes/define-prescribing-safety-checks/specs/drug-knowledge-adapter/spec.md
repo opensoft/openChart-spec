@@ -1,0 +1,82 @@
+## ADDED Requirements
+
+### Requirement: KA-01 openChart bundles no drug knowledge; each practice connects its own source
+openChart SHALL bundle no drug knowledge base, interaction data, allergy cross-reference data or medication classification data (owner ruling 78). Each practice SHALL connect a source that it has licensed or verified, through the adapter contract (KA-02). openChart SHALL assert nothing about any vendor, product, public database, or its license, availability or fitness. Each MUST be verified by the practice before use (KA-03). Distributing any drug knowledge with openChart SHALL need license verification and a separately governed change.
+
+#### Scenario: A clean installation has no source
+- **WHEN** openChart is installed with no source connected
+- **THEN** no drug knowledge is present, prescriptions can be drafted with every check shown as unavailable, and none can be signed (PG-01)
+
+#### Scenario: Failure: a plan bundles a drug database
+- **WHEN** a plan proposes shipping a drug interaction dataset inside openChart
+- **THEN** the plan is out of scope until license verification and a separately governed change approve it
+
+### Requirement: KA-02 A versioned adapter contract connects a source
+openChart SHALL talk to a source only through contract `openchart-drug-knowledge-adapter/1.0`. Its schema is `contracts/openchart-drug-knowledge-adapter-1.0.schema.json`, `$id` `urn:openchart:contract:openchart-drug-knowledge-adapter:1.0`, identified by the SHA-256 recorded in `contracts/SHA256SUMS`. The contract SHALL provide these operations:
+- **source identity:** a reference, a label, the version and the effective date;
+- **capability declaration:** the operations and check kinds supported, the code systems accepted, a severity mapping onto openChart's scale, and a batch limit;
+- **medication normalization:** to ingredients and classes;
+- **allergy cross-reference:** by same ingredient or class cross-sensitivity;
+- **interaction lookup:** for drug–drug, duplicate therapy and, where declared, drug–supplement interactions;
+- **coded errors.**
+
+Every result SHALL carry the source reference, version and effective date. A message with an unsupported MAJOR version SHALL be refused, and a breaking change SHALL need a new MAJOR version and digest.
+
+#### Scenario: openChart reads a capability declaration
+- **WHEN** a deployment connects a source
+- **THEN** openChart requests and stores its capability declaration, validated against the schema at the recorded digest
+
+#### Scenario: Failure: a result fails the schema
+- **WHEN** an adapter returns a result that fails validation
+- **THEN** openChart treats the source as unavailable for that check (KA-05), and stores the failure with a coded reason
+
+### Requirement: KA-03 A source is usable only after the medical director records its verification
+A connected source SHALL be usable for checks only after the medical director, as defined by `define-clinical-acts-foundation` AU-01, records a verification (design call PD-8). The verification SHALL hold:
+- the source identity and version;
+- the adapter identity and version;
+- an opaque reference to the practice's own licence or permission evidence;
+- the result of the adapter contract tests against the synthetic fixtures;
+- an effective date and a review date.
+
+openChart SHALL NOT judge the licence. It records the practice's attestation and shows it as practice-supplied. A new source version, a new adapter version or a passed review date SHALL need a new verification before the source is usable again.
+
+#### Scenario: The medical director verifies a source
+- **WHEN** the medical director records a verification with evidence, a passing contract test and a review date
+- **THEN** the source becomes usable for checks from its effective date
+
+#### Scenario: Failure: the source version changes
+- **WHEN** the adapter reports a source version different from the verified one
+- **THEN** the source is not usable until a new verification is recorded, and the gate treats it as not verified
+
+### Requirement: KA-04 A source older than the practice's policy age counts as unavailable
+The medical director SHALL set a currency policy: the maximum age of a source, measured from its declared effective date (design call PD-9). A source older than that age SHALL be treated as unavailable. Until a currency policy is set, no source SHALL be usable, so the gate is not met. openChart SHALL alert the medical director when a source becomes stale.
+
+#### Scenario: A source goes stale
+- **WHEN** a source's effective date passes the policy's maximum age
+- **THEN** openChart treats it as unavailable, alerts the medical director, and every signing uses the gate's unavailable path (PG-02)
+
+#### Scenario: Failure: no currency policy
+- **WHEN** a deployment has a verified source and no currency policy
+- **THEN** the source is not usable, and no prescription can be signed
+
+### Requirement: KA-05 An adapter failure makes the source unavailable and is never read as "no alerts"
+A timeout, an adapter error, a schema-invalid result, an unsupported version, or a result that omits a requested input SHALL make the source unavailable for that check, or for that input, and SHALL raise PC-02's warning for the input. openChart MUST NOT treat any of them as an empty result, and MUST NOT show "no alerts found" for a check that did not complete (design call PD-10).
+
+#### Scenario: Failure: the adapter times out at signing
+- **WHEN** the adapter does not answer the signing-time interaction lookup in time
+- **THEN** the check is marked unavailable, no "no alerts" message appears, and the gate's unavailable path applies (PG-02)
+
+#### Scenario: Failure: a result leaves out one medication
+- **WHEN** an interaction result lists neither a finding for, nor a `not_checked` entry for, one input medication
+- **THEN** openChart raises "could not be checked" for that medication
+
+### Requirement: KA-06 Adapter messages carry no patient identity, and fixtures are synthetic
+Requests to a source SHALL carry only medication and allergen descriptions and codes, item references and a deployment reference. They SHALL carry no patient identifier, name, date of birth, contact detail or note text; the schema closes every object to enforce it (design call PD-14). The contract's fixtures and every test SHALL use clearly synthetic substance names, classes, codes and rules, and SHALL contain no real drug data.
+
+#### Scenario: Failure: a request would carry the patient
+- **WHEN** an implementation adds a patient reference to an interaction lookup request
+- **THEN** the request fails the schema and is not sent
+
+#### Scenario: Failure: a fixture uses real drug data
+- **WHEN** a contributor adds a fixture naming a real medicine or interaction
+- **THEN** review rejects it, and the fixture is replaced with a synthetic one

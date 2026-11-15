@@ -1,0 +1,43 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "allergy.cross_reference.request",
+  "message_id": "a0000000-0000-4000-8000-000000000007",
+  "sent_at": "2026-11-15T10:00:00Z",
+  "deployment_ref": "SYN-DEPLOYMENT-0001",
+  "allergens": [
+    {
+      "allergen_ref": "SYN-ALG-0001",
+      "text": "synthexamol (synthetic)",
+      "coding": {
+        "system": "urn:example:synthetic:substance",
+        "code": "SYN-ING-0001"
+      },
+      "category": "medication"
+    }
+  ],
+  "medications": [
+    {
+      "item_ref": "SYN-ITEM-RX-0001",
+      "item_kind": "drug",
+      "ingredients": [
+        {
+          "code": {
+            "system": "urn:example:synthetic:substance",
+            "code": "SYN-ING-0001"
+          },
+          "label": "synthexamol (synthetic)"
+        }
+      ],
+      "classes": [
+        {
+          "code": {
+            "system": "urn:example:synthetic:class",
+            "code": "SYN-CLASS-ALPHA"
+          },
+          "label": "synthetic class alpha"
+        }
+      ]
+    }
+  ]
+}

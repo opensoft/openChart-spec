@@ -1,0 +1,43 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "medication.normalize.result",
+  "message_id": "a0000000-0000-4000-8000-000000000006",
+  "sent_at": "2026-11-15T10:00:01Z",
+  "in_reply_to": "a0000000-0000-4000-8000-000000000005",
+  "source": {
+    "source_ref": "SYN-KSOURCE-0001",
+    "source_version": "2026.11-syn",
+    "effective_date": "2026-11-01"
+  },
+  "normalized": [
+    {
+      "item_ref": "SYN-ITEM-RX-0001",
+      "item_kind": "drug",
+      "ingredients": [
+        {
+          "code": {
+            "system": "urn:example:synthetic:substance",
+            "code": "SYN-ING-0001"
+          },
+          "label": "synthexamol (synthetic)"
+        }
+      ],
+      "classes": [
+        {
+          "code": {
+            "system": "urn:example:synthetic:class",
+            "code": "SYN-CLASS-ALPHA"
+          },
+          "label": "synthetic class alpha"
+        }
+      ]
+    }
+  ],
+  "not_checked": [
+    {
+      "ref": "SYN-ITEM-PR-0004",
+      "reason": "skipped"
+    }
+  ]
+}
