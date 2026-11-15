@@ -21,18 +21,24 @@ Checks:
        digest, recomputes from the record's own fields (design call CD-53);
      - each author signature is by the act's author;
      - a co-signed event's sign-off equals the co-signer signature's;
-     - no challenge serves two sign-offs within a record (a production
-       verifier checks this across the whole store);
+     - no challenge serves two sign-offs, within a record or across the
+       valid fixture set, which stands in for one store (an identical
+       copy, such as a co-signed event's, is one sign-off);
      - every time is a real calendar time (the schema pattern checks
        ranges only, so 30 February passes it);
      - an act signed after a hold carries adopted_from, or its hold was
        released by decline before it was signed, and a draft carries
        held_for exactly while its last hold event is held;
-     - an encounter signature's manifest digest recomputes from the
-       records of the fixture set that its signing view showed: every act
-       and information record that references the encounter and was
-       received by the time of signing, the latest version of each act,
-       except a cancelled one, and never a recommendation;
+     - an encounter signature's manifest digest recomputes from every act
+       and information record of the fixture set that referenced the
+       encounter at signed_at: received by then, the latest version of
+       each act received by then, except an act cancelled by then (its
+       status at signed_at is worked out from its lifecycle events), and
+       never a recommendation;
+     - an item released from quarantine is dated by its release:
+       first_received_at <= released_at <= received_at;
+     - a signed act records a signed lifecycle event (reported, not a
+       crash, when it is missing);
   8. every examples/*.integrity-invalid.json validates against the schema
      and fails the verifier, naming the token recorded for it.
 The digests use canonical JSON with sorted keys and no whitespace, which
@@ -104,11 +110,22 @@ def manifest_of(encounter_id, signed_at, records):
             continue
         if r["record_kind"] == "information":
             entries.append({"record_kind": "information", "id": r["information_id"], "content_sha256": sha(r["content"])})
-        elif r["status"] != "cancelled" and r["act_version"] > latest.get(r["act_id"], (0, None))[0]:
+        elif not cancelled_by(r, at) and r["act_version"] > latest.get(r["act_id"], (0, None))[0]:
             latest[r["act_id"]] = (r["act_version"], r)
     for _, r in latest.values():
         entries.append({"record_kind": "act_version", "id": r["act_id"], "version": r["act_version"], "content_sha256": sha(r["content"])})
     return sha(sorted(entries, key=lambda e: (e["record_kind"], e["id"], e.get("version", 0))))
+
+
+def cancelled_by(record, at):
+    """Whether the act's status at the time at was cancelled, worked out from its lifecycle events."""
+    return any(e["event"] == "cancelled" and parse(e["at"]) <= at for e in record["lifecycle"])
+
+
+def sign_offs(record):
+    offs = [(f"signatures/{i}", s["sign_off"]) for i, s in enumerate(record.get("signatures", []))]
+    offs += [(f"lifecycle/{i}", ev["sign_off"]) for i, ev in enumerate(record.get("lifecycle", [])) if "sign_off" in ev]
+    return offs
 
 
 def parse(value):
@@ -118,6 +135,13 @@ def parse(value):
 def verify(record, records=()):
     """The integrity verifier of CA-08 for one record. records is the set an encounter's manifest is recomputed from."""
     problems = [f"{path}: {value} is not a real calendar time" for path, value in times(record) if not real_time(value)]
+    release = record.get("provenance", {}).get("released_from_quarantine")
+    if release and all(real_time(v) for v in (release["first_received_at"], release["released_at"], record["provenance"]["received_at"])):
+        first, released, received = (parse(v) for v in (release["first_received_at"], release["released_at"], record["provenance"]["received_at"]))
+        if received < released:
+            problems.append("provenance/received_at precedes its release from quarantine: a released item is dated by its release")
+        if released < first:
+            problems.append("provenance/released_from_quarantine: released before it first arrived")
     if record.get("record_kind") != "act_version":
         return problems
     content, provenance = record["content"], record["provenance"]
@@ -153,16 +177,25 @@ def verify(record, records=()):
             problems.append(f"lifecycle/{i}: the co-signed event's sign-off differs from the co-signer signature's")
 
     seen = {}
-    offs = [(f"signatures/{i}", s["sign_off"]) for i, s in enumerate(record.get("signatures", []))]
-    offs += [(f"lifecycle/{i}", ev["sign_off"]) for i, ev in enumerate(record["lifecycle"]) if "sign_off" in ev]
+    offs = sign_offs(record)
     for where, so in offs:
         first = seen.setdefault(so["challenge_ref"], (where, so))
         if first[0] != where and first[1] != so:
             problems.append(f"{where}: its challenge already served the sign-off at {first[0]}")
+    me = (record["act_id"], record["act_version"])
+    for other in records:
+        if other.get("record_kind") != "act_version":
+            continue
+        for _, so2 in sign_offs(other):
+            for where, so in offs:
+                if so["challenge_ref"] == so2["challenge_ref"] and ((other["act_id"], other["act_version"]) != me or so != so2):
+                    problems.append(f"{where}: its challenge already served a sign-off of {other['act_id']} version {other['act_version']} in the store")
 
     holds = [(i, ev) for i, ev in enumerate(record["lifecycle"]) if ev["event"] in ("held", "hold_released")]
     signed_at = next((i for i, ev in enumerate(record["lifecycle"]) if ev["event"] == "signed"), None)
-    if record.get("signatures"):
+    if record.get("signatures") and signed_at is None:
+        problems.append("lifecycle: the act is signed but records no signed event")
+    elif record.get("signatures"):
         held_before = [h for h in holds if h[0] < signed_at]
         if held_before and held_before[-1][1]["event"] == "held":
             problems.append("the act was signed while its draft was on hold: no hold_released precedes the signature")

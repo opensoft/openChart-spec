@@ -289,6 +289,21 @@
               }
             }
           }
+        },
+        {
+          "description": "An act version is written by a human in the chart, never released from a quarantine (CA-10, AN-01).",
+          "properties": { "provenance": {"properties": {"released_from_quarantine": false}} }
+        },
+        {
+          "description": "Every signature is recorded as a signed lifecycle event (CA-03).",
+          "if": { "required": ["signatures"] },
+          "then": {
+            "properties": {
+              "lifecycle": {
+                "contains": { "properties": {"event": {"const": "signed"}}, "required": ["event"] }
+              }
+            }
+          }
         }
       ]
     },
@@ -613,7 +628,7 @@
           "then": { "properties": {"representative_ref": false} }
         },
         {
-          "description": "A party that is not identified is described, and carries no account, clinical role, licence attestation or wallet, which would claim an identity the chart does not hold (design call CD-66).",
+          "description": "A party that is not identified is described, and carries nothing that would identify it: no account, clinical role, licence attestation or wallet, no system registration or operator, no device ID, and not the full make, model and serial together. Partial facts go in described_as (design call CD-66).",
           "if": {
             "properties": {
               "kind": { "enum": ["human", "system", "device"] },
@@ -623,7 +638,18 @@
           },
           "then": {
             "required": ["described_as"],
-            "properties": { "account_ref": false, "clinical_role": false, "licence_attestation_ref": false, "openwallet_id": false }
+            "properties": {
+              "account_ref": false,
+              "clinical_role": false,
+              "licence_attestation_ref": false,
+              "openwallet_id": false,
+              "system_id": false,
+              "operator_ref": false,
+              "device_id": false,
+              "device_id_kind": false
+            },
+            "if": { "required": ["make", "model"] },
+            "then": { "properties": {"serial": false} }
           },
           "else": { "properties": {"described_as": false} }
         }
@@ -635,7 +661,10 @@
       "additionalProperties": false,
       "required": ["received_at", "source", "added_by"],
       "properties": {
-        "received_at": { "$ref": "#/$defs/timestamp" },
+        "received_at": {
+          "description": "When the chart added this record, by its own clock. For an item released from quarantine, the time of its release into the chart, never its first arrival (AN-01, AN-04).",
+          "$ref": "#/$defs/timestamp"
+        },
         "occurred_at": { "$ref": "#/$defs/timestamp" },
         "source": {
           "type": "object",
@@ -675,6 +704,18 @@
           "additionalProperties": false,
           "required": ["first_addition", "first_content_sha256"],
           "properties": { "first_addition": {"$ref": "#/$defs/additionRef"}, "first_content_sha256": {"$ref": "#/$defs/sha256"} }
+        },
+        "released_from_quarantine": {
+          "description": "Set when this addition was released from a quarantine into the chart (AN-01; design call CD-61): the held item, when it first arrived, who released it and when. received_at is the time of release.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["held_item_ref", "first_received_at", "released_by", "released_at"],
+          "properties": {
+            "held_item_ref": { "$ref": "#/$defs/opaqueRef" },
+            "first_received_at": { "$ref": "#/$defs/timestamp" },
+            "released_by": { "$ref": "#/$defs/opaqueRef" },
+            "released_at": { "$ref": "#/$defs/timestamp" }
+          }
         }
       },
       "allOf": [
@@ -1175,7 +1216,7 @@
           "enum": ["sign", "new_version", "cosign", "discontinue", "enter_in_error", "cancel"]
         },
         "act_class": {
-          "description": "The class as the writer gave it, kept as declared, whether or not this chart defines it (AN-06).",
+          "description": "The class or kind as the writer gave it, kept as declared, whether or not this chart defines it: a decision class, clinical_note, another kind of record of information such as document_summary, or anything else (AN-06).",
           "$ref": "#/$defs/codeToken"
         },
         "act_type": {
@@ -1239,7 +1280,7 @@
           "then": { "properties": {"target": false, "target_as_given": false} }
         },
         {
-          "description": "Content declared a note is a recommendation only when it is not note content; it is then entered with no_decision_authority (AN-06, CD-63, CD-65).",
+          "description": "Content declared a note is a recommendation only when it is not note content; it is then entered with no_decision_authority, as is any content declared as a kind it does not validate as (AN-06, CD-63, CD-65).",
           "if": { "properties": {"act_class": {"const": "clinical_note"}}, "required": ["act_class", "content"] },
           "then": {
             "properties": { "content": {"not": {"$ref": "#/$defs/clinicalNoteContent"}} }
@@ -1394,10 +1435,19 @@
           }
         },
         {
-          "description": "Content declared a note that is not note content is decision content, entered with no_decision_authority (AN-06; design call CD-65).",
+          "description": "Content declared as anything other than one of the five decision classes, whether a clinical note, another kind of record of information or a class this chart does not define, is a recommendation only because it did not validate as that kind's published shape, or no shape is published: it is entered with no_decision_authority (AN-06; design call CD-65).",
           "if": {
             "properties": {
-              "proposed": { "properties": {"act_class": {"const": "clinical_note"}}, "required": ["act_class"] }
+              "proposed": {
+                "properties": {
+                  "act_class": {
+                    "not": {
+                      "enum": ["encounter", "diagnosis_of_record", "procedure_performed", "order", "prescription"]
+                    }
+                  }
+                },
+                "required": ["act_class"]
+              }
             },
             "required": ["proposed"]
           },

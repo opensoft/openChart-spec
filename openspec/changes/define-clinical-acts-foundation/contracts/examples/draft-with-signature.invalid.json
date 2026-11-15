@@ -40,6 +40,11 @@
       "event": "created",
       "by_ref": "SYN-USER-CLIN-0001",
       "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:30:00Z"
     }
   ],
   "content": {
@@ -72,8 +77,8 @@
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "challenge_ref": "SYN-CHALLENGE-0001-1030",
-        "statement_sha256": "d88286b58be8e61c5b47e9bbbc5f178150df44fc3fdc7562a22cf3c0572105d5",
+        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-RX-0001-v1-sign-1030",
+        "statement_sha256": "bf561af5c0288783059a5085acdb4fe0e18e7a155acf0c472bd7ab8e70aa7c6d",
         "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
         "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
         "custody_model": "isolated_per_use_authorized",

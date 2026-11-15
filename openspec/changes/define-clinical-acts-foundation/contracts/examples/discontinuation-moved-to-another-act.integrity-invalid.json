@@ -68,8 +68,8 @@
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "challenge_ref": "SYN-CHALLENGE-0001-1500",
-        "statement_sha256": "2c825c99a0a1bcd5095c8dd6a5d7d6b7ffd04a93216f468d2f531294f51514c8",
+        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ORD-0007-v1-discontinue-1500",
+        "statement_sha256": "8c09310c37ae4a14959845f9149b7db782c41dcc4b1b9af1e054353630fa9f5d",
         "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1500",
         "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
         "custody_model": "isolated_per_use_authorized",
@@ -105,8 +105,8 @@
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "challenge_ref": "SYN-CHALLENGE-0001-1030",
-        "statement_sha256": "7ed072f0b98339400c9f43a6b69dded969229f63539bdf76ffdd20f566d2353c",
+        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ORD-0007-v1-sign-1030",
+        "statement_sha256": "f33341ba8dbc0beac1142b05a1f833d248466c5dbfc452f71ad2f952bfdfef06",
         "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
         "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
         "custody_model": "isolated_per_use_authorized",

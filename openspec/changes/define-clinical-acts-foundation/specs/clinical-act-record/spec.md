@@ -163,16 +163,18 @@ openChart SHALL record the provenance of AN-04 for every act and every recommend
 - the content digest;
 - the provenance digest;
 - the sign-off statement's digest, whose signer is the signature's `signer_ref` or the event's `by_ref`;
-- for an encounter's signature, the manifest digest, from the records its signing view showed, as they stood at `signed_at`.
+- for an encounter's signature, the manifest digest, from every act and information record that referenced the encounter at `signed_at` (CA-04): the version of each act received by then and its status at that time, worked out from its lifecycle events, so an order cancelled after the signature still counts as shown.
 
 It SHALL also check:
+- that every signature is recorded as a `signed` lifecycle event (CA-03), reporting a missing one as an integrity failure;
+- that an item released from quarantine is dated by its release: its first arrival, then its release, then its `received_at` (AN-01);
 - that the author signature is by the act's author;
 - that a `cosigned` event's copy equals the co-signer's signature;
 - that no challenge serves two sign-offs, anywhere in the store;
 - that every time is a real calendar time, since the contract's pattern checks ranges only;
 - that an act signed after a hold carries `adopted_from`, or follows a `hold_released` by decline, and that a draft carries `held_for` exactly while its last hold event is `held` (AN-14).
 
-A mismatch SHALL be treated as an integrity failure. It is reported to the medical director and the administrative role, and is never repaired silently. A record that fails SHALL NOT be published or returned by an interoperability read until the failure is resolved. The contract's self-test runs every one of these checks over every valid fixture, recomputing the manifest from the fixture set and checking challenges within each record, and over integrity fixtures that pass the schema and must fail the verifier.
+A mismatch SHALL be treated as an integrity failure. It is reported to the medical director and the administrative role, and is never repaired silently. A record that fails SHALL NOT be published or returned by an interoperability read until the failure is resolved. The contract's self-test runs every one of these checks over every valid fixture, recomputing the manifest from the fixture set and checking challenges within each record and across the valid fixture set, which stands in for one store, and over integrity fixtures that pass the schema and must fail the verifier.
 
 #### Scenario: An auditor reviews an amended note
 - **WHEN** an authorized user opens the history of a note amended twice

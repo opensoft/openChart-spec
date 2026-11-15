@@ -63,7 +63,7 @@
           "verified_at": "2026-10-01T00:00:00Z"
         },
         "challenge_ref": "SYN-OTHER",
-        "statement_sha256": "8beba47d174fbd1b0690d2d704833ee06bfabc09ba5bca8bf0a5aa5796f00dac",
+        "statement_sha256": "52e9cd1a86c537fd8ca0aa95897a7bc0a527844d484dfb2cb5a635a8c609a4d0",
         "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1200",
         "provenance_sha256": "85094dac3742357424a885153ba328ec9d4de8302a8a46f69a3ca7ac6e1288cb",
         "custody_model": "isolated_per_use_authorized",
@@ -125,8 +125,8 @@
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "challenge_ref": "SYN-CHALLENGE-0001-1030",
-        "statement_sha256": "f1863cf019780456dd6d0485a165e1c6e325b4147c0a587145c00b12ef704d8f",
+        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ORD-0006-v1-sign-1030",
+        "statement_sha256": "b11dab186233edea43535b0941f7504608714802944ff454809241fb4a1d69e8",
         "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
         "provenance_sha256": "85094dac3742357424a885153ba328ec9d4de8302a8a46f69a3ca7ac6e1288cb",
         "custody_model": "isolated_per_use_authorized",
@@ -155,8 +155,8 @@
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "challenge_ref": "SYN-CHALLENGE-0001-1200",
-        "statement_sha256": "8beba47d174fbd1b0690d2d704833ee06bfabc09ba5bca8bf0a5aa5796f00dac",
+        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ORD-0006-v1-cosign-1200",
+        "statement_sha256": "52e9cd1a86c537fd8ca0aa95897a7bc0a527844d484dfb2cb5a635a8c609a4d0",
         "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1200",
         "provenance_sha256": "85094dac3742357424a885153ba328ec9d4de8302a8a46f69a3ca7ac6e1288cb",
         "custody_model": "isolated_per_use_authorized",

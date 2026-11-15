@@ -1,4 +1,8 @@
 {
+  "act-released-from-quarantine.invalid.json": {
+    "expect_in_error": "does not allow {'held_item_ref'",
+    "reason": "an act version is written by a human in the chart and is never released from a quarantine (CA-10, AN-01)"
+  },
   "act-without-provenance.invalid.json": {
     "expect_in_error": "'provenance' is a required property",
     "reason": "every addition records its provenance (AN-04)"
@@ -38,6 +42,10 @@
   "author-type-ai.invalid.json": {
     "expect_in_error": "author_type",
     "reason": "an act's author type is clinician; act content from an AI is entered as a recommendation record instead (CA-02, AN-09)"
+  },
+  "challenge-reused-across-records.integrity-invalid.json": {
+    "expect_in_error": "challenge",
+    "reason": "a challenge that already served a sign-off of another act in the store"
   },
   "challenge-reused.integrity-invalid.json": {
     "expect_in_error": "challenge",
@@ -159,6 +167,14 @@
     "expect_in_error": "'receipt' is a required property",
     "reason": "the writer of a note kept as information is told at once (AN-14)"
   },
+  "not-identified-device-with-device-id.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-UDI-9'",
+    "reason": "a party that is not identified carries no device ID, which would identify it (AN-13, CD-66)"
+  },
+  "not-identified-device-with-make-model-serial.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-SN-9'",
+    "reason": "a party that is not identified does not carry a device's full make, model and serial, which identify it (AN-13, CD-66)"
+  },
   "not-identified-party-with-account.invalid.json": {
     "expect_in_error": "does not allow 'SYN-USER-CLIN-0001'",
     "reason": "a party that is not identified carries no chart account, which would claim an identity the chart does not hold (CD-66)"
@@ -166,6 +182,10 @@
   "not-identified-party-without-description.invalid.json": {
     "expect_in_error": "'described_as' is a required property",
     "reason": "a party that is not identified carries what is known of it (CD-66; ruling 80, clause 7)"
+  },
+  "not-identified-system-with-registration.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-SYS-INTEG-02'",
+    "reason": "a party that is not identified carries no system registration, which would identify it (AN-03, CD-66)"
   },
   "note-draft-closed-without-information-ref.invalid.json": {
     "expect_in_error": "'information_ref' is a required property",
@@ -263,6 +283,10 @@
     "expect_in_error": "'signatures' was unexpected",
     "reason": "a recommendation cannot be signed (AN-09)"
   },
+  "recommendation-summary-declared-without-no-decision-authority.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "content declared as a kind of record of information that it does not validate as is entered with no_decision_authority (AN-06, CD-65)"
+  },
   "recommendation-unknown-missing-authority.invalid.json": {
     "expect_in_error": "missing_authority",
     "reason": "missing_authority uses the closed code list (AN-09, CD-45)"
@@ -279,9 +303,17 @@
     "expect_in_error": "'record_kind' is a required property",
     "reason": "every record says which record kind it is"
   },
+  "released-item-back-dated.integrity-invalid.json": {
+    "expect_in_error": "release",
+    "reason": "a released item dated by its first arrival instead of its release into the chart"
+  },
   "released-while-cosignature-pending.invalid.json": {
     "expect_in_error": "status",
     "reason": "an order held for a before-effect co-signature is not in force until it is co-signed (CA-07, OR-02)"
+  },
+  "released-without-first-arrival.invalid.json": {
+    "expect_in_error": "'first_received_at' is a required property",
+    "reason": "a released item keeps when it first arrived beside the time of its release (AN-01, CD-61)"
   },
   "sign-off-holder-readable-custody.invalid.json": {
     "expect_in_error": "isolated_per_use_authorized",
@@ -302,6 +334,10 @@
   "signed-order-cancelled-without-sign-off.invalid.json": {
     "expect_in_error": "lifecycle",
     "reason": "cancelling a signed order is a decision and carries the practitioner's sign-off (OR-02)"
+  },
+  "signed-without-signed-event.invalid.json": {
+    "expect_in_error": "lifecycle",
+    "reason": "every signature is recorded as a signed lifecycle event (CA-03)"
   },
   "submission-ref-conflict-not-told.invalid.json": {
     "expect_in_error": "'submission_ref_conflict' is a required property",

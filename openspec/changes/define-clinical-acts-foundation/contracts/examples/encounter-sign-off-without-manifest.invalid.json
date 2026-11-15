@@ -93,8 +93,8 @@
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "challenge_ref": "SYN-CHALLENGE-0001-1030",
-        "statement_sha256": "62304bf4bfae99ccc24e49c6cecb0e3cef98e529b303a1f4ff22e57a15628cff",
+        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ENC-0001-v1-sign-1030",
+        "statement_sha256": "ccabc28f9d88e3bb90e9802d4f04b22feb1c420446e50986e7977572647eb1c3",
         "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
         "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
         "custody_model": "isolated_per_use_authorized",

@@ -1,0 +1,130 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "act_version",
+  "act_id": "SYN-ACT-ORD-0011",
+  "act_version": 1,
+  "act_class": "order",
+  "act_type": "laboratory_order",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "cancelled",
+  "entry_class": "decision",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0001",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0001:v3"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "provenance": {
+    "received_at": "2026-11-15T10:00:00Z",
+    "source": {
+      "kind": "clinician_observation",
+      "ref": "SYN-ACT-ENC-0001"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-CLIN-0001",
+      "clinical_role": "clinician"
+    }
+  },
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:20:00Z"
+    },
+    {
+      "event": "cancelled",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T12:00:00Z",
+      "reason_code": "no_longer_needed",
+      "attestation": {
+        "code": "synthetic-attestation-cancel",
+        "version": "1"
+      },
+      "sign_off": {
+        "action": "cancel",
+        "openwallet_id": "wal-practitioner-SYN-0001",
+        "licence_verification": {
+          "ref": "SYN-LICVER-0001",
+          "covers": "synthetic-licence-scope",
+          "verified_at": "2026-10-01T00:00:00Z"
+        },
+        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ORD-0011-v1-cancel-1200",
+        "statement_sha256": "68594623d3d8943b1966d2bcc04f8fbc42706d91f6b343dbfd25e126b6f8e096",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1200",
+        "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
+        "custody_model": "isolated_per_use_authorized",
+        "check": {
+          "result": "passed",
+          "checked_at": "2026-11-15T12:00:00Z"
+        }
+      }
+    }
+  ],
+  "content": {
+    "order_category": "laboratory",
+    "text": "SYN synthetic panel cancelled after the visit was signed",
+    "code": {
+      "system": "urn:example:synthetic:code-system:lab",
+      "code": "SYN-LAB-0007",
+      "display": "Synthetic panel seven",
+      "code_set_ref": "SYN-CODESET-LAB:3"
+    },
+    "priority": "routine",
+    "encounter_ref": {
+      "act_id": "SYN-ACT-ENC-0001"
+    },
+    "reason_refs": [
+      {
+        "act_id": "SYN-ACT-DX-0001"
+      }
+    ],
+    "release_at": "2026-11-16T09:00:00Z"
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-CLIN-0001",
+      "signer_role": "clinician",
+      "authority_basis_ref": "SYN-GRANT-0001:v3",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:20:00Z",
+      "content_sha256": "71cf493287a1f2010cae20ae13a78cf3aeaa927e7cda26f5e113f680b3dd6eb0",
+      "sign_off": {
+        "action": "sign",
+        "openwallet_id": "wal-practitioner-SYN-0001",
+        "licence_verification": {
+          "ref": "SYN-LICVER-0001",
+          "covers": "synthetic-licence-scope",
+          "verified_at": "2026-10-01T00:00:00Z"
+        },
+        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ORD-0011-v1-sign-1020",
+        "statement_sha256": "9f282338eb99b08cceb5590485cd75b58873715e0041397e9efe0d121da27a71",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1020",
+        "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
+        "custody_model": "isolated_per_use_authorized",
+        "check": {
+          "result": "passed",
+          "checked_at": "2026-11-15T10:20:00Z"
+        }
+      }
+    }
+  ]
+}

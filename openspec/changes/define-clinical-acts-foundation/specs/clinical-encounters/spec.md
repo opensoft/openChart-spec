@@ -40,7 +40,9 @@ openChart SHALL let an encounter move from `in_progress` to `final` only when ev
 - no act that references the encounter is in `draft`;
 - the encounter period has an end.
 
-The encounter signature SHALL attest the records in its manifest: every act and information record that references the encounter and that the signing view showed, which CA-04 defines. The signing view SHALL show exactly the manifest's members, and its sign-off binds the manifest's SHA-256. The signature SHALL be the documentation-final signature that publication uses (PB-02). It attests no record outside the manifest, and never adopts a recommendation (AN-11) (CA-04; design call CD-53, PROPOSED).
+The encounter signature SHALL attest the records in its manifest: every act and information record that references the encounter and that the signing view showed, which CA-04 defines. The signing view SHALL show exactly the manifest's members, and its sign-off binds the manifest's SHA-256. The signature SHALL be the documentation-final signature that publication uses (PB-02). It attests no record outside the manifest, and never adopts a recommendation (AN-11) (CA-04; design call CD-53, PROPOSED). The manifest records what was shown at signing. An order or prescription in a signed manifest MAY later change by its own signed act, such as a release, a cancellation or a discontinuation, without an encounter amendment (EN-05); the signature still attests what was shown at signing.
+
+A draft that blocks the signature, including one returned to its author after its recommendation was declined, does not block it indefinitely: AN-14 lists it for its author and the primary performer with a due time, and escalates it to the medical director, who may close it (design call CD-68, PROPOSED).
 
 #### Scenario: An encounter is finalized
 - **WHEN** the primary performer signs an encounter with a final note, a final diagnosis and no drafts
@@ -59,7 +61,7 @@ The encounter signature SHALL attest the records in its manifest: every act and 
 - **THEN** openChart refuses and the encounter stays `in_progress`
 
 ### Requirement: EN-05 After an encounter is final, every change goes through a signed encounter amendment
-Once an encounter is `final` or `amended`, adding, amending or marking entered in error any note, diagnosis or procedure that references it SHALL be done within an encounter amendment: a new encounter version, status `amended`, with a reason, signed by a participant or clinician with encounter `sign` scope (design call CD-16). The prior encounter version and every prior act version SHALL stay readable. Publication SHALL treat the amendment as a forward-only correction (PB-03).
+Once an encounter is `final` or `amended`, adding, amending or marking entered in error any note, diagnosis or procedure that references it SHALL be done within an encounter amendment. An order or prescription that references it changes by its own signed act, without an encounter amendment, and the signed manifest still records what was shown at signing (EN-04). An amendment is a new encounter version, status `amended`, with a reason, signed by a participant or clinician with encounter `sign` scope, whose signature binds a new manifest (design call CD-16). The prior encounter version and every prior act version SHALL stay readable. Publication SHALL treat the amendment as a forward-only correction (PB-03).
 
 #### Scenario: A procedure is added after signing
 - **WHEN** a clinician adds a procedure to a final encounter
