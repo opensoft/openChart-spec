@@ -96,9 +96,9 @@ When more than one refusal reason applies, openChart SHALL check in this order a
 8. the grant checks, in the order of AG-06's table;
 9. for an `act.write`: `emergency_management_refused`, `reserved_act_refused`, `targets_clinician_record`, `allowlist_entry_unknown`, `allowlist_entry_mismatch`, `conditions_unverified`, then, for a prescription, `prescribing_gate_not_open` (AA-03), a reason that the MINOR version putting Tier 2 in force adds.
 
-For an `authority.notice`, steps 1 to 3 apply, then `notice_would_widen`. Whatever reason a refused `act.write` carries, a set emergency indicator SHALL make its refusal record urgent for the patient's responsible clinician and the medical director (AA-06).
+For an `authority.notice`, steps 1 to 3 apply, then `notice_would_widen`. Whatever step refuses a schema-valid write, its refusal record SHALL keep the emergency indicator, and for a consult a declared `red_flag`, when the request carried them. Such a refusal SHALL be listed urgently, without content: where the patient resolves through an existing link (AW-03, changing nothing), for the patient's responsible clinician and the medical director, with AC-11's fallback recipients; otherwise for the medical director, or, where none is designated, as an alert to the administrative role that the foundation's AU-01 names carrying an opaque reference and a coded cause. For an `act.write` this is AA-06's urgent listing.
 
-A refused write SHALL store no clinical content, with one exception. A `consult.write` refused at step 8, after passing steps 1 to 6, SHALL be kept as quarantined AI communication under AC-11, because its answer has already reached the patient, and its source, content and patient are established. What is stored then is exactly what AC-11 lists, and none of it is returned to the source system. No refused `act.write`, and no write refused at any other step, stores clinical content. For every refused write, openChart SHALL keep a refusal record holding only identifiers, the write kind, the act class where there is one, the claimed mode, the reason code and the time (design call AD-7). The refusal record SHALL be visible as AW-09, AC-06 and AA-12 state.
+A refused write SHALL store no clinical content, with one exception. A `consult.write` refused at step 8, after passing steps 1 to 6, SHALL be kept as quarantined AI communication under AC-11, because its answer has already reached the patient, and its source, content and patient are established. What is stored then is exactly what AC-11 lists, and none of it is returned to the source system. No refused `act.write`, and no write refused at any other step, stores clinical content. For every refused write, openChart SHALL keep a refusal record holding only identifiers, the write kind, the act class where there is one, the claimed mode, the reason code, the time, and the emergency indicator and `red_flag` when the request declared them (design call AD-7). The refusal record SHALL be visible as AW-09, AC-06 and AA-12 state.
 
 #### Scenario: Failure: an act write is refused
 - **WHEN** openChart refuses an `act.write`
@@ -178,17 +178,25 @@ openChart SHALL answer a `record.readback_request` with exactly one `record.read
 - **WHEN** a readback names a record reference openChart does not hold
 - **THEN** openChart answers `not_found` with no digest, state or status
 
-### Requirement: AW-13 An integration identity can be suspended or deregistered at once, and a per-source quarantine cap suspends it
-openChart SHALL provide an audited suspend act and an audited deregister act on an integration identity, each effective at once (design call AD-37). While an identity is suspended, and after it is deregistered, every message from it SHALL fail at step 2 of AW-06's precedence with reason `unauthorized`, and SHALL store no clinical content; nothing it sends is quarantined. The medical director, or a holder of the administrative role that the foundation's AU-01 names, MAY suspend an identity. Only the medical director SHALL lift a suspension. The medical director or a holder of that administrative role MAY deregister an identity; a deregistered identity is never re-enabled, and only a new registration under AW-02 restores a path. Every suspension, lift and deregistration SHALL be recorded with actor, reason and time, and listed for the medical director and the administrative role.
+### Requirement: AW-13 An integration identity can be suspended or deregistered, and a per-source quarantine cap suspends only its non-urgent consults
+openChart SHALL provide two kinds of suspension and a deregistration of an integration identity, each audited and effective at once (design call AD-37).
 
-openChart SHALL count, per source system and practice, the consults quarantined under AC-11 in any rolling 24 hours. The practice's policy sets the cap, which SHALL NOT exceed a built-in ceiling of 20; with no policy set, the ceiling applies (design call AD-37). When a source reaches its cap, openChart SHALL quarantine that consult, suspend the source's identity at once as if by the suspend act, and alert the medical director, or, where none is designated, the administrative role, with identifiers and a coded cause only.
+**Manual suspension and deregistration.** A human has decided that the source is unsafe. The medical director, or a holder of the administrative role that the foundation's AU-01 names, MAY suspend an identity manually or deregister it. While it is manually suspended, and after it is deregistered, every message from it SHALL fail at step 2 of AW-06's precedence with reason `unauthorized`, and SHALL store no clinical content. Only the medical director SHALL lift a manual suspension. A deregistered identity is never re-enabled; only a new registration under AW-02 restores a path.
+
+**Cap suspension.** openChart SHALL count, per source system and practice, the consults quarantined under AC-11 in any rolling 24 hours, leaving out every consult whose emergency indicator is set or whose `review_flags` carry `red_flag`. The practice's policy sets the cap, which SHALL NOT exceed a built-in ceiling of 20; with no policy set, the ceiling applies. When a source reaches its cap, openChart SHALL quarantine that consult and cap-suspend the source at once. A cap suspension stops only non-urgent consults. A `consult.write` from a cap-suspended source without the emergency indicator or `red_flag`, and every `act.write` from it, SHALL fail at step 2 with `unauthorized` and store no clinical content. A consult with the emergency indicator or `red_flag` SHALL be exempt: openChart SHALL keep it as quarantined AI communication and list it urgently under AC-11, even when its grant checks pass. Its receipt is `refused` with the step-8 reason when a grant check fails, and otherwise with `unauthorized`, so the source learns that it was not recorded (design call AD-40). The medical director MAY lift a cap suspension. While no AU-01 designation is in force, a holder of the administrative role that the foundation's AU-01 names MAY lift a cap suspension too, but never a manual one. Lifting a cap suspension grants nothing: consults still meet the grant checks, and are quarantined when they fail them.
+
+**Alerts and records.** A cap suspension SHALL alert the medical director with identifiers and a coded cause only, or, where none is designated, the administrative role that the foundation's AU-01 names with an opaque reference and a coded cause only, as AC-11 provides for that role. Every suspension, lift and deregistration SHALL be recorded with actor, reason and time, and listed for the medical director and the administrative role, naming the source and never a patient. A refused write that declared the emergency indicator or `red_flag` is listed urgently without content, as AW-06 states.
 
 #### Scenario: Failure: the administrative role suspends an unsafe source
-- **WHEN** a holder of the administrative role that the foundation's AU-01 names suspends an AI system's integration identity
+- **WHEN** a holder of the administrative role that the foundation's AU-01 names suspends an AI system's integration identity manually
 - **THEN** every later write from it is refused with reason `unauthorized` and stores no clinical content, and the suspension is listed for the medical director
 
-#### Scenario: Failure: someone other than the medical director lifts a suspension
-- **WHEN** a holder of the administrative role tries to lift a suspension
+#### Scenario: Failure: an emergency consult arrives from a manually suspended source
+- **WHEN** a manually suspended source sends a consult with the emergency indicator set, for a patient it is linked to
+- **THEN** openChart refuses it with reason `unauthorized` and stores no clinical content; the refusal record keeps the emergency indicator, and the refusal is listed urgently, without content, for the patient's responsible clinician and the medical director, or AC-11's fallback recipients, so that a clinician knows to contact the patient
+
+#### Scenario: Failure: someone other than the medical director lifts a manual suspension
+- **WHEN** a holder of the administrative role tries to lift a manual suspension, whether or not a medical director is designated
 - **THEN** the action is refused, and the identity stays suspended until the medical director lifts it
 
 #### Scenario: Failure: a deregistered identity writes
@@ -196,5 +204,13 @@ openChart SHALL count, per source system and practice, the consults quarantined 
 - **THEN** openChart refuses it with reason `unauthorized`, stores no clinical content, and offers no way to re-enable that identity
 
 #### Scenario: Failure: a source reaches its quarantine cap
-- **WHEN** a source's twentieth consult in 24 hours is quarantined, with no lower cap set
-- **THEN** openChart quarantines it, suspends the source's identity at once, and alerts the medical director; the next write from that source is refused with reason `unauthorized`
+- **WHEN** a source's twentieth non-urgent consult in 24 hours is quarantined, with no lower cap set
+- **THEN** openChart quarantines it, cap-suspends the source at once and alerts the medical director, and the source's next non-urgent consult is refused with reason `unauthorized`
+
+#### Scenario: Failure: a red-flag consult arrives from a cap-suspended source
+- **WHEN** a cap-suspended source sends a consult whose `review_flags` carry `red_flag`
+- **THEN** openChart keeps it as quarantined AI communication, lists it urgently under AC-11, does not count it toward the cap, and answers `refused` with the step-8 reason, or with `unauthorized` when every grant check passes
+
+#### Scenario: Failure: the cap is reached while no medical director is designated
+- **WHEN** a source is cap-suspended while no AU-01 designation is in force, and a holder of the administrative role lifts the cap suspension
+- **THEN** the lift is recorded and listed, the alert names no patient, and the source's next consult still meets the grant checks and is quarantined when it fails them
