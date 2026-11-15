@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-ai-clinical-record-write:1.0",
   "title": "openchart-ai-clinical-record-write 1.0",
-  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which every 1.x receiver refuses with tier2_not_in_force until the clinical-acts foundation is ratified and a MINOR version pins its content schemas. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices, status messages and readbacks carry identifiers, digests and codes only, never clinical content; record.readback lets the writing source system confirm what openChart stored. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
+  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which every 1.x receiver refuses with tier2_not_in_force until both the clinical-acts foundation and a future governed amendment put Tier 2 in force and a MINOR version pins the foundation's content schemas. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices, status messages and readbacks carry identifiers, digests and codes only, never clinical content; record.readback lets the writing source system confirm what openChart stored. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
   "oneOf": [
     { "$ref": "#/$defs/consultWrite" },
     { "$ref": "#/$defs/actWrite" },
@@ -47,13 +47,18 @@
       "enum": ["operational", "scenario", "simulation"]
     },
     "sourceSystem": {
-      "description": "The external clinical AI system: its issuer and the namespace token under which openChart stores its patient references.",
+      "description": "The external clinical AI system: its issuer and the namespace token under which openChart stores its patient references. Where the clinical communication record (define-clinical-message-inbox MI-12) defines a source token for the system, the namespace is that token (for example medxfactory). healthlinc (a coach that gives general information only) and openpractice_agent (an administrative agent with no clinical content) are never write-path sources.",
       "type": "object",
       "additionalProperties": false,
       "required": ["issuer", "namespace"],
       "properties": {
         "issuer": { "$ref": "#/$defs/issuer" },
-        "namespace": { "$ref": "#/$defs/namespaceToken" }
+        "namespace": {
+          "allOf": [
+            { "$ref": "#/$defs/namespaceToken" },
+            { "not": { "enum": ["openchart", "healthlinc", "openpractice_agent"] } }
+          ]
+        }
       }
     },
     "openchartPatientRef": {
@@ -153,14 +158,14 @@
       }
     },
     "consultTurn": {
-      "description": "One turn of the exchange. author_kind is patient, representative or ai; a consult write never carries clinician-authored content. Only an ai turn may carry evidence_refs and knowledge_basis.",
+      "description": "One turn of the exchange. author_type uses the author types of the clinical communication record (define-clinical-message-inbox MI-12): patient, representative or ai. A consult write never carries clinician, staff, system or unknown content. Only an ai turn may carry evidence_refs and knowledge_basis.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["turn_id", "seq", "author_kind", "at", "text"],
+      "required": ["turn_id", "seq", "author_type", "at", "text"],
       "properties": {
         "turn_id": { "$ref": "#/$defs/opaqueRef" },
         "seq": { "type": "integer", "minimum": 1 },
-        "author_kind": { "enum": ["patient", "representative", "ai"] },
+        "author_type": { "enum": ["patient", "representative", "ai"] },
         "at": { "$ref": "#/$defs/timestamp" },
         "text": { "type": "string", "minLength": 1, "maxLength": 20000 },
         "attachments": {
@@ -175,7 +180,7 @@
         },
         "knowledge_basis": { "$ref": "#/$defs/knowledgeBasis" }
       },
-      "if": { "properties": { "author_kind": { "const": "ai" } }, "required": ["author_kind"] },
+      "if": { "properties": { "author_type": { "const": "ai" } }, "required": ["author_type"] },
       "else": {
         "not": {
           "anyOf": [
@@ -244,8 +249,8 @@
               "items": { "$ref": "#/$defs/consultTurn" },
               "contains": {
                 "type": "object",
-                "properties": { "author_kind": { "const": "ai" } },
-                "required": ["author_kind"]
+                "properties": { "author_type": { "const": "ai" } },
+                "required": ["author_type"]
               }
             },
             "content_sha256": { "$ref": "#/$defs/sha256" }
@@ -267,7 +272,7 @@
           "items": { "$ref": "#/$defs/evidenceRef" }
         },
         "review_flags": {
-          "description": "Review category codes the source system declares, drawn from the vocabulary of the medical director's review policy.",
+          "description": "Review category codes the source system declares, drawn from the vocabulary of the medical director's review policy. Two built-in codes always put the consult in review: red_flag, and advice_scope_breach (diagnosis language or a treatment directive in advice-only content).",
           "type": "array",
           "maxItems": 50,
           "uniqueItems": true,
@@ -284,7 +289,7 @@
       }
     },
     "actWrite": {
-      "description": "Tier 2. An external clinical AI system records one AI-authored clinical act under limited_practice or full_practice authority. Every 1.x receiver refuses it with tier2_not_in_force until the clinical-acts foundation is ratified and built and a MINOR version of this contract pins the foundation's content schemas.",
+      "description": "Tier 2. An external clinical AI system records one AI-authored clinical act under limited_practice or full_practice authority. Every 1.x receiver refuses it with tier2_not_in_force until both the clinical-acts foundation is ratified and built and a future governed amendment puts Tier 2 in force, and a MINOR version of this contract pins the foundation's content schemas.",
       "type": "object",
       "additionalProperties": false,
       "allOf": [
