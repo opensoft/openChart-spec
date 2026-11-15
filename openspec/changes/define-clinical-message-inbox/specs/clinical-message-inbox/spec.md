@@ -156,7 +156,7 @@ openChart SHALL report each item's progress to openPractice with `handoff.status
 - `clock_expired` the moment the item's effective response deadline passes with no reply;
 - `returned_not_clinical` when a clinician returns the item as administrative (MI-15);
 - `content_unavailable` under MI-03;
-- `closed` when the item closes with a recorded outcome.
+- `closed` when a holder of `close` records the item's closing outcome (MI-07).
 
 `returned_not_clinical` SHALL be the last status for its item. After `responded`, openChart SHALL send `closed` when the item closes. openChart SHALL answer each `handoff.urgency_raised` with `message.ack`. A `responded` or `clock_expired` status SHALL be written in the same transaction as HealthLinc's acceptance or the expiry, and SHALL NOT wait for any batch or schedule.
 
@@ -165,7 +165,7 @@ Every message openChart sends about a handoff SHALL carry its `handoff_id`. It S
 Every `handoff.ack`, `handoff.status`, `handoff.clinician_urgency_raised`, `clinical_need.marker` and `message.ack` openChart sends SHALL be written to the durable outbound store of PL-14 in the same transaction as its cause. It SHALL be delivered with retries that reuse its original `message_id`, until delivery succeeds, and for `handoff.status` and `clinical_need.marker` until openPractice answers with `message.ack`. Delivery MUST NOT rely on `frappe.publish_realtime` or any other site-local event. Clock expiry SHALL NOT close, cancel or unassign an item.
 
 #### Scenario: A reply is delivered
-- **WHEN** HealthLinc accepts the clinician's reply and the owner then closes the item with an outcome
+- **WHEN** HealthLinc accepts the clinician's reply and the owner, holding `close`, then closes the item with an outcome
 - **THEN** openChart sends `responded` and then `closed`
 
 #### Scenario: Failure: openPractice is unreachable
@@ -191,15 +191,19 @@ At acceptance, the owner SHALL be:
 - when no on-call clinician is rostered, the medical director, when they hold `own` over `clinical_inbox_item` for the item's lane (AU-06);
 - otherwise, MI-08's rule for an empty roster slot.
 
-No item SHALL close without an outcome recorded by a named human. AU-06 names no action for recording a closing outcome (tension MT-24). Until it does, no item SHALL close except by `return` under MI-15, and an answered item SHALL stay open and owned. No agent SHALL own, acknowledge, answer, re-route or close an item (design call MD-10). This matches the foundation's AU-05, under which only named humans act on clinical acts.
+No item SHALL close without a closing outcome recorded by a named human who holds a grant over `clinical_inbox_item` with the action `close`, in force for the item's lane (AU-06). openChart SHALL refuse a close by anyone else, and the item SHALL stay open and owned. A recorded closing outcome closes the item, including one already answered, and openChart then sends `closed` (MI-06). A return under MI-15 is not a close: it ends the item with outcome `returned_not_clinical` and needs `return`. No agent SHALL own, acknowledge, answer, re-route or close an item (design call MD-10). This matches the foundation's AU-05, under which only named humans act on clinical acts.
 
 #### Scenario: Failure: nobody is rostered for the lane and hour
 - **WHEN** an offer arrives for an hour with no one named for its lane
 - **THEN** the on-call clinician for the hour owns the item, or the medical director when no on-call clinician is rostered and they hold `own` for that lane, and otherwise MI-08's rule for an empty slot applies
 
-#### Scenario: Failure: an answered item has no closing action
-- **WHEN** an owner has replied to an item and tries to close it, while AU-06 names no closing action
-- **THEN** the item stays open and owned, and openChart sends no `closed` (tension MT-24)
+#### Scenario: An answered item is closed
+- **WHEN** HealthLinc has accepted the owner's reply, and the owner, holding `close` for the item's lane, records a closing outcome
+- **THEN** the item closes, and openChart sends `closed` after `responded` (MI-06)
+
+#### Scenario: Failure: a close without the close action
+- **WHEN** an owner whose `clinical_inbox_item` grant for the item's lane does not include `close` tries to close the item with an outcome
+- **THEN** openChart refuses the close, the item stays open and owned, and openChart sends no `closed`
 
 #### Scenario: Failure: someone closes an item with no outcome
 - **WHEN** a user tries to close an item without recording an outcome
@@ -248,7 +252,7 @@ openChart SHALL escalate every item that has no clinician acknowledgment by its 
 
 Until a response policy is approved, each escalation interval SHALL equal the item's acknowledgment window (`ack_by` minus `routed_at`). An item that arrives at or after its `ack_by` SHALL escalate at once (design call MD-2). Escalation SHALL NOT drop, park or close an item, SHALL NOT depend on any agent, and SHALL run whatever the item's identity state (MI-18). Any other item that has no acknowledgment by its deadline SHALL move to its lane's cover for the hour.
 
-An item whose clock has expired SHALL stay in the queue, open and owned, until a clinician replies or records a closing outcome. openChart SHALL let any holder of a `clinical_inbox_item` grant in force (AU-06) find an open item by its routing id (`handoff_id`) and see it. That includes the on-call clinician named in openPractice's tracked alert (ER-07 and ER-09 in the openPractice change).
+An item whose clock has expired SHALL stay in the queue, open and owned, until a clinician replies or a holder of `close` for its lane records a closing outcome (MI-07). openChart SHALL let any holder of a `clinical_inbox_item` grant in force (AU-06) find an open item by its routing id (`handoff_id`) and see it. That includes the on-call clinician named in openPractice's tracked alert (ER-07 and ER-09 in the openPractice change).
 
 #### Scenario: Failure: the owner does not acknowledge an urgent item
 - **WHEN** an `urgent` item's acknowledgment deadline passes with no acknowledgment by its owner
@@ -649,7 +653,7 @@ The inbox SHALL be covered by contract tests, written first, that validate every
 - `consent_ref`; the required request turn, with an empty result and a result without a request turn treated as failed retrievals; for `priority` and `urgent` items, request turns shared as `urgent_escalation` with `patient_told_at`; withheld turns shown as a partial view; `result_mismatch`; and a `consent_not_granted` refusal;
 - the optional AI-turn fields `ai_mode`, `disclosure_code`, `model_ref` and `advice_statement_ref`, shown when given, shown as not stated when absent, and refused on non-AI turns;
 - `origin_conversation_ref` recorded and shown, and never retrieved on its own; `emergency_guidance` shown prominently on AI turns and refused on other turns;
-- no inbox action, reply or marker without its AU-06 grant for the item's lane; a grant lapse that empties a roster slot, with the warnings, alerts and fallbacks of MI-08; and an offer held unacknowledged until it has a named owner;
+- no inbox action, reply or marker without its AU-06 grant for the item's lane, including a close refused without `close`, and `closed` sent once a holder of `close` records the outcome; a grant lapse that empties a roster slot, with the warnings, alerts and fallbacks of MI-08; and an offer held unacknowledged until it has a named owner;
 - `ai_consult` records in state `accepted` and `quarantined`, a quarantined one always marked with its cause, and `quarantine_cause` refused on an accepted one;
 - every author type of MI-12, per turn by `turn_id`, with its source token, including `unknown`, `openpractice_agent` turns with an answer type or an approver, a clinician claim without a matching `reply_id`, patient turns never shown as AI content, and medical-AI content never filed through the inbox;
 - AI-authored orders, prescriptions and diagnoses in inbox items held as communication, with no clinical act created (MI-26);
