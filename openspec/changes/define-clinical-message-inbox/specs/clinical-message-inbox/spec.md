@@ -116,7 +116,7 @@ A result that withholds only turns other than the request turns is a successful 
 
 ### Requirement: MI-04 Every offer is acknowledged, and handling is idempotent and replay-safe
 openChart SHALL answer every schema-valid, authorized `handoff.offer` with exactly one `handoff.ack`. The two results mean:
-- **`accepted`:** openChart has durably created the inbox item, assigned it a named owner (MI-07) and started its clock (MI-05). This is system acceptance, not a clinician reading the item (design call MD-1).
+- **`accepted`:** openChart has durably created the inbox item, assigned it a named owner (MI-07) and started its clock (MI-05). This is system acceptance, not a clinician reading the item (design call MD-1). openChart SHALL NOT answer `accepted` without a named owner; an offer that no one can own is held under MI-08 until one can.
 - **`rejected`:** the acknowledgment carries a reason code from the schema.
 
 The `message_id` of each inbound message is its idempotency key. A message whose `message_id` was already processed SHALL be answered with the original result and SHALL change nothing. openChart SHALL keep exactly one inbox item per `handoff_id`. A later offer for an existing `handoff_id` under a new `message_id` SHALL be answered with the original result and SHALL NOT alter the item. If that offer's content differs from the original, openChart SHALL also record an integration exception that holds only identifiers and a coded cause (design call MD-14). The `message_id` of every message openChart sends SHALL be a random UUID, reused on every retry. No key SHALL carry PHI (PL-13).
@@ -181,20 +181,25 @@ Every `handoff.ack`, `handoff.status`, `handoff.clinician_urgency_raised`, `clin
 - **THEN** each message carries the `handoff_id` and no `link_id`, and validates against the pinned schema
 
 ### Requirement: MI-07 Every item has exactly one named owner in a physician or nurse lane
-Every inbox item SHALL have exactly one owner at all times, from acceptance until it closes. The owner SHALL be a named human with an openChart account who holds the `clinician` or `nurse` role and an inbox ownership grant in force. Clinical roles, the medical director and grants are those of `define-clinical-acts-foundation` (openChart-spec#5): AU-01 defines the roles and the medical director, and only the medical director records a grant (AU-02). This change defines no role or grant of its own (design Decision 15). The foundation does not yet define an inbox ownership grant (tension MT-17). Until it does, nobody holds one, no item can be owned, and the inbox SHALL NOT be enabled (MI-20, design call MD-31).
+Every inbox item SHALL have exactly one owner at all times, from acceptance until it closes. The owner SHALL be a named human with an openChart account who holds the `clinician` or `nurse` role and a grant over `clinical_inbox_item` with the action `own`, in force for the item's lane (AU-06). Clinical roles, the medical director and grants are those of `define-clinical-acts-foundation` (openChart-spec#5): AU-01 defines the roles and the medical director, only the medical director records a grant (AU-02), and AU-06 carries the inbox's scopes, PROPOSED pending owner decision 92. This change defines no role or grant of its own (design Decision 15). A person without the grant in force for an action and a lane SHALL take none of the inbox actions it covers (design call MD-31).
 
-Each item SHALL sit in one of two lanes: physician or nurse. Lane assignment, and what each lane may answer, SHALL come from a lane policy that the medical director approves. Until one is approved, and while the foundation defines no nurse scope for the inbox (tension MT-18), every item SHALL enter the physician lane, and only a holder of the `clinician` role SHALL own it (design call MD-3).
+Each item SHALL sit in one of two lanes, `physician` or `nurse` (AU-06). Lane assignment SHALL come from a lane policy that the medical director approves. What the `nurse` lane may triage or answer is the nurse-lane scope that the medical director records under AU-06. Until a lane policy is approved and a nurse-lane scope is recorded, every item SHALL enter the `physician` lane (design call MD-3).
 
 At acceptance, the owner SHALL be:
 - the person the cover roster (MI-08) names for the item's lane and hour;
 - when nobody is named, the on-call clinician for the hour;
-- when no on-call clinician is rostered, the medical director.
+- when no on-call clinician is rostered, the medical director, when they hold `own` over `clinical_inbox_item` for the item's lane (AU-06);
+- otherwise, MI-08's rule for an empty roster slot.
 
-No item SHALL close without an outcome recorded by a named human. No agent SHALL own, acknowledge, answer, re-route or close an item (design call MD-10). This matches the foundation's AU-05, under which only named humans act on clinical acts.
+No item SHALL close without an outcome recorded by a named human. AU-06 names no action for recording a closing outcome (tension MT-24). Until it does, no item SHALL close except by `return` under MI-15, and an answered item SHALL stay open and owned. No agent SHALL own, acknowledge, answer, re-route or close an item (design call MD-10). This matches the foundation's AU-05, under which only named humans act on clinical acts.
 
 #### Scenario: Failure: nobody is rostered for the lane and hour
-- **WHEN** an offer is accepted for an hour with no one named for its lane
-- **THEN** the on-call clinician for the hour owns the item, or the medical director when no on-call clinician is rostered
+- **WHEN** an offer arrives for an hour with no one named for its lane
+- **THEN** the on-call clinician for the hour owns the item, or the medical director when no on-call clinician is rostered and they hold `own` for that lane, and otherwise MI-08's rule for an empty slot applies
+
+#### Scenario: Failure: an answered item has no closing action
+- **WHEN** an owner has replied to an item and tries to close it, while AU-06 names no closing action
+- **THEN** the item stays open and owned, and openChart sends no `closed` (tension MT-24)
 
 #### Scenario: Failure: someone closes an item with no outcome
 - **WHEN** a user tries to close an item without recording an outcome
@@ -205,11 +210,19 @@ No item SHALL close without an outcome recorded by a named human. No agent SHALL
 - **THEN** the action is refused and the item is unchanged
 
 ### Requirement: MI-08 Reassignment, absence and on-call cover keep every item owned
-openChart SHALL keep a cover roster that names, for every hour, an on-call clinician who holds the inbox ownership grant (MI-07), and SHALL name the practice's medical director (AU-01) as the last fallback (design call MD-4). The foundation defines no on-call designation, so the roster is a schedule of grant holders, not a role (tension MT-21). openChart owns after-hours clinical cover in its own queue (ER-13 in the openPractice change).
+openChart SHALL keep a cover roster. It is a schedule, not a role: for every hour and lane it names only people who hold `own` over `clinical_inbox_item` in force for that lane, the medical director included as the last fallback (AU-06; design call MD-4). AU-06 refuses a roster entry for anyone else, and removes a holder from every later slot at once when their grant lapses. openChart owns after-hours clinical cover in its own queue (ER-13 in the openPractice change).
 
-The inbox SHALL NOT be enabled until the roster covers every hour or names the medical director as the fallback. While the inbox is enabled, openChart SHALL refuse a roster or account change that would leave an hour with neither.
+The inbox SHALL NOT be enabled until the roster covers every hour of each lane in use, with the medical director as the fallback where nobody else is named. While the inbox is enabled, openChart SHALL refuse a roster or account change that would leave an hour with neither.
 
-An owner MAY reassign an item to another holder of the ownership grant, in a lane the policy allows. The reassignment SHALL be recorded with actor, time and reason. openChart SHALL move each open item at once when its owner is marked absent, loses access, has their account disabled, or no longer holds the role or the ownership grant (MI-07). The item SHALL go to the lane's cover for the hour, or else to the on-call clinician, or else to the medical director. Reassignment and cover SHALL NOT reset or extend the clock.
+**An empty slot after a lapse.** A grant lapse is not a roster change, so the refusal above cannot stop it. When a lapse, or anything else, leaves an hour and lane with nobody rostered, openChart SHALL keep a human reaching every item (design call MD-4):
+- openChart SHALL warn the medical director, and the administrative role that AU-01 names, ahead of a scheduled end of a grant or of the attestation it rests on that would leave a slot empty. It SHALL warn the medical director at once when a narrowing they record would do so;
+- when a slot becomes empty, openChart SHALL alert the medical director and that administrative role at once, with a coded cause and an opaque reference only (MI-21);
+- an empty `nurse`-lane slot SHALL fall back to the `physician` lane for that hour. An empty `physician`-lane slot SHALL fall back to the medical director, when they hold `own` for that lane (AU-06);
+- when nobody can take the item, openChart SHALL alert the medical director and every holder of a `clinical_inbox_item` grant in force for the lane at once, and re-alert them at each escalation interval until one of them takes it.
+
+An offer that openChart cannot give a named owner SHALL be kept durably and unacknowledged, never accepted without an owner (MI-04) and never dropped. Its deadlines SHALL run from the offer as received. openChart SHALL answer `accepted` once an owner is assigned. Until then, openPractice's alert for a missing acknowledgment runs at `ack_by`, and for an urgent item so does its fallback (ER-07 and ER-09 in the openPractice change). An open item whose owner lapses, with nobody to take it, SHALL stay open, listed and re-alerted as above, and SHALL be reported `clock_expired` at its deadline (MI-06). openPractice is not told sooner (tension MT-5).
+
+An owner who holds `reassign` (AU-06) MAY reassign an item to another person who holds `own` for the lane it moves to, in a lane the policy allows. The reassignment SHALL be recorded with actor, time and reason. openChart SHALL move each open item at once when its owner is marked absent, loses access, has their account disabled, or no longer holds the role or the `own` grant (MI-07). The item SHALL go to the lane's cover for the hour, or else to the on-call clinician, or else to the medical director when they hold `own` for that lane, or else under the rule for an empty slot above. Reassignment and cover SHALL NOT reset or extend the clock.
 
 #### Scenario: Failure: an owner's account is disabled
 - **WHEN** the account of a clinician who owns an open `urgent` item is disabled
@@ -219,15 +232,23 @@ An owner MAY reassign an item to another holder of the ownership grant, in a lan
 - **WHEN** an administrator tries to remove the only on-call entry for an hour, and no medical director fallback is named
 - **THEN** the change is refused
 
+#### Scenario: Failure: a grant lapse empties a roster slot
+- **WHEN** the only `physician`-lane clinician rostered for tonight's hours loses their `own` grant when its interval ends
+- **THEN** AU-06 takes them off the roster, openChart alerts the medical director and the administrative role of AU-01 at once, and the medical director covers those hours when they hold `own` for the `physician` lane
+
+#### Scenario: Failure: nobody can own an urgent offer
+- **WHEN** an `urgent` offer arrives for an hour whose slot is empty, and the medical director holds no `own` grant for its lane
+- **THEN** openChart keeps the offer durably and unacknowledged, alerts the medical director and every holder of a `clinical_inbox_item` grant for the lane at once and at each escalation interval, answers `accepted` only once one of them owns it, and openPractice's fallback runs at `ack_by` meanwhile
+
 ### Requirement: MI-09 An unacknowledged urgent item escalates to the on-call clinician, then to the medical director
-openChart SHALL escalate every item that has no clinician acknowledgment by its acknowledgment deadline, when the item is `urgent`, or `priority` and unfiled because of its identity (MI-18). A clinician acknowledgment is an explicit act by the item's owner, recorded with its time. Delivery of a notification is not acknowledgment. The escalation steps are:
+openChart SHALL escalate every item that has no clinician acknowledgment by its acknowledgment deadline, when the item is `urgent`, or `priority` and unfiled because of its identity (MI-18). A clinician acknowledgment is an explicit act by the item's owner under the action `acknowledge` (AU-06), recorded with its time. Delivery of a notification is not acknowledgment. The escalation steps are:
 1. openChart SHALL alert the on-call clinician for the hour at once, and make that clinician the owner.
-2. When the on-call clinician does not acknowledge within the next escalation interval, or no on-call clinician is rostered, openChart SHALL alert the medical director (AU-01 of the foundation) and make the medical director the owner.
+2. When the on-call clinician does not acknowledge within the next escalation interval, or no on-call clinician is rostered, openChart SHALL alert the medical director (AU-01 of the foundation) and make the medical director the owner, when they hold `own` for the item's lane (AU-06). Otherwise openChart SHALL alert the medical director and every holder of a `clinical_inbox_item` grant in force for that lane, as MI-08 provides for an empty slot.
 3. After the last step, openChart SHALL keep re-alerting the medical director at each escalation interval until a clinician acknowledges.
 
 Until a response policy is approved, each escalation interval SHALL equal the item's acknowledgment window (`ack_by` minus `routed_at`). An item that arrives at or after its `ack_by` SHALL escalate at once (design call MD-2). Escalation SHALL NOT drop, park or close an item, SHALL NOT depend on any agent, and SHALL run whatever the item's identity state (MI-18). Any other item that has no acknowledgment by its deadline SHALL move to its lane's cover for the hour.
 
-An item whose clock has expired SHALL stay in the queue, open and owned, until a clinician replies or records a closing outcome. openChart SHALL let any holder of the inbox ownership grant (MI-07) find an open item by its routing id (`handoff_id`) and see it. That includes the on-call clinician named in openPractice's tracked alert (ER-07 and ER-09 in the openPractice change).
+An item whose clock has expired SHALL stay in the queue, open and owned, until a clinician replies or records a closing outcome. openChart SHALL let any holder of a `clinical_inbox_item` grant in force (AU-06) find an open item by its routing id (`handoff_id`) and see it. That includes the on-call clinician named in openPractice's tracked alert (ER-07 and ER-09 in the openPractice change).
 
 #### Scenario: Failure: the owner does not acknowledge an urgent item
 - **WHEN** an `urgent` item's acknowledgment deadline passes with no acknowledgment by its owner
@@ -250,7 +271,7 @@ openChart MUST NOT lower an item's urgency by any path. No user, role, agent, po
 
 On `handoff.urgency_raised`, openChart SHALL set the item's urgency to the higher of its current urgency and the raised one. It SHALL move each deadline only earlier, to the earlier of the current and the offered time, and SHALL answer `message.ack` `received`. A raise that would not increase urgency SHALL be recorded and SHALL change nothing. A raise for a `handoff_id` that has not yet been received SHALL be recorded and applied when its offer arrives.
 
-A named holder of the inbox ownership grant (MI-07) MAY raise an item's urgency inside openChart, to `priority` or to `urgent`, which tightens its deadlines. openChart SHALL report every such raise to openPractice as `handoff.clinician_urgency_raised` (design call MD-8). The message carries:
+A named holder of `raise` over `clinical_inbox_item` for the item's lane (AU-06) MAY raise an item's urgency inside openChart, to `priority` or to `urgent`, which tightens its deadlines. openChart SHALL report every such raise to openPractice as `handoff.clinician_urgency_raised` (design call MD-8). The message carries:
 - the `handoff_id`, and the `link_id` when the item is linked;
 - the new `urgency`;
 - `raised_at`;
@@ -289,7 +310,7 @@ openChart SHALL NOT rely on openPractice to do more than that. No agent SHALL ra
 - **THEN** the message stays in the durable store and is delivered with its original `message_id` when openPractice returns, and openChart's own escalation under MI-09 runs meanwhile
 
 ### Requirement: MI-11 The clinician's reply goes to the patient through HealthLinc
-openChart SHALL send the clinician's reply to the patient through HealthLinc, as `reply.deliver` under `openchart-conversation-retrieval/1.0`, against the offer's `reply_path_ref`, over openChart's own HealthLinc integration. It SHALL never send the reply through openPractice (ER-05 in the openPractice change). This holds whichever system holds the conversation, as openPractice ER-05 also states (design call MD-16). openChart SHALL send `reply.deliver` only while HealthLinc has declared `reply_delivery` (MI-03). Only a named human who holds a reply grant in force SHALL send a reply, and only as the item's owner or as someone the lane policy allows. The foundation does not yet define a reply grant (tension MT-19). Until it does, nobody can send a reply, and the inbox SHALL NOT be enabled (MI-20, design call MD-31). Each reply SHALL carry its `reply_id`, the sender's opaque `clinician_ref` and the author type `clinician` (MI-12).
+openChart SHALL send the clinician's reply to the patient through HealthLinc, as `reply.deliver` under `openchart-conversation-retrieval/1.0`, against the offer's `reply_path_ref`, over openChart's own HealthLinc integration. It SHALL never send the reply through openPractice (ER-05 in the openPractice change). This holds whichever system holds the conversation, as openPractice ER-05 also states (design call MD-16). openChart SHALL send `reply.deliver` only while HealthLinc has declared `reply_delivery` (MI-03). Only a named human who holds `reply` over `clinical_communication`, in force for the item's lane (AU-06), SHALL send a reply, and only as the item's owner or as someone the lane policy allows. Without that grant, openChart SHALL refuse the reply (design call MD-31). Each reply SHALL carry its `reply_id`, the sender's opaque `clinician_ref` and the author type `clinician` (MI-12).
 
 openChart SHALL report `responded` only after HealthLinc answers the reply with `message.ack` `received`, which means accepted for delivery. When HealthLinc cannot be reached, or refuses with `temporarily_unavailable`, openChart SHALL keep the reply and retry with the same `message_id`. When HealthLinc refuses with any other code, or has not declared `reply_delivery`, openChart SHALL keep the reply and show the owner the coded reason, so that they can reach the patient through a permitted channel (MI-22). In every case the item SHALL stay open and owned, and the clock SHALL keep running (design call MD-26).
 
@@ -324,7 +345,14 @@ A repeated callback for the same reply SHALL change nothing further. Under the h
 ### Requirement: MI-12 A clinical communication is recorded with its author type and provenance, and is never a diagnosis or a clinical fact of record
 This requirement is the single definition of the clinical communication record in openChart. Other openChart changes reference it rather than defining a second record; that includes `define-ai-authored-clinical-records` (openChart-spec#4; ruling 64). Every record SHALL carry one origin (design call MD-28):
 - **`handoff`:** an inbox item. openChart SHALL record every inbox item as one clinical communication record of this origin, with the provenance stated below.
-- **`ai_consult`:** a consult record that `define-ai-authored-clinical-records` writes through its `consult.write` (its AC-01). That change defines this origin's provenance, among it the model identifiers and versions, the evidence references, the mode in force, the authority and the exchange's content digest (its AC-01 and AC-03), and the record holds the full exchange. Its turns carry only the author types `patient`, `representative` and `ai` (its AC-02). The handoff references below are absent for this origin. An `ai_consult` record exists whether or not the inbox is enabled, and needs no openPractice (MI-20).
+- **`ai_consult`:** a consult record that `define-ai-authored-clinical-records` keeps from a `consult.write`: an accepted consult record (its AC-01), or a quarantined one (its AC-11). That change defines this origin's provenance, among it the model identifiers and versions, the evidence references, the mode in force, the authority and the exchange's content digest (its AC-01 and AC-03), and the record holds the full exchange. Its turns carry only the author types `patient`, `representative` and `ai` (its AC-02). The handoff references below are absent for this origin. An `ai_consult` record exists whether or not the inbox is enabled, and needs no openPractice (MI-20).
+
+**The quarantined mark.** A record of origin `ai_consult`, and only such a record, SHALL carry these fields, as that change's AC-11 names them:
+- `ai_consult_state`: `accepted` or `quarantined`;
+- `quarantine_cause`: present only when `quarantined`; one of `no_current_grant`, `grant_paused`, `grant_expired`, `grant_revoked`, `grant_mismatch`, `mode_mismatch`, `mode_not_permitted`, `approver_mismatch` or `legal_review_mismatch`;
+- `quarantine_grant_checked`: present only when `quarantined` and a grant existed; its `grant_id` and `grant_version`.
+
+Their meaning, and who may read a quarantined consult, are that change's AC-11. Wherever the inbox shows a quarantined consult (MI-24), it SHALL mark it visibly as quarantined, with its `quarantine_cause`. It SHALL never present it as an accepted consult or as a clinical fact.
 
 The author types, the rule that a communication is never a fact of record, and the versioning rule below apply to both origins. The provenance list, MI-20's inertness and MI-24's no-copy rule apply to `handoff` records only.
 
@@ -374,6 +402,14 @@ A recorded communication MUST NOT be silently overwritten or deleted. A correcti
 #### Scenario: A checklist urgency is recorded
 - **WHEN** a `handoff.urgency_raised` with source `patient_checklist` arrives
 - **THEN** the record holds the urgency change with author type `patient`, never `ai`
+
+#### Scenario: A quarantined consult is shown with its cause
+- **WHEN** a filed inbox item is associated with an `ai_consult` record whose `ai_consult_state` is `quarantined`, with `quarantine_cause` `grant_expired`, and a reader that AC-11 allows opens the item
+- **THEN** the inbox shows the consult visibly marked as quarantined, with the cause `grant_expired`, and never as an accepted consult or a clinical fact
+
+#### Scenario: Failure: an accepted consult carries a quarantine cause
+- **WHEN** an `ai_consult` record whose `ai_consult_state` is `accepted` would carry a `quarantine_cause`
+- **THEN** openChart refuses to record it, and no accepted consult carries a quarantine cause
 
 #### Scenario: An AI consult record exists without the inbox
 - **WHEN** `define-ai-authored-clinical-records` records an accepted `consult.write` at a site with no openPractice gateway and the inbox not enabled
@@ -444,7 +480,7 @@ No item, message or reply SHALL create a billable fact. Inbox records are not en
 - **THEN** the read returns `no_billable_facts`
 
 ### Requirement: MI-15 Administrative items are re-routed, not answered, and openChart keeps no administrative queue
-An item's owner who finds that it is administrative SHALL return it to openPractice with `handoff.status` `returned_not_clinical`, and SHALL NOT answer it (ruling 44; ER-12 in the openPractice change). After the return, openChart SHALL refuse any reply on that item. The item SHALL leave the clinical queue with outcome `returned_not_clinical`, and its record is kept under MI-12. openChart SHALL NOT keep an administrative work queue, administrative lanes or tools for answering administrative questions.
+An item's owner who holds `return` (AU-06) and finds that it is administrative SHALL return it to openPractice with `handoff.status` `returned_not_clinical`, and SHALL NOT answer it (ruling 44; ER-12 in the openPractice change). After the return, openChart SHALL refuse any reply on that item. The item SHALL leave the clinical queue with outcome `returned_not_clinical`, and its record is kept under MI-12. openChart SHALL NOT keep an administrative work queue, administrative lanes or tools for answering administrative questions.
 
 #### Scenario: A clinician returns a billing question
 - **WHEN** a nurse finds that a routed item asks only about a statement balance
@@ -455,7 +491,7 @@ An item's owner who finds that it is administrative SHALL return it to openPract
 - **THEN** the reply is refused
 
 ### Requirement: MI-16 Mixed questions are split, and only the clinical part is answered in openChart
-When an item mixes clinical and administrative questions, the clinician SHALL answer only the clinical part. openChart SHALL ask HealthLinc, with `split.request` naming the offer's `healthlinc_message_ref` as its `request_ref`, to split the item and resubmit only the administrative part to openPractice as a new inquiry (design call MD-7; ruling 44). openChart SHALL send `split.request` only while HealthLinc has declared `split` (MI-03). openChart MUST NOT send `returned_not_clinical` for a mixed item, MUST NOT send administrative text to openPractice, and MUST NOT lower urgency on a split. The item SHALL stay open and owned until HealthLinc answers the split request with `message.ack` `received`. Until then, openChart SHALL retry the request and show the owner a coded exception. While HealthLinc has not declared `split`, openChart SHALL send no `split.request` and SHALL show the owner the same coded exception.
+When an item mixes clinical and administrative questions, the clinician SHALL answer only the clinical part. openChart SHALL ask HealthLinc, with `split.request` naming the offer's `healthlinc_message_ref` as its `request_ref`, to split the item and resubmit only the administrative part to openPractice as a new inquiry (design call MD-7; ruling 44). openChart SHALL send `split.request` only while HealthLinc has declared `split` (MI-03), and only for a named holder of `split` for the item's lane (AU-06). openChart MUST NOT send `returned_not_clinical` for a mixed item, MUST NOT send administrative text to openPractice, and MUST NOT lower urgency on a split. The item SHALL stay open and owned until HealthLinc answers the split request with `message.ack` `received`. Until then, openChart SHALL retry the request and show the owner a coded exception. While HealthLinc has not declared `split`, openChart SHALL send no `split.request` and SHALL show the owner the same coded exception.
 
 #### Scenario: A mixed question is split
 - **WHEN** a routed item asks about a symptom and about a bill, and HealthLinc acknowledges the split request
@@ -552,7 +588,7 @@ openChart MUST operate without MedxFactory, MedxEHR or openPractice, as the rati
 
 The inbox SHALL NOT be enabled until all of these are configured:
 - an openPractice integration identity;
-- the clinical-authority capability of `define-clinical-acts-foundation` (AU-01 to AU-05) built, with a medical director designated (AU-01), and the inbox ownership, reply and on-call grants that tensions MT-17, MT-19 and MT-21 ask the foundation to define (design call MD-31);
+- `define-clinical-acts-foundation`'s feature (1), clinical authority (AU-01 to AU-06), built, with a medical director designated (AU-01) and AU-06's inbox scopes in force, PROPOSED pending owner decision 92 (design call MD-31);
 - conversation retrieval under `openchart-conversation-retrieval/1.0` from HealthLinc, and from medXfactory where the practice uses medXfactory's medical AI (design call MD-12);
 - HealthLinc's declared `reply_delivery`, `delivery_failure_callback` and `split` capabilities (design call MD-23);
 - full cover under MI-08.
@@ -577,8 +613,8 @@ This change defines no route by which a patient's message reaches openChart exce
 - **WHEN** an administrator tries to enable the inbox while HealthLinc's latest `capabilities.result` lacks `delivery_failure_callback`
 - **THEN** the enablement is refused
 
-#### Scenario: Failure: the inbox is enabled before the foundation defines the inbox grants
-- **WHEN** an administrator tries to enable the inbox while `define-clinical-acts-foundation` defines no inbox ownership or reply grant
+#### Scenario: Failure: the inbox is enabled without the foundation's inbox scopes
+- **WHEN** an administrator tries to enable the inbox while the inbox scopes of AU-06 of `define-clinical-acts-foundation` are not in force
 - **THEN** the enablement is refused, and offers stay refused as `unauthorized`
 
 ### Requirement: MI-21 No PHI in logs, errors, notifications, diagnostics or keys
@@ -613,7 +649,8 @@ The inbox SHALL be covered by contract tests, written first, that validate every
 - `consent_ref`; the required request turn, with an empty result and a result without a request turn treated as failed retrievals; for `priority` and `urgent` items, request turns shared as `urgent_escalation` with `patient_told_at`; withheld turns shown as a partial view; `result_mismatch`; and a `consent_not_granted` refusal;
 - the optional AI-turn fields `ai_mode`, `disclosure_code`, `model_ref` and `advice_statement_ref`, shown when given, shown as not stated when absent, and refused on non-AI turns;
 - `origin_conversation_ref` recorded and shown, and never retrieved on its own; `emergency_guidance` shown prominently on AI turns and refused on other turns;
-- no owner, reply or marker without its grant, and enablement refused until the foundation defines the inbox grants;
+- no inbox action, reply or marker without its AU-06 grant for the item's lane; a grant lapse that empties a roster slot, with the warnings, alerts and fallbacks of MI-08; and an offer held unacknowledged until it has a named owner;
+- `ai_consult` records in state `accepted` and `quarantined`, a quarantined one always marked with its cause, and `quarantine_cause` refused on an accepted one;
 - every author type of MI-12, per turn by `turn_id`, with its source token, including `unknown`, `openpractice_agent` turns with an answer type or an approver, a clinician claim without a matching `reply_id`, patient turns never shown as AI content, and medical-AI content never filed through the inbox;
 - AI-authored orders, prescriptions and diagnoses in inbox items held as communication, with no clinical act created (MI-26);
 - `clinical_need.marker`: mark and withdraw under one `need_id`, the `valid_until` and `origin` rules, `related_handoff_id` for `urgent_escalation`, and the handling of `origin_not_verified`;
@@ -645,7 +682,7 @@ The standalone golden-intake tests SHALL pass with the inbox unconfigured.
 ### Requirement: MI-24 A medical-AI exchange reaches the chart only through MedxEHR's relay, and the inbox keeps it by reference
 The medical AI's records SHALL reach openChart only through MedxEHR, which relays them with receipts (ruling 70, refining ruling 53). medXfactory does not write to openChart directly, and the records SHALL never pass through openPractice, which holds no clinical content (ruling 53). That write path belongs to openChart-spec change `define-ai-authored-clinical-records` (openChart-spec#4). This change cites it and defines no part of it (Open Question 4).
 
-When medXfactory holds an inbox item's conversation, openChart SHALL retrieve it with `conversation.retrieve` for the clinician (MI-03). It SHALL record in the item only what MI-12 states for a conversation medXfactory holds: per-turn metadata keyed by `turn_id`, the `snapshot_ref`, the `consent_ref` and the retrieval provenance, with no copy of any turn's text. It SHALL NOT file the exchange to an `OC Patient` through the inbox (design call MD-17). This no-copy rule applies to inbox items only. It does not apply to an `ai_consult` record, which holds the full exchange under `define-ai-authored-clinical-records` (MI-12). When an inbox item names a conversation that an `ai_consult` record also references, the item may show that association by reference, as that change's AC-01 provides, and still files no copy. openChart MUST NOT accept medical-AI content from openPractice, and nothing in this change lets medXfactory write to openChart directly.
+When medXfactory holds an inbox item's conversation, openChart SHALL retrieve it with `conversation.retrieve` for the clinician (MI-03). It SHALL record in the item only what MI-12 states for a conversation medXfactory holds: per-turn metadata keyed by `turn_id`, the `snapshot_ref`, the `consent_ref` and the retrieval provenance, with no copy of any turn's text. It SHALL NOT file the exchange to an `OC Patient` through the inbox (design call MD-17). This no-copy rule applies to inbox items only. It does not apply to an `ai_consult` record, which holds the full exchange under `define-ai-authored-clinical-records` (MI-12). When an inbox item names a conversation that an `ai_consult` record also references, the item may show that association by reference, as that change's AC-01 provides, and still files no copy. It SHALL show the association only on a filed item, only to someone that change lets read the record (its AC-06 and AC-11), and SHALL never use it to resolve or file a patient (MI-17; tension MT-23). openChart MUST NOT accept medical-AI content from openPractice, and nothing in this change lets medXfactory write to openChart directly.
 
 #### Scenario: A clinician answers an escalated medical-AI conversation
 - **WHEN** a clinician answers an item whose conversation medXfactory holds
@@ -664,7 +701,7 @@ When medXfactory holds an inbox item's conversation, openChart SHALL retrieve it
 - **THEN** openChart refuses it and records nothing, because the record's only path into openChart is MedxEHR's relay (ruling 70)
 
 ### Requirement: MI-25 A clinician's clinical-need marker is recorded in openChart and sent to openPractice as `clinical_need.marker`
-openChart SHALL let a named human who holds the `clinician` role (AU-01 of `define-clinical-acts-foundation`) and a clinical-need marker grant in force record, and later withdraw, a clinical-need marker for a patient with an `active` `openpractice` link (ruling 50; ER-18 in the openPractice change). The foundation does not yet define that grant (tension MT-20). Until it does, openChart SHALL refuse every marker with a coded reason (design call MD-31). The kinds are:
+openChart SHALL let a named human who holds `mark` over `clinical_need_marker` in force record a clinical-need marker, and a holder of `withdraw` withdraw it, for a patient with an `active` `openpractice` link (ruling 50; ER-18 in the openPractice change). AU-06 of `define-clinical-acts-foundation` records that grant only for the `clinician` role. Without it, openChart SHALL refuse the marker with a coded reason (design call MD-31). The kinds are:
 - `messaging_continuity`, which keeps the patient's clinical messaging and medical-AI consults open for continuity of care, for example after a lapsed membership or a deactivation;
 - `appointment_needed`, which records that an appointment is clinically needed, so that a payment hold never blocks it.
 
@@ -704,8 +741,8 @@ openChart SHALL write each marker message to the durable outbound store of PL-14
 - **WHEN** an AI agent tries to record or withdraw a clinical-need marker
 - **THEN** the action is refused and nothing is recorded
 
-#### Scenario: Failure: no marker grant is defined
-- **WHEN** a physician tries to record a `messaging_continuity` marker while the foundation defines no marker grant
+#### Scenario: Failure: no marker grant is held
+- **WHEN** a physician who holds no `mark` grant over `clinical_need_marker` tries to record a `messaging_continuity` marker
 - **THEN** openChart refuses it with a coded reason and sends nothing
 
 #### Scenario: Failure: the link is not active
