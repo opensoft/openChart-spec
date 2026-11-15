@@ -1,0 +1,39 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "information",
+  "information_id": "SYN-INFO-0004",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "entry_class": "information",
+  "not_signed_off": true,
+  "act_class": "document",
+  "act_type": "reply_to_patient_copy",
+  "content": {
+    "title": "SYN copy of a reply to the patient",
+    "date": "2026-11-15",
+    "text": "SYN synthetic reply text. No real patient."
+  },
+  "provenance": {
+    "received_at": "2026-11-15T17:05:00Z",
+    "source": {
+      "kind": "clinician_reply",
+      "ref": "sha256:f8fea2c550209821e978ea3918694a23c8612fd1d81f4727136e07e41e2e31fa"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-CLIN-0001",
+      "clinical_role": "clinician"
+    }
+  },
+  "receipt": {
+    "code": "kept_as_information",
+    "sent_at": "2026-11-15T17:05:00Z"
+  }
+}

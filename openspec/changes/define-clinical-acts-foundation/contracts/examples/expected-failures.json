@@ -63,6 +63,14 @@
     "expect_in_error": "signatures/1/sign_off/action",
     "reason": "a co-signer's signature is a co-signature (CA-07)"
   },
+  "declared-time-kept-without-default.invalid.json": {
+    "expect_in_error": "'occurred_at_defaulted' is a required property",
+    "reason": "the time as declared is kept only beside a defaulted time (AN-04, CD-73)"
+  },
+  "defaulted-time-not-receipt.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_defaulted",
+    "reason": "a defaulted time is the time of receipt (CD-73)"
+  },
   "derived-from-unknown-kind.invalid.json": {
     "expect_in_error": "source_kind",
     "reason": "derivation sources are intake statements and clinical communications only"
@@ -215,6 +223,10 @@
     "expect_in_error": "order_category",
     "reason": "order category outside the closed list"
   },
+  "party-ai-model-with-space.invalid.json": {
+    "expect_in_error": "does not match '^[A-Za-z0-9._:/@+-]",
+    "reason": "an AI named in a stored record has its model in the form the write path and the inbox use (AN-02, CD-70)"
+  },
   "party-field-of-another-kind.invalid.json": {
     "expect_in_error": "does not allow 'SYN-MODEL'",
     "reason": "a party carries only its own kind's identifying fields (AN-02)"
@@ -283,6 +295,10 @@
     "expect_in_error": "missing_authority",
     "reason": "content declared a note that is not note content is entered with no_decision_authority (AN-06, CD-65)"
   },
+  "recommendation-order-declined-as-never-a-decision.invalid.json": {
+    "expect_in_error": "not_a_decision_kept_for_reference",
+    "reason": "an order is decision content, so declining it as never a decision is refused (AN-11, CD-65)"
+  },
   "recommendation-path-reason-without-scheme.invalid.json": {
     "expect_in_error": "'scheme' is a required property",
     "reason": "a writing path's own reason names the scheme that defines it (AN-09, CD-51)"
@@ -331,9 +347,69 @@
     "expect_in_error": "'first_received_at' is a required property",
     "reason": "a released item keeps when it first arrived beside the time of its release (AN-01, CD-61)"
   },
+  "sign-off-after-reliance-bound.integrity-invalid.json": {
+    "expect_in_error": "rely_until",
+    "reason": "a verification past its reliance bound supports no sign-off (CD-75)"
+  },
+  "sign-off-attestation-by-reference-only.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('opensig_attestation_ref'",
+    "reason": "the attestation is kept itself, not by reference (CD-76)"
+  },
+  "sign-off-attestation-for-another-challenge.integrity-invalid.json": {
+    "expect_in_error": "attestation challenge_ref",
+    "reason": "the attestation was made for another challenge than the statement's (CD-75)"
+  },
+  "sign-off-attestation-for-another-key.integrity-invalid.json": {
+    "expect_in_error": "key_fingerprint",
+    "reason": "the attestation seals a key other than the one the sign-off names (CD-75)"
+  },
+  "sign-off-attestation-not-verified.invalid.json": {
+    "expect_in_error": "'verified' was expected",
+    "reason": "a sign-off is accepted only on an attestation with result verified (CA-04, CD-75)"
+  },
+  "sign-off-attestation-over-another-digest.integrity-invalid.json": {
+    "expect_in_error": "challenge_digest",
+    "reason": "the attestation is over a digest other than the statement's (CD-75)"
+  },
+  "sign-off-attestation-with-unresolved-values.invalid.json": {
+    "expect_in_error": "[] was expected",
+    "reason": "a sign-off carries only a verified attestation, which resolved every value (CD-76)"
+  },
+  "sign-off-challenge-not-opaque.invalid.json": {
+    "expect_in_error": "does not match '^[A-Za-z0-9_-]{42}",
+    "reason": "a challenge reference is 32 random bytes in unpadded base64url and carries no meaning (CD-53)"
+  },
+  "sign-off-custody-basis-not-declared.invalid.json": {
+    "expect_in_error": "'declared' was expected",
+    "reason": "no record yet shows a key's custody beyond what its wallet declares (CD-76)"
+  },
   "sign-off-holder-readable-custody.invalid.json": {
     "expect_in_error": "isolated_per_use_authorized",
     "reason": "only a key whose custody evidences that the holder acted can sign off (CA-04; openWallet's custody registry)"
+  },
+  "sign-off-jurisdiction-not-iso.invalid.json": {
+    "expect_in_error": "does not match '^[A-Z]{2}",
+    "reason": "a jurisdiction is an ISO 3166-1 alpha-2 or ISO 3166-2 code (CD-76)"
+  },
+  "sign-off-key-fingerprint-uppercase.invalid.json": {
+    "expect_in_error": "does not match '^sha256:[0-9a-f]{64}$'",
+    "reason": "a key fingerprint is sha256: and lowercase hex, openWallet's one spelling (CD-76)"
+  },
+  "sign-off-licence-not-the-one-the-grant-names.integrity-invalid.json": {
+    "expect_in_error": "covers",
+    "reason": "a licence the grant does not name covers nothing (CD-78)"
+  },
+  "sign-off-revocation-list-age-misstated.integrity-invalid.json": {
+    "expect_in_error": "age_seconds",
+    "reason": "the recorded age of the revocation list is not its age at reliance (CD-81)"
+  },
+  "sign-off-two-person-verifier-key.invalid.json": {
+    "expect_in_error": "'release' was expected",
+    "reason": "in version 1 every held verifier key ships with a release of openChart (CD-82)"
+  },
+  "sign-off-without-key-ref.invalid.json": {
+    "expect_in_error": "'key_ref' is a required property",
+    "reason": "the sign-off names the key that made the proof (CA-04, CD-76)"
   },
   "sign-off-without-statement.invalid.json": {
     "expect_in_error": "'statement_sha256' is a required property",
@@ -354,6 +430,14 @@
   "signed-without-signed-event.invalid.json": {
     "expect_in_error": "lifecycle",
     "reason": "every signature is recorded as a signed lifecycle event (CA-03)"
+  },
+  "source-defaulted-false.invalid.json": {
+    "expect_in_error": "True was expected",
+    "reason": "defaulted is present only when the writing path supplied the source (AN-04, CD-73)"
+  },
+  "source-without-reference-not-defaulted.invalid.json": {
+    "expect_in_error": "'ref' is a required property",
+    "reason": "a source the writer named carries its reference; only a defaulted source may omit it (AN-04, CD-73)"
   },
   "submission-ref-conflict-not-told.invalid.json": {
     "expect_in_error": "'submission_ref_conflict' is a required property",

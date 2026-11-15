@@ -3,7 +3,9 @@
 ### Requirement: PB-01 This change is the clinical-encounter capability that replaces the no-billable-facts placeholder
 This change SHALL be the "separately governed openChart capability [that] records clinician-authored encounters, diagnoses and procedures" named by `define-openpractice-boundary` CF-06 (not yet on main). It does not edit that change. In a deployment where this change's encounter, diagnosis and procedure capabilities are built and enabled, where `define-openpractice-boundary`'s clinical-fact publication surface is built, and where owner ruling 152's condition is met, openChart SHALL report `billable_facts_supported: true` in its `capability.result` under `openpractice-ehr-clinical-facts/1.0`. In any other deployment, CF-06 SHALL keep applying: the capability result is false and every facts read returns `no_billable_facts`. Disabling this change's capabilities SHALL return the capability result to false at once (design call CD-24).
 
-Ruling 152's condition is met when openWallet and openSig can do their part, so that a practitioner's sign-off under CA-04 can make a real decision. Until it is met, openChart records no real decision, so it has no signed diagnosis or procedure to publish: it SHALL publish no billable facts and SHALL report `billable_facts_supported: false`, every facts read SHALL return `no_billable_facts`, and openPractice's manual entry applies (`define-mvp-practice-foundation`, owner rulings 21 and 116). A sign-off checked against a stand-in never meets the condition (design calls CD-24 and CD-69, PROPOSED).
+Ruling 152's condition is met when openWallet and openSig can do their part, so that a practitioner's sign-off under CA-04 can make a real decision. Until it is met, openChart records no real decision, so it has no signed diagnosis or procedure to publish: it SHALL publish no billable facts and SHALL report `billable_facts_supported: false`, every facts read SHALL return `no_billable_facts`, and openPractice's manual entry applies (`define-mvp-practice-foundation`, owner rulings 21 and 116). A sign-off checked against a stand-in never meets the condition in a live deployment (design calls CD-24 and CD-69, PROPOSED).
+
+**A test deployment (design calls CD-24 and CD-69, PROPOSED).** A test deployment is one configured to accept stand-in sign-offs; it holds only synthetic patients, and its stand-ins play openWallet's and openSig's part for tests only (owner ruling 152). It MAY report `billable_facts_supported: true` and publish synthetic facts, but only to an openPractice test double, so that the contract's supported path can be tested. openChart SHALL let a test deployment link only to an openPractice endpoint that the practice's administrative role has recorded as a test double, and SHALL refuse any other link from it. A live deployment never accepts a stand-in sign-off, so a test deployment never publishes to a live openPractice.
 
 #### Scenario: Both capabilities are present
 - **WHEN** a deployment has this change's diagnoses and procedures enabled and the boundary change's publication surface built
@@ -12,6 +14,14 @@ Ruling 152's condition is met when openWallet and openSig can do their part, so 
 #### Scenario: Failure: openWallet and openSig cannot yet do their part
 - **WHEN** a deployment has this change's diagnoses and procedures enabled and the boundary change's publication surface built, but ruling 152's condition is not met
 - **THEN** the capability result is false, every facts read returns `no_billable_facts`, nothing is published, and openPractice enters charges manually
+
+#### Scenario: A test deployment publishes synthetic facts to a test double
+- **WHEN** a test deployment that accepts stand-in sign-offs is linked to an openPractice endpoint recorded as a test double, and a synthetic encounter is signed off against the stand-ins
+- **THEN** openChart reports `billable_facts_supported: true` to that test double and publishes the synthetic facts to it
+
+#### Scenario: Failure: a test deployment is pointed at a live openPractice
+- **WHEN** an administrator of a test deployment tries to link it to an openPractice endpoint not recorded as a test double
+- **THEN** openChart refuses the link, and nothing is published
 
 #### Scenario: Failure: the boundary surface exists but this capability is disabled
 - **WHEN** a deployment has the publication surface but this change's diagnoses and procedures are disabled

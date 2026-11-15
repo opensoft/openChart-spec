@@ -74,9 +74,15 @@ Once an encounter is `final` or `amended`, adding, amending or marking entered i
 ### Requirement: EN-06 Every requirement holds the same on mobile and on workstation
 Every requirement in this change SHALL hold independently of the device or form factor the clinician uses (owner ruling 35). No act, signature, attestation, co-signature or check SHALL be weaker, optional or skipped on any client.
 
+**Signing on a phone depends on a proof profile not yet drafted (design call CD-80, PROPOSED).** A sign-off needs a key that can make openWallet's ratified `wallet-challenge-proof`. No phone or browser platform authenticator can make it, and openWallet's draft (`add-practitioner-profile-and-licence-verification`, draft pull request #10, unratified) names a successor proof profile for such authenticators as required, and does not draft it. Until one is ratified, the scenario "Signing on a phone" is not met, and under owner ruling 152 nothing signed there is a decision. How a practitioner signs meanwhile is put to the owner, with the recommendation that the successor profile be drafted. This requirement stands; nothing in this change makes version 1 workstation-only.
+
 #### Scenario: Signing on a phone
 - **WHEN** a clinician signs an encounter from a mobile client
 - **THEN** the same re-authentication, attestation, scope check and completeness rules apply as on a workstation
+
+#### Scenario: Failure: a phone cannot make the ratified proof
+- **WHEN** a clinician signs off from a phone whose only authenticator cannot make openWallet's `wallet-challenge-proof`
+- **THEN** no sign-off is accepted and nothing takes effect; the draft stays a draft and the attempt is recorded
 
 #### Scenario: Failure: a client offers a shortcut
 - **WHEN** a client offers to sign acts without re-authentication because of its form factor

@@ -338,9 +338,36 @@
     "versionLabel": { "type": "string", "pattern": "^[A-Za-z0-9._:+-]{1,64}$" },
     "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
     "walletId": {
-      "description": "An openWallet wallet identifier, in the identifier shape of openWallet's wallet record (opensoft/openWallet). It is an attestation reference, never the identifier of a person or a patient.",
+      "description": "An openWallet wallet identifier, in the identifier form of openWallet's wallet record contract (opensoft/openWallet-code at bb0e9da, contracts/openxwallet/openxwallet-record.schema.yaml, $defs/identifier: 1 to 200 characters); openWallet's ratified specification text states no form of its own. It is an attestation reference, never the identifier of a person or a patient, and is the same pattern the AI write path and the inbox use.",
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$"
+    },
+    "challengeRef": {
+      "description": "A single-use challenge reference: 32 random bytes in unpadded base64url, carrying no meaning, the form openSig's draft accepts and seals in every attestation (design call CD-53, PROPOSED; openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 4cfef0a) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at b7d37a5), both unratified drafts; the field names are re-checked when they settle).",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$"
+    },
+    "keyFingerprint": {
+      "description": "A key fingerprint in openWallet's one spelling: sha256: and the lowercase hex SHA-256 of the raw public key.",
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "didUrl": {
+      "description": "A key reference written as the DID URL <did>#<key_id> under which the wallet declares the key (design call CD-76, PROPOSED; openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 4cfef0a) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at b7d37a5), both unratified drafts; the field names are re-checked when they settle).",
+      "type": "string",
+      "maxLength": 300,
+      "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._%:-]+#[A-Za-z0-9._~%:-]+$"
+    },
+    "jurisdiction": {
+      "description": "Where a licensing authority licenses: an ISO 3166-1 alpha-2 country code, or an ISO 3166-2 subdivision code.",
+      "type": "string",
+      "pattern": "^[A-Z]{2}(-[A-Z0-9]{1,3})?$"
+    },
+    "licenceClass": {
+      "description": "The licence class or profession, in the licensing authority's own designation.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
     },
     "actClass": {
       "enum": ["encounter", "clinical_note", "diagnosis_of_record", "procedure_performed", "order", "prescription"]
@@ -432,7 +459,7 @@
       ]
     },
     "party": {
-      "description": "An identified party (AN-02): the writer of an addition, a party on whose behalf it was written, or a decision maker. kind is human (identified by their own named account in the chart, account_ref; clinical_role, licence_attestation_ref and openwallet_id are recorded where they apply and are never part of the identity, design call CD-55), patient (the verified link; a representative is named as such), ai (openwallet_id with the model and model version), device (make, model and serial, or a device_id with its kind) or system (the registered integration identity and its operator). A human or system whose identity another system vouches for, and that has no account or registration here, is named by external_ref instead, is asserted_by that system, and is never the writer (design call CD-57). identity_basis says whether openChart authenticated the identity itself, an identified system vouched for it, or the party named could not be identified (design calls CD-42 and CD-66); a party that is not identified carries described_as and no account, clinical role, licence attestation or wallet.",
+      "description": "An identified party (AN-02): the writer of an addition, a party on whose behalf it was written, or a decision maker. kind is human (identified by their own named account in the chart, account_ref; clinical_role, licence_attestation_ref and openwallet_id are recorded where they apply and are never part of the identity, design call CD-55), patient (the verified link; a representative is named as such), ai (openwallet_id with the model and model version; an AI's model in the form ^[A-Za-z0-9._:/@+-]{1,128}$, as the AI write path and the inbox use it), device (make, model and serial, or a device_id with its kind) or system (the registered integration identity and its operator). A human or system whose identity another system vouches for, and that has no account or registration here, is named by external_ref instead, is asserted_by that system, and is never the writer (design call CD-57). identity_basis says whether openChart authenticated the identity itself, an identified system vouched for it, or the party named could not be identified (design calls CD-42 and CD-66); a party that is not identified carries described_as and no account, clinical role, licence attestation or wallet.",
       "type": "object",
       "additionalProperties": false,
       "required": ["kind", "identity_basis"],
@@ -552,7 +579,8 @@
               "system_id": false,
               "operator_ref": false,
               "external_ref": false,
-              "identity_basis": { "properties": {"basis": {"enum": ["verified_by_chart", "asserted_by"]}} }
+              "identity_basis": { "properties": {"basis": {"enum": ["verified_by_chart", "asserted_by"]}} },
+              "model": { "pattern": "^[A-Za-z0-9._:/@+-]{1,128}$" }
             }
           }
         },
@@ -670,10 +698,18 @@
           "$ref": "#/$defs/timestamp"
         },
         "occurred_at": { "$ref": "#/$defs/timestamp" },
+        "occurred_at_defaulted": {
+          "description": "Set when the write gave no time the information arose, or declared one later than its receipt beyond a small clock skew, and its writing path set occurred_at to received_at (AN-04; design call CD-73, PROPOSED). A missing time is never a reason to refuse.",
+          "const": true
+        },
+        "occurred_at_as_declared": {
+          "description": "Where the declared time was later than receipt beyond the clock skew: the time as the write declared it, kept with the record.",
+          "$ref": "#/$defs/timestamp"
+        },
         "source": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["kind", "ref"],
+          "required": ["kind"],
           "properties": {
             "kind": {
               "enum": [
@@ -682,11 +718,19 @@
                 "ai_consult",
                 "clinician_observation",
                 "external_record",
-                "chart_entry"
+                "chart_entry",
+                "clinician_reply"
               ]
             },
-            "ref": { "$ref": "#/$defs/opaqueRef" }
-          }
+            "ref": { "$ref": "#/$defs/opaqueRef" },
+            "defaulted": {
+              "description": "Set when the addition named no source and its writing path supplied the kind its path implies (AN-04; design call CD-73, PROPOSED). Nothing is refused for a missing source.",
+              "const": true
+            }
+          },
+          "description": "Where the information came from (AN-04): a kind and a reference to it. clinician_reply is a clinician's reply to a patient (design call CD-73, PROPOSED). A source the writing path supplied (defaulted) need not carry a reference, so a path never invents one.",
+          "if": { "not": {"required": ["defaulted"]} },
+          "then": { "required": ["ref"] }
         },
         "added_by": {
           "allOf": [
@@ -720,6 +764,10 @@
             "released_by": { "$ref": "#/$defs/opaqueRef" },
             "released_at": { "$ref": "#/$defs/timestamp" }
           }
+        },
+        "corrects_held_item_ref": {
+          "description": "Set when this addition came from a later write that corrected the identification of a write held in quarantine outside the chart: the held item it corrects. The later write is checked as a new write; the held item is flagged so that a clinician can dismiss it as duplicate_of_existing_record, naming this record (AN-01; design call CD-70, PROPOSED).",
+          "$ref": "#/$defs/opaqueRef"
         }
       },
       "allOf": [
@@ -727,6 +775,16 @@
           "description": "A submission_ref conflict is flagged only on a submission that carries the reference.",
           "if": { "required": ["submission_ref_conflict"] },
           "then": { "required": ["submission_ref"] }
+        },
+        {
+          "description": "A defaulted time is the time of receipt, and the time as declared is kept only beside a defaulted time.",
+          "if": { "required": ["occurred_at_as_declared"] },
+          "then": { "required": ["occurred_at_defaulted"] }
+        },
+        {
+          "description": "A defaulted time is present.",
+          "if": { "required": ["occurred_at_defaulted"] },
+          "then": { "required": ["occurred_at"] }
         }
       ]
     },
@@ -793,18 +851,21 @@
       ]
     },
     "signOff": {
-      "description": "The practitioner's sign-off evidence (CA-04; owner ruling 151; design calls CD-48 and CD-53): the action signed off, the openwallet_id that signed, the licence verification relied on, the single-use challenge issued at re-authentication, the SHA-256 of the sign-off statement, over which the openSig attestation is made, the SHA-256 of the provenance, the custody model of the presenting key and the check's result. The statement is the RFC 8785 canonical JSON of: act_id, act_version, patient, act_class, act_type, action, signature_role (author, cosigner or actor), signer_ref, attestation, content_sha256, provenance_sha256, signed_at, challenge_ref and, for an encounter, manifest_sha256. The signer is the session account that re-authenticated; a verifier recomputes the digest and treats a mismatch as an integrity failure (CA-08). What a licence verification and an openSig attestation contain is for openWallet and openSig to specify (Open Questions 9 and 11).",
+      "description": "The practitioner's sign-off evidence (CA-04; owner ruling 151; design calls CD-48, CD-53, CD-75, CD-76, CD-81 and CD-82, PROPOSED, against openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 4cfef0a) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at b7d37a5), both unratified drafts; the field names are re-checked when they settle). It records: the action signed off; the openwallet_id that signed; the key that made the proof, by its DID URL and fingerprint; the licence verification relied on, named by reference and SHA-256 and kept once beside the records, with the licence facts it states, the licence the grant relied on names (covers), the revocation list used and the provenance of the verifier key; the single-use challenge; the SHA-256 of the sign-off statement, which is the digest the practitioner's wallet-challenge-proof is made over; the openSig attestation itself, exactly as openSig issued it; the SHA-256 of the provenance; the custody model the key declares, with custody_basis declared; and the check's result. The statement is the RFC 8785 canonical JSON of: act_id, act_version, patient, act_class, act_type, action, signature_role (author, cosigner or actor), signer_ref, attestation, content_sha256, provenance_sha256, signed_at, challenge_ref and, for an encounter, manifest_sha256. openSig never receives it; it receives only its digest. The signer is the session account that re-authenticated; the audit verifier recomputes every digest, re-verifies the attestation, the sealed proof and the licence verification, and treats a mismatch as an integrity failure (CA-08).",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "action",
         "openwallet_id",
+        "key_ref",
+        "key_fingerprint",
         "licence_verification",
         "challenge_ref",
         "statement_sha256",
-        "opensig_attestation_ref",
+        "opensig_attestation",
         "provenance_sha256",
         "custody_model",
+        "custody_basis",
         "check"
       ],
       "properties": {
@@ -812,19 +873,97 @@
           "enum": ["sign", "cosign", "discontinue", "enter_in_error", "cancel"]
         },
         "openwallet_id": { "$ref": "#/$defs/walletId" },
+        "key_ref": {
+          "description": "The key that made the proof: the DID URL under which the wallet declares it (CA-04, AU-07).",
+          "$ref": "#/$defs/didUrl"
+        },
+        "key_fingerprint": {
+          "description": "The fingerprint of the key that made the proof. It is a key bound to the signer's account (AU-07) and named by the licence verification relied on, and equals the fingerprint the attestation seals.",
+          "$ref": "#/$defs/keyFingerprint"
+        },
         "licence_verification": {
+          "description": "The licence verification relied on, kept once beside the records and named here by reference and SHA-256, with the facts it states, what the grant relied on names (covers), the revocation list used and the verifier key's provenance (CA-04's second check; design calls CD-76, CD-78, CD-81 and CD-82, PROPOSED).",
           "type": "object",
           "additionalProperties": false,
-          "required": ["ref", "covers", "verified_at"],
+          "required": [
+            "ref",
+            "sha256",
+            "verifier_ref",
+            "verified_at",
+            "rely_until",
+            "authority",
+            "jurisdiction",
+            "licence_id",
+            "licence_class",
+            "covers",
+            "revocation_list",
+            "verifier_key"
+          ],
           "properties": {
             "ref": { "$ref": "#/$defs/opaqueRef" },
-            "covers": { "$ref": "#/$defs/codeToken" },
-            "verified_at": { "$ref": "#/$defs/timestamp" }
+            "sha256": {
+              "description": "SHA-256 of the RFC 8785 canonical form of the verification as the practitioner presented it.",
+              "$ref": "#/$defs/sha256"
+            },
+            "verifier_ref": { "description": "The verifier that issued it.", "$ref": "#/$defs/opaqueRef" },
+            "verified_at": {
+              "description": "When the verifier checked the licence against its source (the verification's source.checked_at).",
+              "$ref": "#/$defs/timestamp"
+            },
+            "rely_until": { "description": "The verification's reliance bound.", "$ref": "#/$defs/timestamp" },
+            "authority": {
+              "description": "The licensing authority, by the identifier the held verifier key is scoped to.",
+              "$ref": "#/$defs/opaqueRef"
+            },
+            "jurisdiction": { "$ref": "#/$defs/jurisdiction" },
+            "licence_id": {
+              "description": "The authority's own identifier for the licence, as issued. It identifies a licence, never a patient.",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "licence_class": { "$ref": "#/$defs/licenceClass" },
+            "covers": {
+              "description": "What the decision rested on: the grant relied on and the licence it was made against (design call CD-78, PROPOSED). openChart builds no scope-of-practice table: the scope is the medical director's grant, and a licence the grant does not name covers nothing. The three licence facts equal the verification's.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["grant_ref", "authority", "jurisdiction", "licence_class"],
+              "properties": {
+                "grant_ref": { "$ref": "#/$defs/opaqueRef" },
+                "authority": { "$ref": "#/$defs/opaqueRef" },
+                "jurisdiction": { "$ref": "#/$defs/jurisdiction" },
+                "licence_class": { "$ref": "#/$defs/licenceClass" }
+              }
+            },
+            "revocation_list": {
+              "description": "The verifier's newest revocation list the deployment held at reliance, and how old it was. A list older than the deployment's freshness bound flags the reliance (stale) and raises it; it never blocks it (design call CD-81, PROPOSED).",
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["verifier_ref", "sequence", "issued_at", "age_seconds", "stale"],
+              "properties": {
+                "verifier_ref": { "$ref": "#/$defs/opaqueRef" },
+                "sequence": { "type": "integer", "minimum": 0 },
+                "issued_at": { "$ref": "#/$defs/timestamp" },
+                "age_seconds": { "type": "integer", "minimum": 0 },
+                "stale": { "type": "boolean" }
+              }
+            },
+            "verifier_key": {
+              "description": "The held verifier key the verification was checked under, and its provenance. In version 1 every held verifier key ships with a release of openChart (design call CD-82, PROPOSED).",
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["fingerprint", "provenance", "release_ref"],
+              "properties": {
+                "fingerprint": { "$ref": "#/$defs/keyFingerprint" },
+                "provenance": { "const": "release" },
+                "release_ref": { "$ref": "#/$defs/opaqueRef" }
+              }
+            }
           }
         },
         "challenge_ref": {
           "description": "The single-use challenge openChart issued at the re-authentication for this sign-off (design call CD-53).",
-          "$ref": "#/$defs/opaqueRef"
+          "$ref": "#/$defs/challengeRef"
         },
         "statement_sha256": {
           "description": "SHA-256 of the RFC 8785 canonical JSON of the sign-off statement; the openSig attestation is made over it (design call CD-53).",
@@ -834,7 +973,58 @@
           "description": "For an encounter's signature, and the copy on its cosigned event: the SHA-256 of the RFC 8785 canonical JSON of the manifest of every record its signing view showed. The view shows every act and information record that references the encounter at signing: the latest version of each act, except a cancelled one, and each information record; never a recommendation. Each entry is {record_kind, id, version (acts only), content_sha256}, sorted by record_kind, id and version. It is part of the sign-off statement, and the signature attests exactly the records in it (EN-04; design call CD-53).",
           "$ref": "#/$defs/sha256"
         },
-        "opensig_attestation_ref": { "$ref": "#/$defs/opaqueRef" },
+        "opensig_attestation": {
+          "description": "The openSig wallet-bound attestation, kept exactly as openSig issued it, so that the audit verifier can re-verify it from the record alone (design calls CD-75 and CD-76, PROPOSED). Its own signature seals it. openChart accepts only result verified, and checks that its challenge_ref is the statement's, its challenge_digest is sha256: and statement_sha256, and its key_fingerprint is key_fingerprint. Its inner objects are openSig's to define. A decision's sign-off only ever carries a verified attestation, which carries the proof itself and every value openSig resolved; a not_verified attestation, which may carry only the proof's SHA-256 and lists what was not resolved, is kept as it is on the trail of failed attempts and verified there by its signature alone.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "attestation_id",
+            "profile",
+            "relying_party_ref",
+            "challenge_ref",
+            "challenge_digest",
+            "proof",
+            "binding",
+            "key_fingerprint",
+            "custody",
+            "wallet_state",
+            "key_state",
+            "result",
+            "verification",
+            "attested_at",
+            "attester",
+            "signature"
+          ],
+          "properties": {
+            "attestation_id": { "$ref": "#/$defs/opaqueRef" },
+            "profile": { "const": "opensig.wallet-bound-attestation.v1" },
+            "relying_party_ref": { "$ref": "#/$defs/opaqueRef" },
+            "challenge_ref": { "$ref": "#/$defs/challengeRef" },
+            "challenge_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+            "proof": { "description": "openWallet's wallet-challenge-proof, exactly as received.", "type": "object" },
+            "binding": {
+              "description": "The key binding the proof was checked against, as the registry returned it, with its public key.",
+              "type": "object"
+            },
+            "key_fingerprint": { "$ref": "#/$defs/keyFingerprint" },
+            "custody": { "type": "object" },
+            "wallet_state": { "$ref": "#/$defs/codeToken" },
+            "key_state": { "$ref": "#/$defs/codeToken" },
+            "unresolved": {
+              "description": "What openSig did not resolve. It is empty for a verified attestation, the only kind a sign-off carries; a not_verified attestation lists what it did not obtain, and is kept as it is on the trail of failed attempts (CA-08).",
+              "type": "array",
+              "const": []
+            },
+            "result": {
+              "description": "openChart accepts a sign-off only on a verified attestation (CA-04).",
+              "const": "verified"
+            },
+            "verification": { "type": "object" },
+            "attested_at": { "$ref": "#/$defs/timestamp" },
+            "attester": { "type": "object" },
+            "signature": { "type": "object" }
+          }
+        },
         "provenance_sha256": {
           "description": "SHA-256 of the RFC 8785 canonical JSON serialization of this version's provenance object.",
           "$ref": "#/$defs/sha256"
@@ -842,6 +1032,10 @@
         "custody_model": {
           "description": "The declared custody model of the wallet key that signed. It is isolated_per_use_authorized, the one model in openWallet's closed custody registry (opensoft/openWallet-code bb0e9da, contracts/openxwallet/openxwallet-custody.registry.yaml, registry_version 1) whose signature evidences that the holder acted; holder_readable and isolated_invocable evidence only the environment (CA-04).",
           "const": "isolated_per_use_authorized"
+        },
+        "custody_basis": {
+          "description": "The custody model is the one the key declares in the practitioner's wallet record; no record yet shows that a key's custody is what its wallet declares, so the basis is declared (design call CD-76, PROPOSED).",
+          "const": "declared"
         },
         "check": {
           "type": "object",
@@ -1253,7 +1447,7 @@
           "enum": ["sign", "new_version", "cosign", "discontinue", "enter_in_error", "cancel"]
         },
         "act_class": {
-          "description": "The class or kind as the writer gave it, kept as declared, whether or not this chart defines it: a decision class, clinical_note, another kind of record of information such as document_summary, or anything else (AN-06).",
+          "description": "The class or kind as the writer gave it, kept as declared, whether or not this chart defines it: a decision class, clinical_note, another kind of record of information such as document, or anything else (AN-06).",
           "$ref": "#/$defs/codeToken"
         },
         "act_type": {
@@ -1502,6 +1696,29 @@
           "description": "A writer whose submission_ref conflicted is told so in its receipt (AN-10).",
           "if": { "properties": {"provenance": {"required": ["submission_ref_conflict"]}}, "required": ["provenance"] },
           "then": { "properties": {"receipt": {"required": ["submission_ref_conflict"]}} }
+        },
+        {
+          "description": "The decline reason not_a_decision_kept_for_reference says the content was never a decision, so it is allowed only where the proposed class is outside the five decision classes (AN-11; design call CD-65, PROPOSED).",
+          "if": {
+            "properties": {
+              "proposed": {
+                "properties": {
+                  "act_class": {
+                    "enum": ["encounter", "diagnosis_of_record", "procedure_performed", "order", "prescription"]
+                  }
+                },
+                "required": ["act_class"]
+              }
+            },
+            "required": ["proposed"]
+          },
+          "then": {
+            "properties": {
+              "review": {
+                "properties": { "reason_code": {"not": {"const": "not_a_decision_kept_for_reference"}} }
+              }
+            }
+          }
         }
       ]
     },
@@ -1604,7 +1821,7 @@
       ]
     },
     "adoptionFailure": {
-      "description": "Why an adoption did not complete (AN-11): a missing-authority code, a failed act-validity rule, a sign-off failure the clinician can cure, or a gate refusal (RX-02, RX-03).",
+      "description": "Why an adoption did not complete (AN-11): a missing-authority code, a failed act-validity rule, a sign-off failure of one of the four kinds of design call CD-79 (PROPOSED), or a gate refusal (RX-02, RX-03). licence_verification_not_checkable is openWallet's not_checkable, which only the deployment can cure; attestation_request_refused is openSig's refusal of openChart's own request or credential, which only the deployment can cure; attestation_replay_refused is openSig's refusal of a repeated challenge reference or digest, cured by a new challenge and raised as a possible replay.",
       "enum": [
         "no_grant_in_force",
         "no_decision_authority",
@@ -1622,7 +1839,10 @@
         "custody_not_holder_evidencing",
         "check_not_yet_specified",
         "prescribing_safety_gate_not_met",
-        "controlled_classification_not_permitted"
+        "controlled_classification_not_permitted",
+        "licence_verification_not_checkable",
+        "attestation_request_refused",
+        "attestation_replay_refused"
       ]
     }
   }

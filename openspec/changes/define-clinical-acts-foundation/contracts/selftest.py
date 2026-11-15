@@ -39,8 +39,23 @@ Checks:
        first_received_at <= released_at <= received_at, and a held item
        ends once: no two records of the store carry the same
        held_item_ref;
+     - a defaulted time is the time of receipt, and a time as declared that
+       was kept beside it is later than receipt (design call CD-73);
      - a signed act records a signed lifecycle event (reported, not a
        crash, when it is missing);
+     - each sign-off's evidence agrees with itself (design calls CD-75 to
+       CD-78 and CD-81, PROPOSED): the openSig attestation's challenge_ref
+       is the statement's, its challenge_digest is sha256: and
+       statement_sha256, and its key_fingerprint is the sign-off's; the
+       licence facts the grant names (covers) equal the verification's, and
+       for a signature its grant_ref is the signature's authority basis; the
+       verification was checked before the sign-off and is relied on before
+       its reliance bound; the revocation list used was issued before the
+       sign-off, by the verification's verifier, and its recorded age is its
+       age at the sign-off. The self-test does not verify Ed25519
+       signatures: the synthetic fixtures carry placeholders, and the
+       production audit verifier re-verifies openSig's signature, the sealed
+       proof and the licence verification (CA-08);
   8. every examples/*.integrity-invalid.json validates against the schema
      and fails the verifier, naming the token recorded for it.
 The digests use canonical JSON with sorted keys and no whitespace, which
@@ -177,6 +192,13 @@ def verify(record, records=()):
             problems.append("provenance/received_at precedes its release from quarantine: a released item is dated by its release")
         if released < first:
             problems.append("provenance/released_from_quarantine: released before it first arrived")
+    prov_ = record.get("provenance") or {}
+    if prov_.get("occurred_at_defaulted"):
+        if prov_.get("occurred_at") != prov_.get("received_at"):
+            problems.append("provenance/occurred_at_defaulted: a defaulted time is not the time of receipt")
+        declared = prov_.get("occurred_at_as_declared")
+        if declared and real_time(declared) and real_time(prov_["received_at"]) and parse(declared) <= parse(prov_["received_at"]):
+            problems.append("provenance/occurred_at_as_declared: kept as declared, but it is not later than receipt")
     if record.get("record_kind") != "act_version":
         return problems
     content, provenance = record["content"], record["provenance"]
@@ -194,11 +216,40 @@ def verify(record, records=()):
         if sha(statement) != so["statement_sha256"]:
             problems.append(f"{where}: statement_sha256 does not recompute from the record and its signer")
 
+    def evidence(so, where, grant=None):
+        att, lv = so["opensig_attestation"], so["licence_verification"]
+        if att["challenge_ref"] != so["challenge_ref"]:
+            problems.append(f"{where}: the attestation challenge_ref is not the statement's challenge")
+        if att["challenge_digest"] != "sha256:" + so["statement_sha256"]:
+            problems.append(f"{where}: the attestation's challenge_digest is not the statement's digest")
+        if att["key_fingerprint"] != so["key_fingerprint"]:
+            problems.append(f"{where}: the attestation seals a key_fingerprint other than the sign-off's")
+        cov = lv["covers"]
+        if any(cov[k] != lv[k] for k in ("authority", "jurisdiction", "licence_class")):
+            problems.append(f"{where}: the licence the grant names (covers) is not the licence the verification states")
+        if grant is not None and cov["grant_ref"] != grant:
+            problems.append(f"{where}: covers names a grant other than the signature's authority basis")
+        at = so["check"]["checked_at"]
+        stamps = (at, lv["verified_at"], lv["rely_until"], lv["revocation_list"]["issued_at"])
+        if all(real_time(v) for v in stamps):
+            at, verified, rely, listed = (parse(v) for v in stamps)
+            if not verified <= at:
+                problems.append(f"{where}: the licence was verified after the sign-off")
+            if not at < rely:
+                problems.append(f"{where}: the sign-off is past the verification's rely_until")
+            if listed > at:
+                problems.append(f"{where}: the revocation list used was issued after the sign-off")
+            elif int((at - listed).total_seconds()) != lv["revocation_list"]["age_seconds"]:
+                problems.append(f"{where}: the revocation list's age_seconds is not its age at the sign-off")
+        if lv["revocation_list"]["verifier_ref"] != lv["verifier_ref"]:
+            problems.append(f"{where}: the revocation list is not the verification's verifier's")
+
     cosigner_offs = []
     for i, s in enumerate(record.get("signatures", [])):
         if s["content_sha256"] != sha(content):
             problems.append(f"signatures/{i}: content_sha256 does not recompute")
         check(s["sign_off"], s["signature_role"], s["signer_ref"], s["attestation"], s["signed_at"], f"signatures/{i}")
+        evidence(s["sign_off"], f"signatures/{i}", s["authority_basis_ref"])
         if s["signature_role"] == "author" and s["signer_ref"] != record["author"]["author_ref"]:
             problems.append(f"signatures/{i}: the author signature is not by the act's author")
         if s["signature_role"] == "cosigner":
@@ -208,6 +259,7 @@ def verify(record, records=()):
             continue
         role = "cosigner" if ev["event"] == "cosigned" else "actor"
         check(ev["sign_off"], role, ev["by_ref"], ev["attestation"], ev["at"], f"lifecycle/{i}")
+        evidence(ev["sign_off"], f"lifecycle/{i}")
         if ev["event"] == "cosigned" and ev["sign_off"] not in cosigner_offs:
             problems.append(f"lifecycle/{i}: the co-signed event's sign-off differs from the co-signer signature's")
 

@@ -1,0 +1,57 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "information",
+  "information_id": "SYN-INFO-0006",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "entry_class": "information",
+  "not_signed_off": true,
+  "act_class": "clinical_note",
+  "act_type": "consult_note",
+  "content": {
+    "encounter_ref": {
+      "act_id": "SYN-ACT-ENC-0001"
+    },
+    "note_kind": "consult",
+    "text": "SYN synthetic note an AI system wrote; held, then released.",
+    "text_format": "text/plain"
+  },
+  "provenance": {
+    "received_at": "2026-11-15T17:30:00Z",
+    "source": {
+      "kind": "ai_consult",
+      "ref": "SYN-CONSULT-0007"
+    },
+    "added_by": {
+      "kind": "system",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "system_id": "SYN-SYS-RELAY-01",
+      "operator_ref": "SYN-OPERATOR-01"
+    },
+    "on_behalf_of": [
+      {
+        "kind": "ai",
+        "identity_basis": {
+          "basis": "asserted_by",
+          "asserted_by_system_id": "SYN-SYS-RELAY-01"
+        },
+        "openwallet_id": "wal-agent-SYN-0007",
+        "model": "syn-medical-model",
+        "model_version": "2026.11"
+      }
+    ],
+    "occurred_at": "2026-11-15T17:30:00Z",
+    "occurred_at_defaulted": true,
+    "occurred_at_as_declared": "2026-11-15T19:00:00Z"
+  },
+  "receipt": {
+    "code": "kept_as_information",
+    "sent_at": "2026-11-15T17:30:00Z"
+  }
+}

@@ -63,16 +63,90 @@
       "sign_off": {
         "action": "enter_in_error",
         "openwallet_id": "wal-practitioner-SYN-0001",
+        "key_ref": "did:key:zSYN0001#signoff-1",
+        "key_fingerprint": "sha256:691001c2a3f968389bda3566184811ac7caac94c9374fc874a1bb4b0aa3fe48d",
         "licence_verification": {
           "ref": "SYN-LICVER-0001",
-          "covers": "synthetic-licence-scope",
-          "verified_at": "2026-10-01T00:00:00Z"
+          "sha256": "83527f53f695ef8d61a12422b02e3331d14dcd8ef63f4bcd5f1327e90a427d8b",
+          "verifier_ref": "SYN-VERIFIER-01",
+          "verified_at": "2026-10-01T00:00:00Z",
+          "rely_until": "2027-09-30T00:00:00Z",
+          "authority": "SYN-LICENSING-AUTHORITY-01",
+          "jurisdiction": "ZZ",
+          "licence_id": "SYN-LIC-0001",
+          "licence_class": "SYN physician (synthetic)",
+          "covers": {
+            "grant_ref": "SYN-GRANT-0001:v3",
+            "authority": "SYN-LICENSING-AUTHORITY-01",
+            "jurisdiction": "ZZ",
+            "licence_class": "SYN physician (synthetic)"
+          },
+          "revocation_list": {
+            "verifier_ref": "SYN-VERIFIER-01",
+            "sequence": 7,
+            "issued_at": "2026-11-15T04:45:00Z",
+            "age_seconds": 21600,
+            "stale": false
+          },
+          "verifier_key": {
+            "fingerprint": "sha256:d3bf4ada1c7111188e8165b80c29a69d108bf1b47ec9b20e73c4863801f7963b",
+            "provenance": "release",
+            "release_ref": "SYN-OPENCHART-RELEASE-1.0.0"
+          }
         },
-        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ORD-0002-v1-enter_in_error-1045",
-        "statement_sha256": "0cfc809c7e0244f5f982aeed68a1fb61751371076f13ce81f314ab2c6d0b7be6",
-        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1045",
+        "challenge_ref": "fp4S6ZuTAXAgQNDEJcCkaB0mC_PsuPJjGff0ZnCUg84",
+        "statement_sha256": "1e248db9512028b042b10b772509af8d109bb5f784e8b3cf165bf655e5665b8a",
+        "opensig_attestation": {
+          "attestation_id": "SYN-OPENSIG-ATT-0001-1045-enter_in_error",
+          "profile": "opensig.wallet-bound-attestation.v1",
+          "relying_party_ref": "SYN-OPENCHART-DEPLOYMENT-01",
+          "challenge_ref": "fp4S6ZuTAXAgQNDEJcCkaB0mC_PsuPJjGff0ZnCUg84",
+          "challenge_digest": "sha256:1e248db9512028b042b10b772509af8d109bb5f784e8b3cf165bf655e5665b8a",
+          "proof": {
+            "profile": "openwallet.challenge-proof.v0",
+            "wallet_ref": "wal-practitioner-SYN-0001",
+            "key_ref": "did:key:zSYN0001#signoff-1",
+            "challenge_digest": "sha256:1e248db9512028b042b10b772509af8d109bb5f784e8b3cf165bf655e5665b8a",
+            "signature": {
+              "alg": "Ed25519",
+              "value": "SYN-PLACEHOLDER-NOT-A-SIGNATURE"
+            }
+          },
+          "binding": {
+            "binding_ref": "SYN-BINDING-0001-1",
+            "revision": 1,
+            "wallet_ref": "wal-practitioner-SYN-0001",
+            "key_ref": "did:key:zSYN0001#signoff-1",
+            "custody_ref": "openxwallet-custody:1:isolated_per_use_authorized",
+            "public_key": "SYN-PUBLIC-KEY-SYN-USER-CLIN-0001"
+          },
+          "key_fingerprint": "sha256:691001c2a3f968389bda3566184811ac7caac94c9374fc874a1bb4b0aa3fe48d",
+          "custody": {
+            "model": "isolated_per_use_authorized",
+            "registry_version": 1,
+            "basis": "declared"
+          },
+          "wallet_state": "active",
+          "key_state": "active",
+          "unresolved": [],
+          "result": "verified",
+          "verification": {
+            "profile": "openwallet.challenge-proof.v0",
+            "openwallet_release": "SYN-OPENWALLET-RELEASE"
+          },
+          "attested_at": "2026-11-15T10:45:00Z",
+          "attester": {
+            "attester_ref": "SYN-ATTESTER-01",
+            "attestation_key_ref": "SYN-ATTESTATION-KEY-01"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "value": "SYN-PLACEHOLDER-NOT-A-SIGNATURE"
+          }
+        },
         "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
         "custody_model": "isolated_per_use_authorized",
+        "custody_basis": "declared",
         "check": {
           "result": "passed",
           "checked_at": "2026-11-15T10:45:00Z"
@@ -100,16 +174,90 @@
       "sign_off": {
         "action": "sign",
         "openwallet_id": "wal-practitioner-SYN-0001",
+        "key_ref": "did:key:zSYN0001#signoff-1",
+        "key_fingerprint": "sha256:691001c2a3f968389bda3566184811ac7caac94c9374fc874a1bb4b0aa3fe48d",
         "licence_verification": {
           "ref": "SYN-LICVER-0001",
-          "covers": "synthetic-licence-scope",
-          "verified_at": "2026-10-01T00:00:00Z"
+          "sha256": "83527f53f695ef8d61a12422b02e3331d14dcd8ef63f4bcd5f1327e90a427d8b",
+          "verifier_ref": "SYN-VERIFIER-01",
+          "verified_at": "2026-10-01T00:00:00Z",
+          "rely_until": "2027-09-30T00:00:00Z",
+          "authority": "SYN-LICENSING-AUTHORITY-01",
+          "jurisdiction": "ZZ",
+          "licence_id": "SYN-LIC-0001",
+          "licence_class": "SYN physician (synthetic)",
+          "covers": {
+            "grant_ref": "SYN-GRANT-0001:v3",
+            "authority": "SYN-LICENSING-AUTHORITY-01",
+            "jurisdiction": "ZZ",
+            "licence_class": "SYN physician (synthetic)"
+          },
+          "revocation_list": {
+            "verifier_ref": "SYN-VERIFIER-01",
+            "sequence": 7,
+            "issued_at": "2026-11-15T04:30:00Z",
+            "age_seconds": 21600,
+            "stale": false
+          },
+          "verifier_key": {
+            "fingerprint": "sha256:d3bf4ada1c7111188e8165b80c29a69d108bf1b47ec9b20e73c4863801f7963b",
+            "provenance": "release",
+            "release_ref": "SYN-OPENCHART-RELEASE-1.0.0"
+          }
         },
-        "challenge_ref": "SYN-CHALLENGE-SYN-ACT-ORD-0002-v1-sign-1030",
-        "statement_sha256": "b183c5faffae8be320662f88714031bd921836d46f03c39fd5f5b24af7c2658a",
-        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
+        "challenge_ref": "1cL_bxQQ7xU2p1XX9aLtft0BjFCjmCCO3Et4cKq-UfI",
+        "statement_sha256": "fee35647bf890972673086a0798c91f109c34337c1c8b479f1da615093c57f4e",
+        "opensig_attestation": {
+          "attestation_id": "SYN-OPENSIG-ATT-0001-1030-sign",
+          "profile": "opensig.wallet-bound-attestation.v1",
+          "relying_party_ref": "SYN-OPENCHART-DEPLOYMENT-01",
+          "challenge_ref": "1cL_bxQQ7xU2p1XX9aLtft0BjFCjmCCO3Et4cKq-UfI",
+          "challenge_digest": "sha256:fee35647bf890972673086a0798c91f109c34337c1c8b479f1da615093c57f4e",
+          "proof": {
+            "profile": "openwallet.challenge-proof.v0",
+            "wallet_ref": "wal-practitioner-SYN-0001",
+            "key_ref": "did:key:zSYN0001#signoff-1",
+            "challenge_digest": "sha256:fee35647bf890972673086a0798c91f109c34337c1c8b479f1da615093c57f4e",
+            "signature": {
+              "alg": "Ed25519",
+              "value": "SYN-PLACEHOLDER-NOT-A-SIGNATURE"
+            }
+          },
+          "binding": {
+            "binding_ref": "SYN-BINDING-0001-1",
+            "revision": 1,
+            "wallet_ref": "wal-practitioner-SYN-0001",
+            "key_ref": "did:key:zSYN0001#signoff-1",
+            "custody_ref": "openxwallet-custody:1:isolated_per_use_authorized",
+            "public_key": "SYN-PUBLIC-KEY-SYN-USER-CLIN-0001"
+          },
+          "key_fingerprint": "sha256:691001c2a3f968389bda3566184811ac7caac94c9374fc874a1bb4b0aa3fe48d",
+          "custody": {
+            "model": "isolated_per_use_authorized",
+            "registry_version": 1,
+            "basis": "declared"
+          },
+          "wallet_state": "active",
+          "key_state": "active",
+          "unresolved": [],
+          "result": "verified",
+          "verification": {
+            "profile": "openwallet.challenge-proof.v0",
+            "openwallet_release": "SYN-OPENWALLET-RELEASE"
+          },
+          "attested_at": "2026-11-15T10:30:00Z",
+          "attester": {
+            "attester_ref": "SYN-ATTESTER-01",
+            "attestation_key_ref": "SYN-ATTESTATION-KEY-01"
+          },
+          "signature": {
+            "alg": "Ed25519",
+            "value": "SYN-PLACEHOLDER-NOT-A-SIGNATURE"
+          }
+        },
         "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
         "custody_model": "isolated_per_use_authorized",
+        "custody_basis": "declared",
         "check": {
           "result": "passed",
           "checked_at": "2026-11-15T10:30:00Z"
