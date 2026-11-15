@@ -38,7 +38,7 @@ Rows 1 to 33 have the same source: **Brett Heap, 2026-11-14, authoring session.*
 | 14 | The date-of-birth hold is accepted, as a link-level suspension | PL-08 |
 | 15 | The "agree" check is made deterministic against the built DocType | PL-05 |
 | 16 | Applied name and date of birth are projected onto `OC Patient` with history; `sex_recorded` is never overwritten | PL-09 |
-| 17 | openChart refuses direct edits to a linked patient's projected fields and routes them to openPractice as correction requests, intake flows included | PL-10 |
+| 17 | openChart refuses direct edits to a linked patient's projected fields and routes them to openPractice as correction requests, intake flows included | PL-10, for a patient with an established link (⚑ design call 1) |
 | 18 | The integration role is named and scoped in planning, narrower than System Manager | PL-05 |
 | 19 | Namespace tokens `openpractice` and `openchart` are confirmed | PL-02, PL-03 |
 | 20 | Zero or more coverages | openPractice only |
@@ -48,7 +48,7 @@ Rows 1 to 33 have the same source: **Brett Heap, 2026-11-14, authoring session.*
 | 24 | Membership, subscription and retail invoicing are out of the MVP accounting contract's scope | openPractice only |
 | 25 | Medical-billing customers may carry name and billing contact in the accounting destination after its BAA gate, in `customer-detail` mode only (supersedes ruling 3) | openPractice only |
 | 26 | Posting mechanics belong to `define-mvp-practice-foundation`; customer roles, offering routes and obligation ownership belong to openPractice change `define-customer-financial-data-boundaries` | openPractice only |
-| 27 | Confidential-communication instructions stay in the link snapshot. openChart, and anything it drives (for example HealthLinc), must honor them for every patient communication it originates. This settles re-review finding N6. | PL-16 |
+| 27 | Confidential-communication instructions stay in the link snapshot. openChart, and anything it drives (for example HealthLinc), must honor them for every patient communication it originates. This settles re-review finding N6. | PL-16, with instructions taken from an established link only (⚑ design call 2) |
 | 28 | The accounting default is `summary-journal`; `customer-detail` is a per-destination opt-in behind the BAA gate | openPractice only |
 | 29 | openPractice is the source for administrative demographics and publishes them to a linked EHR; each system owns its own record | Boundary: PL-07, PL-09 (unchanged) |
 | 30 | Net revenue is the constrained expected entitlement, estimated at the date of service and re-estimated at each close (supersedes ruling 22) | openPractice only |
@@ -72,7 +72,8 @@ The accounting posting modes are named `summary-journal` and `customer-detail` i
   - a deterministic "agree" check;
   - a link-level suspension when the date of birth changes;
   - a single resolver for each review;
-  - refusal to edit projected fields locally, with corrections routed to openPractice.
+  - refusal to edit projected fields locally, with corrections routed to openPractice;
+  - nothing applied, projected or routed through a link that has never been confirmed.
 - Keep openChart free of billing, accounting, coverage and guarantor data.
 
 **Non-Goals:**
@@ -111,6 +112,13 @@ There are two conflict cases (PL-06). The second, a second active value from the
 - revocation wins over confirmation;
 - case 2 can never resolve as `confirmed`.
 
+**Established links (⚑ design call 1).** A link in `identity_review` is in one of two positions. An established link, one that has been `active` at least once, is in review while a date-of-birth change is held (PL-08). A link in review since its request, after a failed agree check (PL-05) or a conflict (PL-06), has never been established. Only an established link carries anything (PL-02):
+- edit refusals and correction requests (PL-10);
+- applied and projected demographics (PL-07 to PL-09);
+- confidential-communication instructions (PL-16).
+
+A link that has never been established refuses no edit, receives updates without applying or holding them, projects nothing and routes nothing.
+
 ### 4. Applying demographics and projecting them
 
 - Each applied version is stored immutably.
@@ -121,7 +129,7 @@ There are two conflict cases (PL-06). The second, a second active value from the
 
 ### 5. The date-of-birth suspension
 
-This replaces the earlier hold on single updates (PL-08, ruling 14, review B2). A hold starts whenever an incoming snapshot's date of birth differs from the date of birth currently applied. It does not depend on the previous version, so no later full snapshot can bypass it. While a hold is open, the link status is `identity_review` and every later version is held.
+This replaces the earlier hold on single updates (PL-08, ruling 14, review B2). A hold starts whenever an incoming snapshot's date of birth differs from the date of birth currently applied. It does not depend on the previous version, so no later full snapshot can bypass it. While a hold is open, the link status is `identity_review` and every later version is held. A hold arises only on an established link, which has a date of birth applied.
 
 | Outcome | Effect |
 |---|---|
@@ -132,7 +140,7 @@ openPractice suspends its own delivery for the link until the hold is confirmed,
 
 ### 6. Refusing local edits and routing corrections
 
-This closes the former Open Question 3 (ruling 17, PL-10). Direct edits to a linked patient's `patient_name` or `date_of_birth` are refused, whether they come from openChart staff or from intake flows such as HealthLinc. Each refused edit is sent to openPractice as a `demographics.correction_requested` message. openPractice acknowledges it (`correction.ack`) and later reports the outcome (`correction.resolved`); an applied correction comes back as a new demographic version.
+This closes the former Open Question 3 (ruling 17, PL-10). Direct edits to the `patient_name` or `date_of_birth` of a patient with an established link are refused, whether they come from openChart staff or from intake flows such as HealthLinc. Each refused edit is sent to openPractice as a `demographics.correction_requested` message through the established link. A link in review since its request has never been confirmed as the same person, and a request aimed at the wrong patient sits in exactly that state. Such a link refuses no edit and carries no correction request, so this patient's demographic changes never reach an unrelated openPractice record (⚑ design call 1). openPractice acknowledges it (`correction.ack`) and later reports the outcome (`correction.resolved`); an applied correction comes back as a new demographic version.
 
 An intake submission is still accepted and persisted under the ratified intake requirements. Only the change to the projected fields is withheld.
 
@@ -163,11 +171,29 @@ Every new component is optional (PL-15). The standalone golden-intake tests rema
 | APIs and hooks are authorized and versioned | The dedicated integration role is scoped by subject, tenant, purpose and role (PL-05). Contracts are versioned by MAJOR version and schema digest (PL-04, PL-12). |
 | Intake confers no clinician or autonomous authority | CF-02. Demographic updates are human-authored administrative changes made in openPractice. |
 
-**No conflict with ratified openChart text was found.** PL-10 refuses local edits to `patient_name` and `date_of_birth` for linked patients only. The ratified text does not require openChart to accept such edits, so no ratified text is changed.
+**No conflict with ratified openChart text was found.** PL-10 refuses local edits to `patient_name` and `date_of_birth` only for patients with an established link. The ratified text does not require openChart to accept such edits, so no ratified text is changed.
+
+## Design calls for owner review
+
+Items marked ⚑ are design calls this change makes beyond Brett Heap's rulings. Each is proposed, not ruled, and each is an owner item (`tasks.md` 1.5).
+
+1. ⚑ **Established links** (PL-02, PL-07 to PL-10, PL-16). This change tells the two kinds of `identity_review` apart by whether the link has ever been `active`. A link becomes established when openChart answers `linked` or a review of it resolves `confirmed`, and planning decides how the row records it.
+   - An established link in review stands confirmed as the same person, with one field in question.
+   - A link in review since its request does not. Its openPractice record may be someone else, so it must not receive this patient's corrections, and its snapshots must not change this patient's record.
+   - Ruling 17 covers edits to "a linked patient's projected fields". This call reads a patient whose only link was never confirmed as not yet linked.
+   - The alternative was to refuse edits during any review but send no correction. That would freeze a patient's name and date of birth in openChart because of a request that may name another person.
+
+   Recommendation: confirm.
+2. ⚑ **No instructions from a link that has never been established** (PL-16). openChart takes neither restriction flags nor alternate addresses or channels from such a link's snapshots.
+   - An alternate address or channel from a record not confirmed as this patient's could send this patient's communications to another person.
+   - Honoring that record's restriction flags alone would disclose nothing, but could withhold this patient's communications because of another person's instructions.
+   - The other reading is to honor the flags and never the channels. The open corrections to `opensoft/openPractice-spec` `define-mvp-practice-foundation` take that reading for a same-person group (its PR-15, proposed there).
+
+   Recommendation: take nothing until the link is confirmed, and treat the patient meanwhile as a patient with no link.
 
 ## Risks / Trade-offs
 
-- **[Wrong-patient propagation]** → Mitigated by the deterministic "agree" check, the date-of-birth suspension, single-resolver review, and the edit refusal.
+- **[Wrong-patient propagation]** → Mitigated by the deterministic "agree" check, the date-of-birth suspension, single-resolver review, and the edit refusal. A link that has never been confirmed carries nothing in either direction (⚑ design call 1).
 - **[Staff frustration at refused edits]** → The correction path is explicit, and each request is acknowledged and resolved by openPractice.
 - **[Over-privileged integration]** → A dedicated role, narrower than `System Manager`.
 - **[Contract drift]** → Schemas are compared by digest (PL-04). Both changes' task 1.3 checks them.
