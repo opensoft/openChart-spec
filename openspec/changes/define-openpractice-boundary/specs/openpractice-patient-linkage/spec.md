@@ -16,7 +16,7 @@ openChart SHALL store each openPractice link as an `OC Patient External Identifi
 - an effective interval and an `identifier_version`;
 - provenance naming the contract `openpractice-ehr-patient-link/1.0`, the `link_id`, and the message that created or changed the row.
 
-A revoked or superseded row SHALL remain stored with its status and effective end.
+A revoked or superseded row SHALL remain stored with its status and effective end. `revoked` and `superseded` are terminal: no transition SHALL take a link out of either, so a link that is revoked or superseded never becomes `active` or `identity_review` again (⚑ design call 4 in `design.md`). A `link.request` that names a `link_id` already revoked or superseded SHALL be answered `refused`, with reason `link_revoked` or `link_superseded`.
 
 A link is **established** from the moment it first becomes `active`: when openChart answers `linked` to its `link.request` (PL-05), or when a review of it resolves `confirmed` (PL-06). It stays established until it is revoked or superseded, including while a date-of-birth hold puts it in `identity_review` (PL-08). A link that has been in `identity_review` since its request, because the agree check failed (PL-05) or a conflict was found (PL-06), has never been established: nothing has confirmed that its openPractice patient and the `OC Patient` are the same person. openChart SHALL record, for each `openpractice` row, whether the link has been established. Planning decides how (⚑ design call 1 in `design.md`). Only an established link carries edit refusals, correction requests, applied demographics or confidential-communication instructions (PL-07 to PL-10, PL-16).
 
@@ -71,7 +71,7 @@ openChart SHALL place a link in `identity_review` in either of these cases:
 - the openPractice issuer and value are already `active` on another `OC Patient`;
 - the target `OC Patient` already holds an `active` `openpractice` identifier from the same issuer with a different value.
 
-The side that raised a review SHALL be its only resolver. For reviews it raises, openChart SHALL record the outcome (`confirmed` or `revoked`) with actor, time and reason, and send `link.review_resolved`. A review of the second kind SHALL NOT resolve as `confirmed`. A `link.revoked` for the same `link_id` from either side SHALL win over any confirmation. No demographic update SHALL apply on a link in review, and resolution MUST NOT merge, overwrite or delete records. Version counters SHALL be tracked per `link_id`.
+The side that raised a review SHALL be its only resolver. For reviews it raises, openChart SHALL record the outcome (`confirmed` or `revoked`) with actor, time and reason, and send `link.review_resolved`. A review of the second kind SHALL NOT resolve as `confirmed`. A `link.revoked` for the same `link_id` from either side SHALL win over any confirmation. A confirmation SHALL re-check the link's status, and SHALL NOT change a link that is revoked or superseded (PL-02). No demographic update SHALL apply on a link in review, and resolution MUST NOT merge, overwrite or delete records. Version counters SHALL be tracked per `link_id`.
 
 **Confirming a link that has never been established (⚑ design call 3 in `design.md`).** This covers a review openChart raised under PL-05 or under this requirement's first case. When its reviewer confirms such a link, the link SHALL become `active` and established (PL-02) at that moment, and openChart SHALL apply demographic snapshots on it under PL-07 and PL-09 from that moment.
 - **No unread snapshot.** openChart SHALL NOT apply a snapshot received before the confirmation unless the reviewer re-read it, side by side with the `OC Patient` they confirmed, as part of the confirmation.
@@ -130,6 +130,8 @@ When an incoming snapshot's date of birth differs from the date of birth openCha
 - **On confirmation**, openChart SHALL apply the latest held snapshot, set the status to `active`, and send `link.review_resolved` with outcome `confirmed` and the applied version.
 - **On rejection**, openChart SHALL apply none of the held versions, set the status back to `active`, and send `demographics.hold_rejected` listing the held versions.
 
+Resolving a hold, by confirmation or rejection, SHALL first re-check the link's status. Neither outcome SHALL change a link that is revoked or superseded (PL-02). Such a link has no open hold, and the reviewer's resolution applies nothing and sends nothing. When a link is revoked or superseded, every open hold on it SHALL be cancelled at that moment, with the reason recorded: the revocation or supersession that ended the link. openChart then applies none of the held versions, and sends neither `link.review_resolved` nor `demographics.hold_rejected` for the hold (⚑ design call 4 in `design.md`).
+
 A later snapshot whose date of birth still differs from the applied value SHALL start a new hold.
 
 A hold arises only on an established link (PL-02), which has a date of birth applied. On a link that has never been established, an update is answered under PL-07 and starts no hold.
@@ -146,6 +148,10 @@ A hold arises only on an established link (PL-02), which has a date of birth app
 - **WHEN** the reviewer rejects a held date-of-birth change
 - **THEN** the prior date of birth stays, the link returns to `active`, and openChart sends `demographics.hold_rejected` listing the held versions
 
+#### Scenario: The link is revoked during a hold, and the reviewer then rejects
+- **WHEN** a hold is open for version 5, openPractice sends `link.revoked` for the link, and the reviewer then rejects the held change
+- **THEN** the hold was cancelled at the revocation, with that reason recorded. The link stays `revoked`, nothing is applied, neither `demographics.hold_rejected` nor `link.review_resolved` is sent, later updates on that `link_id` are answered `rejected`, and no clinical-fact read is served under it (CF-01)
+
 ### Requirement: PL-09 Applied name and date of birth are projected onto OC Patient; nothing clinical is overwritten
 openChart SHALL project the applied legal name onto `OC Patient.patient_name`, using the canonical schema's projection, and the applied date of birth onto `OC Patient.date_of_birth`. Every prior value SHALL be kept in the applied-version history. Administrative sex, gender identity, pronouns, preferred language, telecom, addresses and confidential-communication instructions SHALL live in the applied-version record. An administrative update MUST NOT alter intake submissions, patient-reported statements or clinical records, and MUST NOT overwrite `OC Patient.sex_recorded`. Nothing SHALL be projected from a link that has never been established (PL-02). Until the link is confirmed, the patient's `patient_name` and `date_of_birth` stay openChart's own.
 
@@ -157,6 +163,12 @@ openChart SHALL project the applied legal name onto `OC Patient.patient_name`, u
 For a patient whose `openpractice` link is established (PL-02) and has status `active`, or `identity_review` because of a date-of-birth hold (PL-08), openChart SHALL refuse every direct edit to `OC Patient.patient_name` or `OC Patient.date_of_birth`, whether it comes from openChart staff or from an intake flow such as HealthLinc. openChart SHALL instead send the proposed change to openPractice as a `demographics.correction_requested` message through that link, and record the request. An intake submission carrying identity data SHALL still be accepted and persisted under the ratified intake requirements. Only the change to the projected fields is withheld and routed. Under contract version 1.0, openChart SHALL NOT send `demographics.updated` messages to openPractice. After the link is revoked or superseded, the refusal no longer applies.
 
 **A link that has never been established.** A link that has been in `identity_review` since its request (PL-05, PL-06) has not been confirmed as the same person, and may name an unrelated openPractice record. openChart SHALL refuse no edit for its sake, and SHALL send no `demographics.correction_requested` through it. The patient's `patient_name` and `date_of_birth` stay openChart's own until the link is confirmed (⚑ design call 1 in `design.md`). An edit made meanwhile changes openChart's record only, under its ordinary rules, as for a patient with no link. Nothing is sent to openPractice, and the link's reviewer compares the records as they stand at resolution. Where the patient also has an established link, that link governs: the edit is refused and routed through the established link alone, and nothing is sent through the link that has never been established.
+
+**What openChart expects back (⚑ design call 5 in `design.md`).** This follows `opensoft/openPractice-spec` `define-mvp-practice-foundation` EB-09, PROPOSED there.
+- **`received` means only received.** openPractice answers every correction request with `correction.ack` result `received`. It does so even where it holds the link in identity review, including a review it raised on a link that openChart holds `active`. openChart SHALL record the request as open, never as accepted.
+- **Nothing is decided during openPractice's review.** While that review is open, the request is neither accepted nor declined, and no `correction.resolved` arrives. openChart SHALL keep the request open, and SHALL raise no error for the wait.
+- **Revocation closes it.** If the link ends `revoked`, no `correction.resolved` comes for the request. openChart SHALL treat the revocation as closing every open correction request on that link (PL-11), SHALL record that with the revocation as the reason, and SHALL raise no error. Nothing in openChart changes because of the closed request.
+- **No contract change.** The patient-link contract gains no reject reason for this case, so PL-04 keeps its pin.
 
 #### Scenario: Staff edit a linked patient's name
 - **WHEN** an openChart user edits the name of a patient with an active openPractice link
@@ -174,12 +186,22 @@ For a patient whose `openpractice` link is established (PL-02) and has status `a
 - **WHEN** a `link_existing` request failed the agree check, its link has been in `identity_review` since the request and has never been `active`, the patient has no other `openpractice` link, and an openChart user edits the patient's date of birth
 - **THEN** the edit is made to `OC Patient.date_of_birth` under openChart's ordinary rules, as for a patient with no link, and no `demographics.correction_requested` is sent through that link or to openPractice at all
 
+#### Scenario: A correction through a link that openPractice holds in review
+- **WHEN** openChart sends a correction request through a link it holds `active`, openPractice holds that link in a review it raised, and openPractice later resolves the review as `revoked`
+- **THEN** openChart records `correction.ack` `received` as received, not accepted, and receives no `correction.resolved`. The revocation closes the request, with the reason recorded and no error raised, and the refusal of direct edits for that link ends (PL-11)
+
 #### Scenario: A second link in review on a patient with an active link
 - **WHEN** a patient has an active link and a second link from the same issuer in `identity_review` under PL-06 that has never been `active`, and an openChart user edits the patient's name
 - **THEN** the edit is refused, the correction request is sent through the active link only, and nothing is sent through the second link
 
 ### Requirement: PL-11 openChart accepts and sends link revocations
-openChart SHALL accept `link.revoked` from openPractice. It SHALL set the identifier row's status to `revoked`, set its effective end, and answer with `message.ack`. openChart MAY send `link.revoked` itself, with a coded reason. Revocation SHALL win over any concurrent or later confirmation of the same `link_id`, and no clinical record SHALL change.
+openChart SHALL accept `link.revoked` from openPractice. It SHALL set the identifier row's status to `revoked`, set its effective end, and answer with `message.ack`. openChart MAY send `link.revoked` itself, with a coded reason. Revocation SHALL win over any concurrent or later confirmation or hold resolution of the same `link_id`, and no clinical record SHALL change. A revoked link SHALL never become `active` again (PL-02).
+
+Revocation SHALL also, recording the reason for each (⚑ design calls 4 and 5 in `design.md`):
+- cancel every open hold on the link (PL-08);
+- close every open correction request that openChart sent through it (PL-10).
+
+A `link.review_resolved` with outcome `revoked`, for a review that openPractice raised, SHALL be handled as a `link.revoked` of that link.
 
 #### Scenario: openPractice revokes a link
 - **WHEN** openChart receives `link.revoked` for an active link
@@ -214,7 +236,7 @@ openChart SHALL operate fully with no openPractice deployment. Patients without 
 - **THEN** migrations complete and the golden-patient intake tests pass
 
 ### Requirement: PL-16 openChart honors confidential-communication instructions in every communication it originates
-For a patient whose `openpractice` link is established (PL-02) and has status `active` or `identity_review`, openChart SHALL apply the confidential-communication instructions of the latest applied demographic version to every patient communication it originates. After the link is revoked or superseded, openChart SHALL keep honoring the last applied instructions and SHALL NOT drop them because the link ended. This includes communications from any system it drives, such as HealthLinc intake (ruling 27). It MUST NOT send to an address or channel that the instructions restrict, and it SHALL use the alternate address or channel they name. While updates are held (PL-08), openChart SHALL honor every restriction in the applied version and in every held version. A communication that cannot satisfy the instructions SHALL be withheld, and the withholding SHALL be recorded with a coded reason and no PHI in logs (PL-13).
+For a patient whose `openpractice` link is established (PL-02) and has status `active` or `identity_review`, openChart SHALL apply the confidential-communication instructions of the latest applied demographic version to every patient communication it originates. After the link is revoked or superseded, openChart SHALL keep honoring the last applied instructions and SHALL NOT drop them because the link ended. Where a hold was open when the link ended (PL-08), openChart SHALL also keep honoring the restrictions of the held versions, which it was already honoring. This includes communications from any system it drives, such as HealthLinc intake (ruling 27). It MUST NOT send to an address or channel that the instructions restrict, and it SHALL use the alternate address or channel they name. While updates are held (PL-08), openChart SHALL honor every restriction in the applied version and in every held version. A communication that cannot satisfy the instructions SHALL be withheld, and the withholding SHALL be recorded with a coded reason and no PHI in logs (PL-13).
 
 A link that has never been established gives openChart no instructions. openChart SHALL take no restriction, alternate address or alternate channel from its snapshots, because nothing has confirmed that they belong to this patient (⚑ design call 2 in `design.md`). A patient whose only `openpractice` link has never been established is treated as a patient with no link. A patient who also has an established link, or the last applied instructions of an ended one, is governed by those.
 

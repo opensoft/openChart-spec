@@ -10,7 +10,7 @@
 
   Record both revisions and each digest pair. A mismatch blocks the handoff.
 - [ ] 1.4 When the follow-up change of ruling 93 lands in `opensoft/openPractice-spec`, re-pin `openpractice-ehr-clinical-facts/1.0` in PL-04 to its revision and digest, and adopt its retraction reason code in CF-04 (ruling 89). Until then the recorded pin stands, and a retraction carries no reason code.
-- [ ] 1.5 Obtain Brett Heap's disposition of the ⚑ design calls in `design.md` ("Design calls for owner review"): established links (PL-02, PL-07 to PL-10, PL-16), instructions from a link that has never been established (PL-16), and confirming such a link (PL-06). For the last, also record whether `define-mvp-practice-foundation` extends EB-08's resume rule to every `confirmed` resolution. Compare them with any matching rule that `define-mvp-practice-foundation` adopts for a correction request arriving through a link in review (its EB-09).
+- [ ] 1.5 Obtain Brett Heap's disposition of the ⚑ design calls in `design.md` ("Design calls for owner review"): established links (PL-02, PL-07 to PL-10, PL-16), instructions from a link that has never been established (PL-16), confirming such a link (PL-06), terminal `revoked` and `superseded` states (PL-02, PL-06, PL-08, PL-11, PL-16), and what openChart expects back for a correction request (PL-10, PL-11). Also record whether `define-mvp-practice-foundation` extends EB-08's resume rule to every `confirmed` resolution, and the final form of its EB-09 for a correction through a link in identity review. Compare them with any matching rule that `define-mvp-practice-foundation` adopts for a correction request arriving through a link in review (its EB-09).
 
 ## 2. Governance Prerequisites (Routed Open Questions)
 
@@ -40,6 +40,7 @@
   - conflicts go to review and never merge;
   - case 2 is never confirmed;
   - a suspended link applies only the latest held version;
+  - a revoked or superseded link never becomes `active` again, and its open holds are cancelled;
   - edits to the projected fields of a patient with an established link are refused and routed;
   - a link that has never been established refuses no edit, sends no correction request, applies and projects nothing, and gives no communication instructions;
   - no PHI appears in logs or reasons;

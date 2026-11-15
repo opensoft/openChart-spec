@@ -110,7 +110,8 @@ There are two conflict cases (PL-06). The second, a second active value from the
 
 - the side that raised a review is its only resolver;
 - revocation wins over confirmation;
-- case 2 can never resolve as `confirmed`.
+- case 2 can never resolve as `confirmed`;
+- `revoked` and `superseded` are terminal. No confirmation, hold resolution or link request makes such a link `active` again, and a revocation or supersession cancels an open hold (⚑ design call 4).
 
 **Established links (⚑ design call 1).** A link in `identity_review` is in one of two positions. An established link, one that has been `active` at least once, is in review while a date-of-birth change is held (PL-08). A link in review since its request, after a failed agree check (PL-05) or a conflict (PL-06), has never been established. Only an established link carries anything (PL-02):
 - edit refusals and correction requests (PL-10);
@@ -140,6 +141,8 @@ This replaces the earlier hold on single updates (PL-08, ruling 14, review B2). 
 |---|---|
 | Confirm | Apply the latest held snapshot and send `link.review_resolved` with outcome `confirmed` |
 | Reject | Apply nothing, return the link to `active`, and send `demographics.hold_rejected` |
+
+Both outcomes first re-check the link. A link that is revoked or superseded keeps that status, because its hold was cancelled when it ended, and nothing is applied or sent (⚑ design call 4).
 
 openPractice suspends its own delivery for the link until the hold is confirmed, or until its staff correct or re-assert the value. There is no deadlock: confirmation applies the newest held version, and resuming after a rejection needs a deliberate human act.
 
@@ -204,6 +207,25 @@ Items marked ⚑ are design calls this change makes beyond Brett Heap's rulings.
    - **The other reading** was to apply the latest snapshot received, read or not. That is simpler, but it applies data no human compared with the patient.
 
    Recommendation: confirm. The companion change should extend EB-08's resume rule to every `confirmed` resolution: openPractice republishes its current snapshot, with reason `republish_after_review`, when `applied_version` is lower than its current version.
+
+4. ⚑ **`revoked` and `superseded` are terminal** (PL-02, PL-06, PL-08, PL-11, PL-16).
+   - **The finding.** PL-08's rejection set a link "back to `active`" unconditionally. A hold rejected after the link was revoked would have reactivated it, and with it demographic application and clinical-fact reads. PL-06 and PL-11 gave revocation precedence over confirmation only, and nothing gave supersession precedence at all.
+   - **The rule.** No transition leaves `revoked` or `superseded`. Every confirmation and every hold resolution re-checks the link's status first.
+   - **Cancelled holds.** A revocation or supersession cancels every open hold on the link, with the reason recorded, and nothing is sent for it.
+   - **Reused link ids.** A `link.request` that names a revoked or superseded `link_id` is refused with `link_revoked` or `link_superseded`. The contract's `link_id` names one link for its whole life.
+   - **Restrictions.** Restrictions of versions held when the link ended stay honored, because openChart was honoring them a moment before.
+   - **Where else this was checked.** Three other transitions set a link `active`: PL-05's `linked`, PL-06's confirmation and PL-08's confirmation. Each was covered only by "revocation wins over confirmation", which said nothing of supersession or of a reused `link_id`. They now share the one rule.
+
+   Recommendation: confirm.
+5. ⚑ **What openChart expects back for a correction request** (PL-10, PL-11). This follows `opensoft/openPractice-spec` `define-mvp-practice-foundation` EB-09 (its design call F-22, PROPOSED there).
+   - openPractice answers every correction request `received`, even through a link it holds in identity review. That includes a review it raised on a link openChart holds `active`.
+   - It decides nothing on such a request while the review is open.
+   - It sends no `correction.resolved` for a request whose link ends `revoked`.
+   - openChart therefore records `received` as received only, waits without error, and treats the link's revocation as closing its open correction requests on that link, with the reason recorded.
+   - A `link.review_resolved` `revoked` from openPractice for a review it raised is handled as a revocation, since it is the only way openChart learns that such a review ended the link.
+   - The patient-link contract is unchanged: no reject reason was added, so PL-04 still pins `76f465e144893000de4bd2240adb9f547899e2e8100315f698c3cc6cb885b802`.
+
+   Recommendation: confirm.
 
 ## Risks / Trade-offs
 
