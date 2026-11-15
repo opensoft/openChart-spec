@@ -3,7 +3,7 @@
 - [ ] 1.1 Run `openspec validate define-prescribing-safety-checks --strict --no-interactive` on the exact revision proposed for ratification. Record the OpenSpec version, timestamp, revision, exit code and output.
 - [ ] 1.2 In this change's `contracts/` directory, run `sha256sum -c SHA256SUMS` and `python3 -I selftest.py`. The self-test needs `jsonschema` 4.18 or later. All 11 valid fixtures must validate, and all 14 invalid fixtures must fail, each for the reason stated in `examples/expected-failures.json`. Record both outputs.
 - [ ] 1.3 Obtain Brett Heap's ratification. He stamps `Ratified by` and changes `Status` from `draft` to `ratified` in `proposal.md`, in the same revision. The rulings recorded in `design.md` are not ratification. No Spec Kit feature is created before this task is complete.
-- [ ] 1.4 Record Brett Heap's disposition of tensions PT-3 to PT-5 (PT-1 and PT-2 are settled by rulings 84 and 82) and of design calls PD-1 to PD-23, including those made under rulings 82 and 83 (PD-9, PD-12, PD-19). Where a disposition needs an amendment elsewhere, name the change that must carry it:
+- [ ] 1.4 Record Brett Heap's disposition of tensions PT-3 to PT-5 (PT-1 and PT-2 are settled by rulings 84 and 82) and of design calls PD-1 to PD-23, including those made under rulings 82 and 83 (PD-9, PD-12, PD-19) and the parts of PD-23 beyond ruling 189. Where a disposition needs an amendment elsewhere, name the change that must carry it:
   - `define-clinical-acts-foundation` for PT-3 (CA-01 wording and a MINOR content-schema version);
   - `define-ai-authored-clinical-records` for PT-4.
 
@@ -35,6 +35,7 @@
 - [ ] 4.2 Attach evidence for each of these:
   - a standalone installation passes the golden-intake round trip with no source connected, and only prescription signing is refused;
   - patient-reported allergies and medications are check inputs and are labelled as such;
+  - an allergy held only as unconfirmed information or as a recommendation raises an alert only, labelled as resting on an unconfirmed entry, never counts as confirmed and never removes a warning (ruling 189);
   - every uncheckable input and every check kind not run raises a visible warning;
   - drug–supplement is checked only where declared;
   - a same-ingredient allergy match is always critical, and an unmapped severity is critical;

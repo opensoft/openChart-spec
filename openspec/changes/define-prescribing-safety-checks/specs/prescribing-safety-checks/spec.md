@@ -6,9 +6,9 @@ Every prescribing-safety check SHALL take as inputs, for the patient:
 - every active clinician-confirmed allergy entry and medication list entry (SL-01, SL-02);
 - every other openChart prescription that is `pending_release` or `released`, so that a duplicate between two prescriptions not yet released is caught;
 - the latest accepted version of every active patient-reported allergy, medication and supplement statement, whether or not a clinician has reconciled it, reviewed it or marked it `clinician_verified` (design call PD-4);
-- as inputs that can only raise an alert, every pending recommendation record under `define-clinical-acts-foundation` (not yet on main; AN-09) that proposes an allergy entry or a medication list entry, and any identified but unconfirmed information about an allergy added under its AN-01 (design call PD-23, PROPOSED).
+- as inputs that can only raise an alert, every allergy the chart holds only as unconfirmed information or as a recommendation, for example from a nurse, an AI consult or another organization's record (owner ruling 189), and every pending recommendation record under `define-clinical-acts-foundation` (not yet on main; AN-09) that proposes a medication list entry (design call PD-23, PROPOSED for medication list entries).
 
-A patient-reported entry MUST NOT be ignored because no clinician has confirmed it. An alert that rests on a recommendation or on unconfirmed information SHALL be labelled as resting on an entry that is not an authorized decision. Such an input SHALL never be treated as a confirmed entry, and SHALL never suppress an alert or a warning or satisfy anything (owner ruling 80, clause 14). Every alert that arises from a patient-reported or unconfirmed input SHALL say so. A `draft` or `refuted` entry SHALL NOT suppress a patient-reported statement of the same substance. An entry is for the same substance as a statement when it was reconciled from that statement (SL-04) or carries the same code system and code.
+A patient-reported entry MUST NOT be ignored because no clinician has confirmed it. An alert that rests on such an allergy SHALL be labelled as resting on an unconfirmed entry, and the allergy SHALL never count as confirmed and SHALL never remove a warning (owner ruling 189). Where the entry is a recommendation, the label SHALL also say that it rests on an entry that is not an authorized decision, and an alert that rests on a medication-list recommendation SHALL be labelled the same way (design call PD-23, PROPOSED). Such an input SHALL never be treated as a confirmed entry, and SHALL never suppress an alert or a warning or satisfy anything (owner ruling 80, clause 14). Every alert that arises from a patient-reported or unconfirmed input SHALL say so. A `draft` or `refuted` entry SHALL NOT suppress a patient-reported statement of the same substance. An entry is for the same substance as a statement when it was reconciled from that statement (SL-04) or carries the same code system and code.
 
 #### Scenario: A patient-reported allergy raises an alert
 - **WHEN** a clinician drafts a prescription whose ingredient matches an allergy that the patient reported at intake and no clinician has confirmed
@@ -16,7 +16,11 @@ A patient-reported entry MUST NOT be ignored because no clinician has confirmed 
 
 #### Scenario: A recommended allergy raises a labelled alert
 - **WHEN** a nurse without allergy-list scope records a penicillin allergy, which is kept as a recommendation, and a clinician then drafts a prescription for amoxicillin
-- **THEN** the check raises an allergy alert labelled as resting on an entry that is not an authorized decision
+- **THEN** the check raises an allergy alert labelled as resting on an unconfirmed entry that is not an authorized decision
+
+#### Scenario: An allergy from another organization's record raises an alert only
+- **WHEN** the chart holds a penicillin allergy only as unconfirmed information from another organization's record, the patient's allergy status is not recorded, and a clinician drafts a prescription for amoxicillin
+- **THEN** the check raises an allergy alert labelled as resting on an unconfirmed entry, the allergy does not count as confirmed, and the "allergy status not recorded" warning stays
 
 #### Scenario: Failure: a recommendation would suppress an alert
 - **WHEN** a pending recommendation proposes marking a patient's confirmed penicillin allergy `refuted`, and a clinician drafts amoxicillin
