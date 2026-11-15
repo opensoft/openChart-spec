@@ -3,7 +3,7 @@
 ### Requirement: MI-01 openChart receives routed clinical items in a clinical message inbox
 openChart SHALL provide a clinical message inbox that receives the clinical items openPractice routes under contract `openpractice-clinical-handoff/1.0`. That contract is owned by `opensoft/openPractice-spec` change `define-patient-gateway-and-escalation` (PR #6, not yet on main; ER-04 and ER-05 there). openChart is the doctor's clinical interface (ruling 34): the clinician reads and answers routed clinical questions in openChart. HealthLinc is the patient's gateway to their doctor: the patient may connect to their human doctor, through openPractice to openChart, or to medXfactory's medical AI (ruling 51). This inbox is the human-doctor path.
 
-openChart SHALL accept handoff messages only from an authenticated openPractice integration identity. That identity SHALL hold a dedicated openChart integration role that is narrower than `System Manager`, is named in planning, and is authorized for subject, tenant, purpose and role, as the ratified API requirement demands. openChart SHALL use only the messages the pinned contract defines: `handoff.offer`, `handoff.ack`, `handoff.urgency_raised`, `handoff.status`, `clinical_need.marker` and `message.ack`. It SHALL define no message of its own toward openPractice.
+openChart SHALL accept handoff messages only from an authenticated openPractice integration identity. That identity SHALL hold a dedicated openChart integration role that is narrower than `System Manager`, is named in planning, and is authorized for subject, tenant, purpose and role, as the ratified API requirement demands. openChart SHALL use only the messages the pinned contract defines: `handoff.offer`, `handoff.ack`, `handoff.urgency_raised`, `handoff.status`, `clinical_need.marker` and `message.ack`. From the next pin (MI-02), it also sends `handoff.clinician_urgency_raised` (MI-10). It SHALL define no message of its own toward openPractice.
 
 Every requirement in this capability SHALL apply in the same way on every client through which a clinician uses openChart, whether mobile or workstation (ruling 35, a current-phase decision). No requirement depends on a device.
 
@@ -21,7 +21,15 @@ openChart SHALL validate every handoff message it receives or sends against the 
 
 The digest identifies the schema even after archival moves the file. openChart SHALL NOT implement against a schema whose digest differs from the digest recorded here, until both changes record the same new digest. When that change's schema changes, this pin SHALL be updated in a governed revision of this change.
 
-The pinned schema carries everything this capability uses. Its offer names the conversation's holder in `conversation_source` (`healthlinc` or `medxfactory`), and gives a matching `conversation_ref` (ruling 51). It also defines `clinical_need.marker` (ER-18 in the openPractice change), which MI-25 sends.
+The pinned schema names the conversation's holder in `conversation_source` (`healthlinc` or `medxfactory`), with a matching `conversation_ref` (ruling 51). It defines `clinical_need.marker` (ER-18 in the openPractice change), which MI-25 sends.
+
+The openPractice change is adding these, in its current revision:
+- the offer field `identity_state`, one of `linked`, `link_in_review` or `unlinked`;
+- the `unlinked_identity` subset for an unlinked patient;
+- the message `handoff.clinician_urgency_raised`;
+- the `handoff.urgency_raised` sources `coach_triage` and `medical_ai_triage`.
+
+MI-10, MI-12, MI-17 and MI-18 are written against those names. This pin SHALL be updated when that schema's digest is recorded, and openChart SHALL NOT implement against those additions before then.
 
 openChart SHALL accept a `1.x` message at a MINOR version it has declared. It SHALL refuse a message whose MAJOR version it does not support with reason `unsupported_major_version`, and a message that fails the schema with reason `schema_invalid`. A refusal SHALL change nothing (the PL-12 pattern; PG-01 and ER-04 in the openPractice change).
 
@@ -160,12 +168,12 @@ An owner MAY reassign an item to another named clinician or nurse, in a lane the
 - **THEN** the change is refused
 
 ### Requirement: MI-09 An unacknowledged urgent item escalates to the on-call clinician, then to the medical director
-openChart SHALL escalate every `urgent` item that has no clinician acknowledgment by its acknowledgment deadline. A clinician acknowledgment is an explicit act by the item's owner, recorded with its time. Delivery of a notification is not acknowledgment. The escalation steps are:
+openChart SHALL escalate every item that has no clinician acknowledgment by its acknowledgment deadline, when the item is `urgent`, or `priority` and unfiled because of its identity (MI-18). A clinician acknowledgment is an explicit act by the item's owner, recorded with its time. Delivery of a notification is not acknowledgment. The escalation steps are:
 1. openChart SHALL alert the on-call clinician for the hour at once, and make that clinician the owner.
 2. When the on-call clinician does not acknowledge within the next escalation interval, or no on-call clinician is rostered, openChart SHALL alert the medical director and make the medical director the owner.
 3. After the last step, openChart SHALL keep re-alerting the medical director at each escalation interval until a clinician acknowledges.
 
-Until a response policy is approved, each escalation interval SHALL equal the item's acknowledgment window (`ack_by` minus `routed_at`). An item that arrives at or after its `ack_by` SHALL escalate at once (design call MD-2). Escalation SHALL NOT drop, park or close an item, SHALL NOT depend on any agent, and SHALL run whatever the item's identity state (MI-18). A non-urgent item that has no acknowledgment by its deadline SHALL move to its lane's cover for the hour.
+Until a response policy is approved, each escalation interval SHALL equal the item's acknowledgment window (`ack_by` minus `routed_at`). An item that arrives at or after its `ack_by` SHALL escalate at once (design call MD-2). Escalation SHALL NOT drop, park or close an item, SHALL NOT depend on any agent, and SHALL run whatever the item's identity state (MI-18). Any other item that has no acknowledgment by its deadline SHALL move to its lane's cover for the hour.
 
 An item whose clock has expired SHALL stay in the queue, open and owned, until a clinician replies or records a closing outcome. openChart SHALL let any clinician authorized for the inbox find an open item by its routing id (`handoff_id`) and see it. That includes the on-call clinician named in openPractice's tracked alert (ER-07 and ER-09 in the openPractice change).
 
@@ -190,7 +198,14 @@ openChart MUST NOT lower an item's urgency by any path. No user, role, agent, po
 
 On `handoff.urgency_raised`, openChart SHALL set the item's urgency to the higher of its current urgency and the raised one. It SHALL move each deadline only earlier, to the earlier of the current and the offered time, and SHALL answer `message.ack` `received`. A raise that would not increase urgency SHALL be recorded and SHALL change nothing. A raise for a `handoff_id` that has not yet been received SHALL be recorded and applied when its offer arrives.
 
-A clinician MAY raise an item's urgency inside openChart, which tightens its deadlines. Under contract 1.0 no message reports that raise to openPractice, whose shadow deadline stays later (design call MD-8). A raise to `urgent` on an item already `responded` or closed SHALL reopen it inside openChart, to its last owner or to cover, under MI-09 (design call MD-9).
+A clinician MAY raise an item's urgency inside openChart, to `priority` or to `urgent`, which tightens its deadlines. openChart SHALL report every such raise to openPractice as `handoff.clinician_urgency_raised` (design call MD-8). The message carries:
+- the `handoff_id`, and the `link_id` when the item is linked;
+- the new `urgency`;
+- `raised_at`;
+- `respond_by`, openChart's new effective response deadline;
+- `raised_by`, openChart's opaque clinician reference, never derived from the clinician's name or login.
+
+openChart SHALL write the message to the durable outbound store of PL-14 in the same transaction as the raise, and deliver it until openPractice answers with `message.ack`. openPractice then tracks the new deadline under its own escalation path (ER-07 and ER-09 in the openPractice change). No agent SHALL raise urgency in openChart. A raise to `urgent` on an item already `responded` or closed SHALL reopen it inside openChart, to its last owner or to cover, under MI-09 (design call MD-9).
 
 #### Scenario: Failure: a clinician tries to lower urgency
 - **WHEN** a clinician tries to change an `urgent` item to `routine`
@@ -204,10 +219,30 @@ A clinician MAY raise an item's urgency inside openChart, which tightens its dea
 - **WHEN** a `handoff.urgency_raised` arrives for a `handoff_id` openChart has not yet received
 - **THEN** openChart records it, answers `message.ack` `received`, and applies the raise when the offer arrives
 
+#### Scenario: A clinician raises an item to urgent
+- **WHEN** a clinician raises a `priority` item to `urgent`
+- **THEN** openChart tightens the item's deadlines, and sends `handoff.clinician_urgency_raised` with `urgent`, `raised_at`, its new `respond_by` and `raised_by` through the durable store
+
+#### Scenario: A clinician raises a routine item to priority
+- **WHEN** a clinician raises a `routine` item to `priority`
+- **THEN** openChart sends `handoff.clinician_urgency_raised` with `priority` and its new `respond_by`
+
+#### Scenario: Failure: openPractice is unreachable when a clinician raises urgency
+- **WHEN** openPractice is unreachable at the moment a clinician raises an item to `urgent`
+- **THEN** the message stays in the durable store and is delivered with its original `message_id` when openPractice returns, and openChart's own escalation under MI-09 runs meanwhile
+
 ### Requirement: MI-11 The clinician's reply goes to the patient through HealthLinc
 openChart SHALL send the clinician's reply to the patient through HealthLinc, against the offer's `reply_path_ref`, over openChart's own HealthLinc integration. It SHALL never send the reply through openPractice (ER-05 in the openPractice change). This holds whichever system holds the conversation, as openPractice ER-05 also states (design call MD-16). Only the item's owner, or a named clinician or nurse whom the lane policy allows, SHALL send a reply. Each reply SHALL carry the sender's identity and the author type `clinician` (MI-12).
 
 openChart SHALL report `responded` only after HealthLinc accepts the reply for delivery. When HealthLinc refuses the reply or cannot be reached, openChart SHALL keep the reply, retry with the same message identifier, keep the item open and owned, and show the owner the failure. The clock SHALL keep running.
+
+HealthLinc may report, through its `reply.delivery_failed` callback, that an `urgent` reply it had accepted could not be delivered. openChart SHALL accept that callback only from HealthLinc's authenticated integration. It SHALL then treat `responded` as not final (design call MD-21):
+- it SHALL reopen the item if it was closed, and keep it owned by its last owner or by cover;
+- it SHALL escalate the item under MI-09;
+- it SHALL record the failure (MI-12);
+- it SHALL show the owner the coded cause, and point them to a permitted channel (MI-22).
+
+A repeated callback for the same reply SHALL change nothing further. Under contract 1.0 no status withdraws `responded`, so openChart sends openPractice nothing for the failure (tension MT-15).
 
 #### Scenario: A reply is accepted
 - **WHEN** a clinician sends a reply and HealthLinc accepts it for delivery
@@ -217,19 +252,24 @@ openChart SHALL report `responded` only after HealthLinc accepts the reply for d
 - **WHEN** HealthLinc refuses a reply with a coded reason
 - **THEN** the item stays open and owned, openChart does not report `responded`, and the owner sees the coded reason
 
+#### Scenario: Failure: an accepted urgent reply is not delivered
+- **WHEN** HealthLinc sends `reply.delivery_failed` for an `urgent` reply that openChart had already reported as `responded`
+- **THEN** the item reopens and stays owned, it escalates under MI-09, the owner is pointed to a permitted channel, and openChart sends openPractice nothing under contract 1.0
+
 ### Requirement: MI-12 A clinical communication is recorded with its author type and provenance, and is never a diagnosis or a clinical fact of record
 openChart SHALL record every inbox item as one clinical communication record. This requirement is the single definition of that record in openChart. Other openChart changes reference it rather than defining a second record; that includes `define-ai-authored-clinical-records` (ruling 64).
 
 **Author type.** Every piece of content in a clinical communication SHALL carry exactly one author type:
 - `patient`, for the patient. Content from the patient's representative carries `representative`, and is treated like `patient` content under every rule in this capability.
-- `ai`, for any AI or agent. The provenance SHALL name the source system: HealthLinc's coach, which gives general health information only, with a not-medical-advice statement (rulings 51 and 54); or medXfactory's medical AI (ruling 51). Category and urgency proposals from either are `ai` content (ruling 51, amending ruling 44).
+- `ai`, for any AI or agent. The provenance SHALL name the source system: HealthLinc's coach, which gives general health information only, with a not-medical-advice statement (rulings 51 and 54); or medXfactory's medical AI (ruling 51). Category and urgency proposals from either are `ai` content, including the `handoff.urgency_raised` sources `coach_triage` and `medical_ai_triage` (ruling 51, amending ruling 44).
 - `clinician`, for a named physician or nurse acting through an authenticated openChart session.
 - `staff` or `system`, for content from practice staff, or from a system rather than a person.
 - `unknown`, a fail-safe for content whose author type the source system does not report. `unknown` content SHALL never be treated, shown or delivered as clinician-authored.
 
 **Provenance.** The record SHALL hold:
-- the handoff references: `handoff_id`, `link_id`, `healthlinc_message_ref`, `conversation_source`, `conversation_ref`, `reply_path_ref`, the origin and any split-group reference;
-- every urgency change with its source, every owner change, every clock event, every acknowledgment, every status sent and every clinical-need marker sent (MI-25);
+- the handoff references: `handoff_id`, `link_id` when present, `identity_state`, `healthlinc_message_ref`, `conversation_source`, `conversation_ref`, `reply_path_ref`, the origin and any split-group reference;
+- for an `unlinked` item, the `unlinked_identity` as received. It is marked unverified, is never projected onto an `OC Patient`, and is never used to match (MI-17, MI-18);
+- every urgency change with its source, every owner change, every clock event, every acknowledgment, every status sent, every clinician urgency raise and clinical-need marker sent, and every reply delivery failure reported (MI-10, MI-11, MI-25);
 - for a conversation HealthLinc holds, the escalated exchange as retrieved, each turn with its author type, source system, time, reference and retrieval time;
 - for a conversation medXfactory holds, only the `conversation_ref`, the author type `ai` with medXfactory's medical AI named as the source, and the retrieval provenance, with no copy of the exchange (MI-24);
 - every reply, with the named clinician who sent it, its time and HealthLinc's acceptance.
@@ -318,8 +358,10 @@ When an item mixes clinical and administrative questions, the clinician SHALL an
 
 ### Requirement: MI-17 A handoff resolves the patient only through the links that exist
 openChart SHALL resolve the patient for an offer only through the links that exist, because there is no master patient identity across HealthLinc, openPractice and openChart (ruling 39). Those links are:
-- the `openpractice` `OC Patient External Identifier` row whose provenance names the offer's `link_id` (PL-02). The row SHALL be `active` and SHALL belong to the `OC Patient` that the offer's `ehr_patient` triple names under openChart's own issuer (PL-03);
+- the `openpractice` `OC Patient External Identifier` row whose provenance names the offer's `link_id` (PL-02), on an offer whose `identity_state` is `linked`. The row SHALL be `active` and SHALL belong to the `OC Patient` that the offer's `ehr_patient` triple names under openChart's own issuer (PL-03);
 - where one exists, the openChart patient reference that HealthLinc reports for the account behind the message (MI-03). It SHALL name the same `OC Patient`.
+
+The offer's `identity_state` is an input, never a resolution. Where it and openChart's own link state differ, the more uncertain of the two governs (design call MD-5). An `unlinked` offer has no `link_id` or `ehr_patient`, so this requirement cannot resolve its patient. Its `unlinked_identity` SHALL NOT be used to match, link or file the item, automatically or by default (ruling 39).
 
 openChart MUST NOT match on names, dates of birth or other demographics. It MUST NOT resolve a handoff through any other namespace or system, including a Medx or medXfactory reference, even when medXfactory holds the conversation (design call MD-19). It MUST NOT create, change, merge or re-point a link or a patient while handling a handoff (PL-01, PL-05, PL-06).
 
@@ -331,17 +373,43 @@ openChart MUST NOT match on names, dates of birth or other demographics. It MUST
 - **WHEN** HealthLinc reports an openChart patient reference that differs from the `OC Patient` the `openpractice` link names
 - **THEN** the item stays unfiled, an identity review opens, and no link or patient record changes
 
-### Requirement: MI-18 Unresolved or conflicting identity goes to identity review, and an urgent item still reaches a clinician
-When MI-17 does not resolve exactly one patient, openChart SHALL handle the item by its urgency. The cases are: an unknown link; a revoked or superseded link; a link in `identity_review`, including a date-of-birth hold under PL-08; an `ehr_patient` triple that does not match the link; or a HealthLinc reference that disagrees.
+#### Scenario: Failure: an unlinked identity resembles an existing patient
+- **WHEN** an `unlinked` offer's `unlinked_identity` resembles an existing `OC Patient`
+- **THEN** openChart neither matches nor files the item, and shows the subset to the clinician as unverified
 
-- **`routine` or `priority` offers.** openChart SHALL reject the offer with the schema's code, as the openPractice change expects: `link_unknown` for an unknown link; `link_revoked` for a revoked or superseded link; `link_in_review` for a link in review; and `ehr_patient_mismatch` for a triple that does not match. openPractice then owns the exception (ER-06 and ER-07 in the openPractice change).
-- **`urgent` offers.** openChart SHALL accept the offer into an unfiled item, show the identity uncertainty to everyone who views it, route it under MI-07 and MI-09, and open an identity review (design call MD-5). An urgent item MUST NOT be rejected, dropped or parked because of its identity.
+### Requirement: MI-18 Unresolved or conflicting identity goes to identity review, and an urgent or priority item still reaches a clinician
+When MI-17 does not resolve exactly one patient, openChart SHALL handle the item by its urgency (design call MD-5). The cases are:
+- an offer whose `identity_state` is `link_in_review`, which covers identity review and a demographic hold alike;
+- an offer whose `identity_state` is `unlinked`, which carries `unlinked_identity`;
+- an offer marked `linked` where openChart holds the link as unknown, revoked, superseded or in `identity_review` (a PL-08 hold included), or where the `ehr_patient` triple does not match the link;
+- a HealthLinc reference that disagrees, found after acceptance.
 
-An unfiled item SHALL NOT be filed to any `OC Patient` until MI-17 resolves the patient (design call MD-6). Meanwhile, its content MAY be read and answered through HealthLinc's reply path. When an identity problem is found after acceptance, the item SHALL stay accepted and become unfiled, whatever its urgency. Identity review SHALL follow PL-06 and PL-08, and MUST NOT merge, overwrite or delete records. For urgent offers only, this departs from the list of companion items in the openPractice change; tension MT-1 records the departure.
+- **`urgent` or `priority` offers.** openChart SHALL accept the offer into an unfiled item, and show the identity uncertainty to everyone who views it. It SHALL route the item under MI-07, escalate it under MI-09, and open an identity review. It MUST NOT reject, drop or park such an item because of its identity. For an `unlinked` item, openChart SHALL show the `unlinked_identity` to the clinician as unverified, and never put it in a notification or log (MI-21).
+- **`routine` offers.** The openPractice change's amended ER-06 offers only `urgent` and `priority` items on a link in review or with no link. If a `routine` offer nevertheless arrives with an identity problem, openChart SHALL reject it with the schema's code:
+  - `link_unknown` for an unknown link or an `unlinked` offer;
+  - `link_revoked` for a revoked or superseded link;
+  - `link_in_review` for a link in review;
+  - `ehr_patient_mismatch` for a triple that does not match.
+
+  openPractice then owns the exception (ER-06 and ER-07 in the openPractice change).
+
+An unfiled item SHALL NOT be filed to any `OC Patient` until MI-17 resolves the patient (design call MD-6). Meanwhile, its content MAY be read and answered through HealthLinc's reply path. When an identity problem is found after acceptance, the item SHALL stay accepted and become unfiled, whatever its urgency. Where a link exists, identity review SHALL follow PL-06 and PL-08. It MUST NOT merge, overwrite or delete records. This matches the openPractice change's amended ER-06, which offers `urgent` and `priority` items on a link in review or with no link while openPractice's fallback also runs (MT-1, MT-2).
 
 #### Scenario: Failure: an urgent offer arrives on a link in review
-- **WHEN** an `urgent` offer names a link that openChart holds in `identity_review`
+- **WHEN** an `urgent` offer arrives with `identity_state` `link_in_review`
 - **THEN** openChart accepts it into an unfiled item that shows the identity uncertainty, the escalation of MI-09 runs, and an identity review opens
+
+#### Scenario: Failure: a priority offer arrives on a link in review
+- **WHEN** a `priority` offer arrives with `identity_state` `link_in_review`
+- **THEN** openChart accepts it into an unfiled item, opens an identity review and escalates it under MI-09, and never rejects it
+
+#### Scenario: Failure: an urgent offer arrives for an unlinked patient
+- **WHEN** an `urgent` offer arrives with `identity_state` `unlinked` and an `unlinked_identity`
+- **THEN** openChart accepts it into an unfiled item, shows the subset to the clinician as unverified, matches nothing, opens an identity review, and escalates it under MI-09
+
+#### Scenario: Failure: the offer says linked but openChart holds the link in review
+- **WHEN** a `priority` offer is marked `linked` but openChart holds that link in `identity_review`
+- **THEN** openChart treats the link as in review, and accepts the offer into an unfiled item
 
 #### Scenario: Failure: a routine offer arrives on a revoked link
 - **WHEN** a `routine` offer names a revoked link
@@ -363,7 +431,7 @@ openChart MUST NOT request, receive, store or show payment-hold status, balances
 - **THEN** openChart handles it like any other `urgent` item and keeps no record that a hold exists
 
 ### Requirement: MI-20 openChart operates without openPractice, and without a gateway the inbox is inert
-openChart SHALL operate fully with no openPractice deployment and no HealthLinc integration, as the ratified `expanded-patient-intake` rule and PL-15 require. This requirement restates those rules and does not weaken them. The inbox is optional. With no openPractice gateway configured, the inbox SHALL accept no handoff, and no other openChart operation SHALL depend on it.
+openChart MUST operate without MedxFactory, MedxEHR or openPractice, as the ratified `expanded-patient-intake` requirement states; PL-15 restates the openPractice part. This requirement restates that rule and does not weaken it. openChart SHALL also operate fully with no HealthLinc or medXfactory integration. The inbox is optional. With no openPractice gateway configured, the inbox SHALL accept no handoff, and no other openChart operation SHALL depend on it.
 
 The inbox SHALL NOT be enabled until all of these are configured:
 - an openPractice integration identity;
@@ -374,7 +442,7 @@ The inbox SHALL NOT be enabled until all of these are configured:
 Disabling the inbox SHALL withdraw the integration's authorization for handoffs, so later offers are refused with `unauthorized`. Every open item SHALL stay owned until it closes. Apart from medXfactory's governed chart path for medical-AI exchanges (ruling 53, MI-24), this change defines no route by which a patient's message reaches openChart without passing through openPractice (design call MD-12).
 
 #### Scenario: Standalone installation
-- **WHEN** openChart is installed on a clean supported site with no openPractice and no HealthLinc
+- **WHEN** openChart is installed on a clean supported site with no MedxFactory, MedxEHR, openPractice, HealthLinc or medXfactory
 - **THEN** migrations complete, the golden-patient intake tests pass, and the inbox is not configured
 
 #### Scenario: Failure: an offer reaches a site with no gateway
@@ -421,7 +489,9 @@ The inbox SHALL be covered by contract tests, written first, that validate every
 - an expired item kept in the queue and found by its routing id;
 - urgency raises, and the absence of any lowering;
 - deadlines that never extend;
-- every identity case in MI-18;
+- every identity case in MI-18, including `identity_state` `link_in_review` and `unlinked`, `unlinked_identity` shown as unverified and never matched, and `priority` offers never rejected for identity;
+- `handoff.clinician_urgency_raised` for raises to `priority` and to `urgent`, and the `coach_triage` and `medical_ai_triage` sources recorded as `ai`;
+- an urgent reply's `reply.delivery_failed` callback reopening its item;
 - escalation to the on-call clinician and to the medical director;
 - reply delivery, refusal and withholding;
 - re-routing and splitting;
