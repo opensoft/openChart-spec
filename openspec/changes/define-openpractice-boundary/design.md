@@ -12,7 +12,7 @@ This change touches these pieces of what is already built:
 
 The openPractice side is `opensoft/openPractice-spec` change `define-mvp-practice-foundation`, capability `ehr-boundary` (EB-01 to EB-20). That change owns the canonical schemas this change references by digest (PL-04).
 
-Brett Heap ruled on 31 questions on 2026-11-14; they are tabulated below. **Rulings are not ratification.** This change stays `Status: draft` until he stamps `Ratified by` in `proposal.md`.
+Brett Heap ruled on 33 questions on 2026-11-14; they are tabulated below. **Rulings are not ratification.** This change stays `Status: draft` until he stamps `Ratified by` in `proposal.md`.
 
 **Constitution status.** openChart's `.specify/memory/constitution.md`, in the assembly root `opensoft/openChart`, is the unfilled Spec Kit template on `main`. There is nothing ratified to check against. This design therefore checks against openChart's `AGENTS.md` and the ratified `expanded-patient-intake` requirements. The plan phase waits on adopting a constitution.
 
@@ -53,8 +53,10 @@ Every row has the same source: **Brett Heap, 2026-11-14, authoring session.** Ro
 | 29 | openPractice is the source for administrative demographics and publishes them to a linked EHR; each system owns its own record | Boundary: PL-07, PL-09 (unchanged) |
 | 30 | Net revenue is the constrained expected entitlement, estimated at the date of service and re-estimated at each close (supersedes ruling 22) | openPractice only |
 | 31 | openPractice is the system of record for the administrative appointment; the EHR owns the encounter and keeps an appointment reference if needed. The 1.0 contracts carry no appointment operations; appointment events are a future MINOR version. This closes R-7. | Boundary: Non-goals, Open Question 3 |
+| 32 | One Party with roles; "customer" is a party role only for membership and retail buyers, and a medical-billing accounting customer is derived from the guarantor or payer role | openPractice only |
+| 33 | FD-5 governs sign-offs; where a tier calls for an approval, release decision or attestation, a named human or an opted-in named AI agent with an openWallet ID may sign; tier 4 stays human-only | openPractice only. openChart's identity-review resolution stays with its authorized user. |
 
-The accounting posting modes are named `summary-journal` and `customer-detail` in all three changes. None of rulings 24 to 31 alters either EHR contract or its schema digest; the PL-04 pins are unchanged. Ruling 27 adds PL-16, and ruling 31 settles appointment authority without adding any operation.
+The accounting posting modes are named `summary-journal` and `customer-detail` in all three changes. None of rulings 24 to 33 alters either EHR contract or its schema digest; the PL-04 pins are unchanged. Ruling 27 adds PL-16, and ruling 31 settles appointment authority without adding any operation.
 
 ## Goals / Non-Goals
 
