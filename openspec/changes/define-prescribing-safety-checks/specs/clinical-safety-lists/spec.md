@@ -24,7 +24,7 @@ openChart SHALL keep, for each patient, an active medication list made of two pa
 - **List entries:** acts of a new act class, `medication_list_entry`, each with the medication as text and, where available, a coding; a kind (`prescription_from_elsewhere`, `over_the_counter`, `supplement` or `other`); dose and frequency as text; a status (`active`, `on_hold` or `stopped`); and optionally a start date and an end date;
 - **openChart's own prescriptions:** every prescription under `define-clinical-acts-foundation` (not yet on main) whose status is `released`, included by reference and never copied into an entry.
 
-A stopped or entered-in-error entry, and a prescription that is `completed`, `discontinued`, `cancelled` or `entered_in_error`, SHALL NOT be shown as active.
+A stopped or entered-in-error entry, and a prescription that is `completed` (not reachable in version 1; `define-clinical-acts-foundation` RX-01), `discontinued`, `cancelled` or `entered_in_error`, SHALL NOT be shown as active.
 
 #### Scenario: The active list combines entries and prescriptions
 - **WHEN** a patient has one active over-the-counter entry and one released openChart prescription
