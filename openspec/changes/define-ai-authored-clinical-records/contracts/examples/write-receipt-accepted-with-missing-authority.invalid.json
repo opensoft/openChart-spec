@@ -13,5 +13,8 @@
     "grant_version": 3
   },
   "received_at": "2026-11-14T09:02:01Z",
-  "missing_authority": "grant_paused"
+  "missing_authority": [
+    "no_grant_in_force",
+    "no_practitioner_sign_off"
+  ]
 }

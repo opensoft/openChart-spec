@@ -8,6 +8,14 @@
   "write_kind": "consult",
   "result": "recorded_as_recommendation",
   "record_ref": "OC-AIR-00001",
-  "missing_authority": "tier2_not_in_force",
+  "missing_authority": [
+    "no_decision_authority",
+    "no_practitioner_sign_off"
+  ],
+  "path_reason": {
+    "scheme": "openchart-ai-clinical-record-write.missing_authority",
+    "scheme_version": "1.0",
+    "code": "tier2_not_in_force"
+  },
   "received_at": "2026-11-14T10:00:01Z"
 }
