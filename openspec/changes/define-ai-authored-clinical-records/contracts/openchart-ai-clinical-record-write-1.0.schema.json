@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-ai-clinical-record-write:1.0",
   "title": "openchart-ai-clinical-record-write 1.0",
-  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which no 1.x receiver accepts as an act until both the clinical-acts foundation and a future governed amendment put Tier 2 in force and a MINOR version pins the foundation's content schemas. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Under owner ruling 80, every write names its writer (added_by), the AI on whose behalf it was written, by its openWallet ID with the model and model version that produced the content, and any system between them (on_behalf_of), and where its information came from (source). Missing authority never refuses a write: an act.write that fails an authority check is recorded in full as a recommendation that has no effect, kept as a recommendation record of openchart-clinical-act-content/1.0 (SHA-256 8f1da4c77df472609e2cbd4559ae768ddba42226a20c3976dee7891182015094, owned by define-clinical-acts-foundation), and answered write.receipt recorded_as_recommendation with that contract's missing_authority codes and this contract's own code in path_reason; a consult.write that fails a grant check is kept as quarantined AI communication (write.receipt quarantined, with quarantine_cause). Only a malformed, unidentified, repeated, non-operational, digest-mismatched or unlinked write, or a write from a suspended writer, is refused, and a refused write stores no clinical content. Every rule holds whether or not a validator asserts format: timestamps and UUIDs also carry patterns. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices, status messages and readbacks carry identifiers, digests and codes only, never clinical content; record.readback lets the writing source system confirm what openChart stored. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
+  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which no 1.x receiver accepts as an act until both the clinical-acts foundation and a future governed amendment put Tier 2 in force and a MINOR version pins the foundation's content schemas. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Under owner ruling 80, every write names its writer (added_by), the AI on whose behalf it was written, by its openWallet ID with the model and model version that produced the content, and any system between them (on_behalf_of), and where its information came from (source). Missing authority never refuses a write: an act.write that fails an authority check is recorded in full as a recommendation that has no effect, kept as a recommendation record of openchart-clinical-act-content/1.0 (SHA-256 d1c250e737158162cddffdcc6db9716a9e5f0e50fd104c1c47f019912fbfa81d, owned by define-clinical-acts-foundation, as of its head f85e742), and answered write.receipt recorded_as_recommendation with that contract's missing_authority codes and this contract's own code in path_reason; a consult.write that fails a grant check is kept as quarantined AI communication (write.receipt quarantined, with quarantine_cause). A write from an identified, registered writer whose AI has no openWallet ID, or one the writer's registration does not cover, is held in quarantine by default, outside the chart and never refused (quarantine_cause openwallet_id_missing or openwallet_id_not_covered; a reading put to the owner). A write is refused, and stores no clinical content, only on a ground that owner ruling 80, clause 18 keeps: its writer cannot be identified, is not registered or is suspended; its content is malformed or test data; or its patient cannot be matched. A repeat is answered with the first result, and a repeat of a record's identifiers with different content is kept as a new record flagged submission_ref_conflict. Every rule holds whether or not a validator asserts format: timestamps and UUIDs are checked by pattern only, the timestamp pattern being the clinical-acts foundation's own, and openChart refuses as malformed a timestamp that names a day its month does not have. Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation. message_id is the idempotency key and carries no PHI. Receipts, notices, status messages and readbacks carry identifiers, digests and codes only, never clinical content; record.readback lets the writing source system confirm what openChart stored. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
   "oneOf": [
     { "$ref": "#/$defs/consultWrite" },
     { "$ref": "#/$defs/actWrite" },
@@ -24,16 +24,14 @@
       "pattern": "^1\\.(0|[1-9][0-9]*)$"
     },
     "uuid": {
-      "description": "A UUID in its hyphenated hexadecimal form. The pattern carries the rule whether or not a validator asserts format.",
+      "description": "A UUID in its hyphenated hexadecimal form, checked by pattern only, so that no rule depends on whether a validator asserts format.",
       "type": "string",
-      "format": "uuid",
       "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
     },
     "timestamp": {
-      "description": "An RFC 3339 date-time with a time-zone offset or Z. The pattern carries the rule whether or not a validator asserts format.",
+      "description": "An RFC 3339 date-time with a time zone, checked by pattern only, with month, day, hour, minute and second ranges and one to nine fractional-second digits: the clinical-acts foundation's pattern, character for character (its design, section 1). A day that the month does not have, such as 30 February, passes the pattern; openChart refuses it as malformed by a check beside the schema.",
       "type": "string",
-      "format": "date-time",
-      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]+)?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
     },
     "issuer": {
       "description": "A deployment's configured, stable issuer identifier, unique across deployments and never derived from a host path.",
@@ -123,7 +121,7 @@
       }
     },
     "openwalletId": {
-      "description": "The AI's openWallet ID (owner ruling 80, part B), in the identifier shape that openWallet's wallet record contract gives wallet_id (opensoft/openWallet-code, contracts/openxwallet/openxwallet-record.schema.yaml, $defs/identifier), as the clinical-acts foundation's walletId does. openChart compares it exactly with the registration of the writer that delivers the write. It never identifies a person or a patient (design call AD-49).",
+      "description": "The AI's openWallet ID (owner ruling 80, part B), in the identifier shape that openWallet's wallet record contract gives wallet_id (opensoft/openWallet-code, contracts/openxwallet/openxwallet-record.schema.yaml, $defs/identifier), as the clinical-acts foundation's walletId does. openChart compares it exactly with the registration of the writer that delivers the write. It never identifies a person or a patient (design call AD-49). A value outside this shape is not an openWallet ID, and the write is malformed.",
       "type": "string",
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$"
     },
@@ -139,10 +137,10 @@
       }
     },
     "aiParty": {
-      "description": "The AI that produced the content: its openWallet ID, and the model and model version that produced it (owner ruling 80, part B).",
+      "description": "The AI that produced the content: its openWallet ID, and the model and model version that produced it (owner ruling 80, part B). A write that names its AI without an openWallet ID, or with one the writer's registration does not cover, is not refused: by default openChart holds it in quarantine, outside the chart and in front of a clinician (design call AD-60, PROPOSED; define-clinical-acts-foundation AN-01 and its Open Question 22).",
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "openwallet_id", "model", "model_version"],
+      "required": ["kind", "model", "model_version"],
       "properties": {
         "kind": { "const": "ai" },
         "openwallet_id": { "$ref": "#/$defs/openwalletId" },
@@ -182,7 +180,7 @@
       }
     },
     "authorityClaim": {
-      "description": "The authority the source system says it acted under. openChart compares every field with its own grant record and refuses on any difference.",
+      "description": "The authority the source system says it acted under. openChart compares every field with its own grant record; a difference is missing authority, recorded as a quarantine cause or a path code, and never a refusal.",
       "type": "object",
       "additionalProperties": false,
       "required": ["grant_id", "grant_version", "mode", "configuration_version"],
@@ -355,7 +353,7 @@
       }
     },
     "actWrite": {
-      "description": "Tier 2. An external clinical AI system records one AI-authored clinical act under limited_practice or full_practice authority. No 1.x receiver accepts it as an act until both the clinical-acts foundation is ratified and built and a future governed amendment puts Tier 2 in force, and a MINOR version of this contract pins the foundation's content schemas. Until then, and whenever an act fails an authority check, openChart records it in full as a recommendation that has no effect and answers recorded_as_recommendation with missing_authority (owner ruling 80).",
+      "description": "Tier 2. An external clinical AI system records one AI-authored clinical act under limited_practice or full_practice authority. No 1.x receiver accepts it as an act until both the clinical-acts foundation is ratified and built and a future governed amendment puts Tier 2 in force, and a MINOR version of this contract pins the foundation's content schemas. Until then, and whenever an act fails an authority check, openChart records it in full as a recommendation that has no effect and answers recorded_as_recommendation with missing_authority and path_reason (owner ruling 80).",
       "type": "object",
       "additionalProperties": false,
       "allOf": [
@@ -612,7 +610,7 @@
       ]
     },
     "rejectReason": {
-      "description": "Why a write or notice was refused. A refused write stores no clinical content. Missing authority is never a reason to refuse an addition (owner ruling 80, clause 18), so no authority check appears here.",
+      "description": "Why a write or notice was refused. A refused write stores no clinical content. Each reason for a write is a ground that owner ruling 80, clause 18 keeps: schema_invalid, unsupported_major_version and content_digest_mismatch, malformed content; unauthorized, a writer that cannot be identified, is not registered for what the write claims, or is suspended; non_operational_context, test data its writer declares; and the three patient-link reasons, a patient that cannot be matched. Missing authority is never a reason to refuse an addition, so no authority check appears here, and a repeat with different content is kept and flagged, not refused.",
       "enum": [
         "schema_invalid",
         "unsupported_major_version",
@@ -621,7 +619,6 @@
         "patient_link_unknown",
         "patient_link_mismatch",
         "patient_link_in_review",
-        "conflicting_duplicate",
         "content_digest_mismatch",
         "notice_would_widen"
       ]
@@ -649,7 +646,7 @@
       ]
     },
     "missingAuthority": {
-      "description": "The closed list of missing-authority codes that every reader uses, as the clinical-acts foundation defines it (define-clinical-acts-foundation AN-09; openchart-clinical-act-content/1.0, SHA-256 8f1da4c77df472609e2cbd4559ae768ddba42226a20c3976dee7891182015094, $defs/missingAuthority).",
+      "description": "The closed list of missing-authority codes that every reader uses, as the clinical-acts foundation defines it (define-clinical-acts-foundation AN-09; openchart-clinical-act-content/1.0, SHA-256 d1c250e737158162cddffdcc6db9716a9e5f0e50fd104c1c47f019912fbfa81d, $defs/missingAuthority).",
       "enum": [
         "no_grant_in_force",
         "no_decision_authority",
@@ -663,7 +660,7 @@
       ]
     },
     "missingAuthorityList": {
-      "description": "The foundation's missing-authority codes for an AI act recorded as a recommendation. Of its nine codes only three can be true of an addition on this path, and no_practitioner_sign_off is always among them: no practitioner signed it off, and this contract carries no sign-off (owner ruling 151; design call AD-57).",
+      "description": "The foundation's missing-authority codes for an AI act recorded as a recommendation. Of its nine codes only three can be true of an addition on this path, and no_practitioner_sign_off is always among them: no practitioner signed it off, and this contract carries no sign-off (owner ruling 151; design call AD-57). The foundation's contract requires it of every recommendation whose decision maker is not a human.",
       "type": "array",
       "minItems": 1,
       "maxItems": 3,
@@ -708,7 +705,7 @@
       ]
     },
     "quarantineCause": {
-      "description": "Why a consult.write was kept as quarantined AI communication rather than accepted: the first grant check it failed, or source_cap_suspended for an emergency or red-flag consult from a cap-suspended source.",
+      "description": "Why a write was kept in quarantine rather than accepted. For a consult.write: the first grant check it failed, or source_cap_suspended for an emergency or red-flag consult from a cap-suspended source. For a consult.write or an act.write: openwallet_id_missing or openwallet_id_not_covered, when its AI has no openWallet ID or one the writer's registration does not cover, so that the write is held outside the chart (design call AD-60, PROPOSED).",
       "enum": [
         "no_current_grant",
         "grant_paused",
@@ -719,11 +716,34 @@
         "mode_not_permitted",
         "approver_mismatch",
         "legal_review_mismatch",
-        "source_cap_suspended"
+        "source_cap_suspended",
+        "openwallet_id_missing",
+        "openwallet_id_not_covered"
       ]
     },
+    "quarantineCodes": {
+      "description": "The codes of a quarantined write: a consult may carry any quarantine cause; an act only openwallet_id_missing or openwallet_id_not_covered, since an act that fails an authority check is a recommendation, never quarantined.",
+      "required": ["quarantine_cause"],
+      "properties": { "write_kind": { "enum": ["consult", "act"] } },
+      "allOf": [
+        {
+          "if": { "properties": { "write_kind": { "const": "act" } }, "required": ["write_kind"] },
+          "then": { "properties": { "quarantine_cause": { "enum": ["openwallet_id_missing", "openwallet_id_not_covered"] } } }
+        }
+      ]
+    },
+    "submissionRefConflict": {
+      "description": "Set on a record kept from a write that repeated an earlier write's record identifiers (consult_id and consult_version, or act_id and act_version) with a different content digest: the first record and its stored content digest. The write is kept as a new record, flagged, and never refused; the first record is unchanged (define-clinical-acts-foundation AN-10, its design call CD-64; design call AD-61).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_record_ref", "first_content_sha256"],
+      "properties": {
+        "first_record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "first_content_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
     "writeReceipt": {
-      "description": "openChart's answer to every write and every authority notice it receives. accepted and duplicate carry record_ref. recorded_as_recommendation answers an act.write that failed an authority check: openChart recorded it in full as a recommendation that has no effect, record_ref is the recommendation's identifier, missing_authority carries the foundation's codes and path_reason this contract's code for the first check it failed (owner ruling 80; define-clinical-acts-foundation AN-09 and AN-10). quarantined answers a consult.write that failed a grant check: openChart kept it as quarantined AI communication, never accepted, and quarantine_cause names why. A duplicate of either carries the original's code. refused carries a reason and no record_ref, and a refused write stores no clinical content.",
+      "description": "openChart's answer to every write and every authority notice it receives. accepted and duplicate carry record_ref. recorded_as_recommendation answers an act.write that failed an authority check: openChart recorded it in full as a recommendation that has no effect, record_ref is the recommendation's identifier, missing_authority carries the foundation's codes and path_reason this contract's code for the first check it failed (owner ruling 80; define-clinical-acts-foundation AN-09 and AN-10). quarantined answers a consult.write that failed a grant check, which openChart kept as quarantined AI communication, never accepted, or a write held because its AI is not identified; quarantine_cause names why, and quarantined is this path's held_in_quarantine. duplicate answers an identical repeat with the first result: first_result, the first record_ref and its codes. submission_ref_conflict tells the writer that its write repeated an earlier write's identifiers with different content and was kept as a new record. refused carries a reason and no record_ref, and a refused write stores no clinical content.",
       "type": "object",
       "additionalProperties": false,
       "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "write_kind", "result", "received_at"],
@@ -736,6 +756,11 @@
         "in_reply_to": { "$ref": "#/$defs/uuid" },
         "write_kind": { "enum": ["consult", "act", "authority_notice"] },
         "result": { "enum": ["accepted", "duplicate", "recorded_as_recommendation", "quarantined", "refused"] },
+        "first_result": {
+          "description": "For a duplicate only: the result the first submission received (define-clinical-acts-foundation AN-10).",
+          "enum": ["accepted", "recorded_as_recommendation", "quarantined"]
+        },
+        "submission_ref_conflict": { "$ref": "#/$defs/submissionRefConflict" },
         "reason": { "$ref": "#/$defs/rejectReason" },
         "missing_authority": { "$ref": "#/$defs/missingAuthorityList" },
         "path_reason": { "$ref": "#/$defs/pathReason" },
@@ -755,17 +780,21 @@
       },
       "allOf": [
         {
+          "if": { "properties": { "write_kind": { "const": "authority_notice" } }, "required": ["write_kind"] },
+          "then": { "not": { "required": ["submission_ref_conflict"] } }
+        },
+        {
           "if": { "properties": { "result": { "const": "refused" } }, "required": ["result"] },
           "then": {
             "required": ["reason"],
-            "not": { "anyOf": [{ "required": ["record_ref"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }] }
+            "not": { "anyOf": [{ "required": ["record_ref"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }, { "required": ["first_result"] }, { "required": ["submission_ref_conflict"] }] }
           }
         },
         {
           "if": { "properties": { "result": { "const": "accepted" } }, "required": ["result"] },
           "then": {
             "required": ["record_ref"],
-            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }] }
+            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }, { "required": ["first_result"] }] }
           }
         },
         {
@@ -774,28 +803,35 @@
             "required": ["record_ref"],
             "properties": { "write_kind": { "const": "act" } },
             "allOf": [{ "$ref": "#/$defs/recommendationCodes" }],
-            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["quarantine_cause"] }] }
+            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["quarantine_cause"] }, { "required": ["first_result"] }] }
           }
         },
         {
           "if": { "properties": { "result": { "const": "quarantined" } }, "required": ["result"] },
           "then": {
             "required": ["record_ref", "quarantine_cause"],
-            "properties": { "write_kind": { "const": "consult" } },
-            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }] }
+            "allOf": [{ "$ref": "#/$defs/quarantineCodes" }],
+            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["first_result"] }] }
           }
         },
         {
           "if": { "properties": { "result": { "const": "duplicate" } }, "required": ["result"] },
           "then": {
-            "required": ["record_ref"],
-            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["missing_authority", "quarantine_cause"] }, { "required": ["path_reason", "quarantine_cause"] }] },
+            "required": ["record_ref", "first_result"],
+            "not": { "required": ["reason"] },
             "allOf": [
               {
-                "if": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }] },
-                "then": { "properties": { "write_kind": { "const": "act" } }, "allOf": [{ "$ref": "#/$defs/recommendationCodes" }] }
+                "if": { "properties": { "first_result": { "const": "accepted" } }, "required": ["first_result"] },
+                "then": { "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }] } }
               },
-              { "if": { "required": ["quarantine_cause"] }, "then": { "properties": { "write_kind": { "const": "consult" } } } }
+              {
+                "if": { "properties": { "first_result": { "const": "recorded_as_recommendation" } }, "required": ["first_result"] },
+                "then": { "properties": { "write_kind": { "const": "act" } }, "allOf": [{ "$ref": "#/$defs/recommendationCodes" }], "not": { "required": ["quarantine_cause"] } }
+              },
+              {
+                "if": { "properties": { "first_result": { "const": "quarantined" } }, "required": ["first_result"] },
+                "then": { "allOf": [{ "$ref": "#/$defs/quarantineCodes" }], "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }] } }
+              }
             ]
           }
         }
@@ -870,7 +906,7 @@
       }
     },
     "readbackResult": {
-      "description": "openChart's answer to a readback request: the stored record's identifiers, its stored content digest, when openChart received it, the grant version it was checked against and its current state, as codes and digests only. For a consult, stored_content_sha256 is recomputed from the stored turns exactly as exchange.content_sha256 is defined; for an act, it is the SHA-256 of the RFC 8785 canonical JSON serialization of the stored act_content. A recommendation (record_state recommendation, with the foundation's missing_authority codes and this contract's path_reason) and a quarantined consult (record_state quarantined, with quarantine_cause) are found but never accepted; neither reports a review status, and each carries grant_checked only where a grant was checked.",
+      "description": "openChart's answer to a readback request: the stored record's identifiers, its stored content digest, when openChart received it, the grant version it was checked against and its current state, as codes and digests only. For a consult, stored_content_sha256 is recomputed from the stored turns exactly as exchange.content_sha256 is defined; for an act, it is the SHA-256 of the RFC 8785 canonical JSON serialization of the stored act_content. A recommendation (record_state recommendation, with the foundation's missing_authority codes and this contract's path_reason), a quarantined consult and a held write (record_state quarantined, with quarantine_cause) are found but never accepted; none reports a review status, and each carries grant_checked only where a grant was checked. A record kept from a write that repeated an earlier write's identifiers with different content carries submission_ref_conflict. A readback is not an interoperability read: it returns no record, only identifiers, digests and codes, to the writing source.",
       "type": "object",
       "additionalProperties": false,
       "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "write_kind", "record_ref", "result", "read_at"],
@@ -903,6 +939,7 @@
         "missing_authority": { "$ref": "#/$defs/missingAuthorityList" },
         "path_reason": { "$ref": "#/$defs/pathReason" },
         "quarantine_cause": { "$ref": "#/$defs/quarantineCause" },
+        "submission_ref_conflict": { "$ref": "#/$defs/submissionRefConflict" },
         "review_status": {
           "enum": ["not_selected", "selected", "in_review", "reviewed", "co_review_pending", "co_review_overdue", "co_review_done"]
         },
@@ -923,8 +960,7 @@
           {
             "if": { "properties": { "record_state": { "const": "quarantined" } }, "required": ["record_state"] },
             "then": {
-              "properties": { "write_kind": { "const": "consult" } },
-              "required": ["quarantine_cause"],
+              "allOf": [{ "$ref": "#/$defs/quarantineCodes" }],
               "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["review_status"] }] }
             }
           },
@@ -949,6 +985,7 @@
             { "required": ["missing_authority"] },
             { "required": ["path_reason"] },
             { "required": ["quarantine_cause"] },
+            { "required": ["submission_ref_conflict"] },
             { "required": ["review_status"] }
           ]
         }
