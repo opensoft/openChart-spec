@@ -1,9 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: AN-01 Any identified human or system may add to a patient's chart, and an addition the chart cannot identify is refused with nothing stored
-Any human or system SHALL be able to add to a patient's chart: a clinician, other staff, the patient, an AI, a device or another system (owner ruling 80, clause 1). An addition is anything written into a patient's chart through any path: an act, a note, a message, a consult record, a reading, an imported record or a recommendation. openChart SHALL add nothing unless it can identify the writer, the human or system that writes the addition into the chart, as AN-02 states. An addition whose writer it cannot identify SHALL be refused, and nothing SHALL be stored (clause 2). Every addition SHALL arrive through the versioned service boundary (CA-10).
+Any human or system SHALL be able to add to a patient's chart: a clinician, other staff, the patient, an AI, a device or another system (owner ruling 80, clause 1). An addition is anything written into a patient's chart through any path: a signed act, a note, a message, a consult record, a reading, an imported record, information or a recommendation. A draft is not yet an addition; it becomes one when it is submitted (AN-05, AN-14). openChart SHALL add nothing unless it can identify the writer, the human or system that writes the addition into the chart, and every party it names, as AN-02 states. An addition it cannot identify SHALL be refused, and nothing SHALL be stored (clause 2). Every addition SHALL arrive through the versioned service boundary (CA-10).
 
-Practice configuration is not an addition to a patient's chart: grants, attestations, designations, act-type registry entries and system and device registrations. Their own refusals stay (design call CD-49, PROPOSED).
+Where an earlier ruling requires that what an AI already told a patient stay in front of a clinician (owner ruling 90, in `define-ai-authored-clinical-records`, not yet on main), that writing path's own quarantine SHALL apply instead of this refusal, as that change defines it.
+
+Practice configuration is not an addition to a patient's chart: grants, attestations, designations, act-type registry entries, system and device registrations, and the binding of a practitioner's account to their wallet (AU-07). Their own refusals stay (design call CD-49, PROPOSED).
 
 #### Scenario: A registered system adds a summary
 - **WHEN** a registered integration identity adds a document summary for a patient, naming itself and its operator
@@ -13,28 +15,36 @@ Practice configuration is not an addition to a patient's chart: grants, attestat
 - **WHEN** a caller that the chart cannot identify as a named account, a verified patient link, a registered system or a registered device submits a note for a patient
 - **THEN** openChart refuses it, and nothing is stored
 
-### Requirement: AN-02 Each kind of writer is identified in its own recorded way
-Every party an addition names, its writer and every party on whose behalf it was written, SHALL be identified by `kind` as below (owner ruling 80, part B and clause 2; owner ruling 151):
+### Requirement: AN-02 Each kind of party is identified in its own recorded way
+Every party an addition names, its writer and every party on whose behalf it was written, SHALL be identified by `kind` as below (owner ruling 80, part B and clause 2):
 
 | `kind` | Identified by |
 |---|---|
-| `human` | the person's own named account in the chart (`account_ref`). For a clinician, also their clinical role and the licence attestation on record (AU-03). A practitioner who signs off a decision is also identified by their `openwallet_id` (CA-04) |
+| `human` | their own named account in the chart (`account_ref`) |
 | `patient` | the verified link the patient or their representative comes through (`patient_link_ref`). A representative is named as such (`acting_as`) |
 | `ai` | its `openwallet_id`, plus the `model` and `model_version` that produced the content |
 | `device` | its `make`, `model` and `serial`, or a `device_id` the chart can resolve to them, with its `device_id_kind`: `udi` or `asset_tag` |
 | `system` | its registered integration identity (`system_id`) and who operates it (`operator_ref`) |
 
+For a human, openChart SHALL also record, where they apply, their clinical role, the licence attestation on record (AU-03) and, for a practitioner who signs off a decision, their `openwallet_id` (CA-04, AU-07). These are never part of the identity, and their absence SHALL never make a writer unidentified: a sign-off without them fails as CA-04 states (design call CD-55, PROPOSED).
+
+A human or system that has no account or registration in this chart, such as another organization's clinician or system named in the record it produced, SHALL be named by its `external_ref` (issuer, namespace and value), with its identity `asserted_by` the identified system that delivered it. Such a party SHALL never be the writer, and such a human SHALL carry no openChart clinical role (design call CD-57, PROPOSED).
+
 Each party SHALL also carry its `identity_basis` (design call CD-42, PROPOSED). It is `verified_by_chart` when openChart itself authenticated the identity. It is `asserted_by` when an identified system vouched for it, and then names that system. The writer's identity SHALL always be `verified_by_chart`.
 
-When a system delivers an AI's addition, the system is the writer and the AI is named as the party on whose behalf it wrote. The AI's `openwallet_id` SHALL be carried on every addition it makes, and openChart SHALL check it against the registration of the system that delivers it (AN-03). A wallet identifier SHALL NOT become the identifier of a person or a patient: openChart resolves people by their own account and patients by the openChart patient triple. This keeps openWallet's ratified rule that a wallet reference is attestation, not identity.
+When a system delivers an AI's addition, the system is the writer and the AI is named as the party on whose behalf it wrote. The AI's `openwallet_id` SHALL be carried on every addition it makes, and openChart SHALL check it against the registration of the system that delivers it (AN-03). An AI named with no `openwallet_id`, or with one that the delivering system's registration does not cover, cannot be identified, and the addition SHALL be refused under AN-01 (design call CD-61, PROPOSED). A wallet identifier SHALL NOT become the identifier of a person or a patient: openChart resolves people by their own account and patients by the openChart patient triple. This keeps openWallet's ratified rule that a wallet reference is attestation, not identity.
 
 #### Scenario: A relay delivers an AI's consult record
-- **WHEN** a registered relay delivers a consult record written by an AI that carries its openWallet ID, model and model version
-- **THEN** openChart records the relay as the writer, verified by the chart, and the AI as the party on whose behalf it wrote, asserted by the relay. It also checks the AI's openWallet ID against the relay's registration
+- **WHEN** a registered relay delivers a consult record written by an AI that carries its openWallet ID, model and model version, and the relay's registration covers that openWallet ID
+- **THEN** openChart records the relay as the writer, verified by the chart, and the AI as the party on whose behalf it wrote, asserted by the relay
 
-#### Scenario: Failure: an AI addition without its openWallet ID
-- **WHEN** a relay delivers an AI's addition that names no openWallet ID for the AI
-- **THEN** openChart cannot identify the AI, refuses the addition, and stores nothing
+#### Scenario: A clinician whose attestation has lapsed is still identified
+- **WHEN** a clinician whose licensure attestation has expired submits an order from their own session
+- **THEN** openChart identifies the clinician by their named account, and the order is entered as a recommendation with `practice_attestation_not_in_force` and `no_grant_in_force`, never refused
+
+#### Scenario: Failure: an AI addition the relay's registration does not cover
+- **WHEN** a registered relay delivers an AI's addition that names no openWallet ID, or one that the relay's registration does not list
+- **THEN** openChart cannot identify the AI, refuses the addition, and stores nothing, unless that writing path's own quarantine applies (AN-01)
 
 ### Requirement: AN-03 Every system and device is registered with the practice before it adds, and the practice can suspend any of them at once
 openChart SHALL let a system or device add to a chart only after it is registered with the practice (owner ruling 80, clause 3). A registration SHALL record the writer's `kind` and identity (AN-02), its operator, the practice user who registered it and when, and for a system that delivers an AI's additions, the AI `openwallet_id` values it may deliver for. The practice SHALL be able to suspend any registered system or device at once. Every later addition by a suspended writer SHALL be refused and nothing stored, until the suspension is lifted (clause 18). Registrations and suspensions SHALL be audited, and no registration SHALL be deleted. The administrative role named in planning SHALL register systems and devices. The same role or the medical director SHALL suspend them (design call CD-43, PROPOSED). A registration confers no decision authority (AN-07).
@@ -53,20 +63,22 @@ Every addition SHALL carry its provenance (owner ruling 80, clauses 4 to 7):
 - `occurred_at`: when the information itself arose, where that differs, such as when a reading was taken or a conversation held;
 - `source`: where the information came from, as a `kind` (`patient_statement`, `device_reading`, `ai_consult`, `clinician_observation`, `external_record` or `chart_entry`) and a reference to it;
 - `added_by`: the writer, identified as AN-02 states;
-- `on_behalf_of`: when a system adds something for another system or a human, every party it was added for and every hand it passed through, in order from the originator to the writer.
+- `on_behalf_of`: when a system adds something for another system or a human, every party it was added for and every hand it passed through. They are listed in order from the originator to the writer, an order that is design call CD-42, PROPOSED.
 
 openChart SHALL set `received_at` itself and SHALL NOT take it from the writer.
 
+Until a later governed change aligns it (tension CT-17; Open Question 15), an intake submission under the ratified `expanded-patient-intake` capability SHALL record the identity and audit that capability defines, in place of these fields. No intake addition is a decision.
+
 #### Scenario: An integration forwards another organization's record
 - **WHEN** a registered integration delivers a discharge summary that another organization's system produced for a clinician there
-- **THEN** the addition records the integration as writer, the other organization's system and its clinician on whose behalf it was added, source kind `external_record` with its reference, `received_at` from openChart's clock and `occurred_at` from the record
+- **THEN** the addition records the integration as writer, and the other organization's clinician and system, each named by its `external_ref` and asserted by the integration, as the parties on whose behalf it was added. It records source kind `external_record` with its reference, `received_at` from openChart's clock and `occurred_at` from the record
 
 #### Scenario: Failure: a writer supplies its own receipt time
 - **WHEN** a writer submits an addition carrying a `received_at` in the past
 - **THEN** openChart records its own receipt time as `received_at`, and keeps the writer's time only as `occurred_at` where the source supports it
 
-### Requirement: AN-05 The record of an addition is permanent and readable by anyone who can read the chart; a correction is a new addition that points to the old one
-The provenance and content of every addition SHALL be permanent and visible to anyone who can read the patient's chart (owner ruling 80, clause 8). Nothing in it SHALL be edited or deleted through any supported path. A correction SHALL be a new, dated addition that points to the addition it corrects (`corrects`), and the corrected addition SHALL stay readable. For an act, CA-05 and CA-06 are how a correction is made.
+### Requirement: AN-05 The record of an addition is permanent from submission; a correction is a new addition that points to the old one
+From the moment an addition is submitted, its provenance and content SHALL be permanent and visible to anyone who can read the patient's chart in openChart (owner ruling 80, clause 8). Nothing in it SHALL be edited or deleted through any supported path. A draft is its author's work in progress and not yet an addition, so revising a draft before it is submitted is not an edit of an addition (CA-05; design call CD-60, PROPOSED). A correction SHALL be a new, dated addition that points to the addition it corrects (`corrects`), and the corrected addition SHALL stay readable. For an act, CA-05 and CA-06 are how a correction is made. What an interoperability read returns is CA-13's rule.
 
 #### Scenario: A wrong reading is corrected
 - **WHEN** a registered system corrects a reading it added an hour earlier
@@ -76,23 +88,38 @@ The provenance and content of every addition SHALL be permanent and visible to a
 - **WHEN** a user or extension tries to change the `added_by` of a stored addition
 - **THEN** openChart refuses the change, and the addition is unchanged
 
-### Requirement: AN-06 Every addition is information or a decision; the act-type registry is the list of decisions, and the class a writer claims never decides whether an addition takes effect
-Every addition SHALL be either information or a decision (owner ruling 80, clause 9). Information is an observation, a reading, a statement, a message, a summary or a recommendation. A decision changes the patient's care or what the chart holds as established. The chart's list of what counts as a decision SHALL be the act-type registry (CA-09). An addition is a decision when it holds act content of an act type in that registry, or when it signs off an act: a signature, a new signed version, a co-signature, a completion, a discontinuation or an entered-in-error mark. Everything else is information. A draft revision is not a decision (design call CD-44, PROPOSED).
+### Requirement: AN-06 Every addition is information or a decision; decision content whose class or type the chart does not hold in force becomes a recommendation, and the class a writer claims never decides whether an addition takes effect
+Every addition SHALL be either information or a decision (owner ruling 80, clause 9). Information is an observation, a reading, a statement, a message, a summary or a recommendation. A decision changes the patient's care or what the chart holds as established. Decision content is (design call CD-44, PROPOSED):
+- act content of the classes `encounter`, `diagnosis_of_record`, `procedure_performed`, `order` and `prescription`, whatever its act type;
+- content submitted as an act of a class this chart does not define, and content of a kind clause 9 names as a decision: a diagnosis, an order, a prescription, a referral or a treatment plan;
+- a sign-off of an act: a signature, a clinical note's and an encounter's included; a new signed version; a co-signature; a discontinuation; an entered-in-error mark; or the cancellation of a pending-release order or prescription.
 
-A writer MAY declare a class on an addition. openChart SHALL determine the class itself from the registry, SHALL record the class it determined, and SHALL keep a declared class that differs as the writer's declaration only. The class a writer claims SHALL never decide whether an addition takes effect. Act content declared as information is still a decision, so it takes effect only under AN-07. A declared decision that is not in the registry is information. Information needs only the identification of AN-01 to AN-04 (clause 10).
+A clinical note's content is information, an observation or a summary; the practitioner's signature on it is a sign-off, which is a decision (design call CD-63, PROPOSED; Open Question 20). Recording that an order was carried out (a completion) is a record of work done, not a decision (design call CD-58, PROPOSED; Open Question 21). A draft revision is not a decision.
+
+The chart keeps the list of what counts as a decision in this requirement and in the act-type registry (CA-09). Decision content whose class and act type are in force in the registry can take effect, under AN-07. Decision content whose class or act type the chart does not define, or that is not in force in the registry, including while the registry is empty, SHALL be entered as a recommendation with `no_decision_authority` (AN-09). It SHALL NOT be refused for that reason, and SHALL NOT be kept as unmarked information.
+
+A writer MAY declare a class on an addition. openChart SHALL determine the class itself, SHALL record the class it determined, and SHALL keep a declared class that differs as the writer's declaration only. The class a writer claims SHALL never decide whether an addition takes effect. Act content declared as information is still decision content, so it takes effect only under AN-07. Content that is not act content, and is not of a kind clause 9 names as a decision, is information even when its writer declares it a decision. Information needs only the identification of AN-01 to AN-04 (clause 10).
 
 #### Scenario: A clinician's observation is information
 - **WHEN** a nurse adds a free-text observation to a patient's chart
 - **THEN** openChart stores it as information, identified and with its provenance, and no authority is checked
 
+#### Scenario: A treatment plan the chart does not define is kept as a recommendation
+- **WHEN** a clinician submits a treatment plan change through openChart's own boundary, a class this chart does not define, with no declared schema
+- **THEN** openChart enters it as a recommendation marked not an authorized decision, with `no_decision_authority`, keeping the class as given
+
+#### Scenario: Failure: an order arrives before any act type is registered
+- **WHEN** a registered system submits an order while the practice's registry has no act type in force
+- **THEN** openChart enters it as a recommendation with `no_decision_authority`, neither refusing it nor keeping it as unmarked information
+
 #### Scenario: Failure: an order is declared as information
 - **WHEN** a registered system submits order content and declares it `information`
-- **THEN** openChart determines that it is a decision, keeps the declaration as the writer's only, and applies AN-07, so the order does not take effect
+- **THEN** openChart determines that it is decision content, keeps the declaration as the writer's only, and applies AN-07, so the order does not take effect
 
 ### Requirement: AN-07 A decision counts as a decision only when its decision maker held the authority at that moment and a practitioner signed it off; the authority relied on is recorded
 A decision SHALL count as a decision only when its decision maker held the practice authority for that kind of decision at that moment (owner ruling 80, clause 11), and a practitioner signed it off in their own logged-in session with their openWallet and openSig (owner ruling 151; CA-04). openChart SHALL check that authority at the moment of the action (AU-04) and SHALL record the authority each decision rested on:
 - for a human, their licence and what the medical director has granted them: the licence verification in their openWallet relied on at sign-off (CA-04), the practice-supplied attestations under the grant (AU-03) and the grant version (AU-02);
-- for an AI, the mode and scope the medical director has approved for it, of which none can be switched on today (AN-12);
+- for an AI, the mode and scope the medical director has approved for it. Today only advice only can be switched on, and it confers no decision authority (AN-12);
 - a device or a plain integration holds none.
 
 A decision without that authority SHALL be entered as a recommendation (AN-09). It SHALL NOT be refused for that reason (clause 18).
@@ -105,38 +132,44 @@ A decision without that authority SHALL be entered as a recommendation (AN-09). 
 - **WHEN** a registered device submits content shaped as a diagnosis of record
 - **THEN** openChart enters it as a recommendation marked not an authorized decision, because a device holds no decision authority, and no diagnosis exists
 
-### Requirement: AN-08 A decision added on someone's behalf counts as theirs only with their own sign-off in the chart; otherwise it is the carrying system's recommendation
-When a system adds a decision on someone's behalf, openChart SHALL judge authority on the decision maker, never on the system that carried it (owner ruling 80, clause 12). The decision SHALL count as the decision maker's only when it carries that practitioner's own sign-off, made in the chart as CA-04 states (owner ruling 151). Under ruling 151, nothing else is "an approval of theirs it can check". Otherwise openChart SHALL enter it as the carrying system's recommendation (AN-09). The recommendation names the carrying system as its decision maker, keeps the party it claimed as the claimed decision maker, and records `decision_maker_not_confirmed`.
+### Requirement: AN-08 A decision added on someone's behalf counts as theirs only with their own sign-off; otherwise it is the carrying system's recommendation
+When a system adds a decision on someone's behalf, openChart SHALL judge authority on the decision maker, never on the system that carried it (owner ruling 80, clause 12). The decision SHALL count as the decision maker's only when the chart can confirm they made it, by their own sign-off made as ruling 151 states (owner ruling 151).
+
+As the fail-closed default, openChart SHALL accept as that sign-off only one made in the chart, in the practitioner's own openChart session as CA-04 states (design call CD-52, PROPOSED). Whether a sign-off made with openWallet and openSig in another system, and proved to the chart, also counts is Open Question 17.
+
+Otherwise openChart SHALL enter it as the carrying system's recommendation (AN-09). The recommendation names the carrying system as its decision maker, keeps the party it claimed as the claimed decision maker, and records `decision_maker_not_confirmed`.
+
+A registered relay whose registration covers an AI's `openwallet_id` delivers that AI's decision content, so the recommendation SHALL name that AI as its decision maker, its identity asserted by the relay (design call CD-61, PROPOSED).
 
 #### Scenario: A clinician later signs off a carried order
 - **WHEN** an integration delivers an order on a clinician's behalf, and the clinician then adopts it in their own session with their openWallet and openSig
-- **THEN** a new order of the clinician's own takes effect, pointing back to the recommendation that the delivery created
+- **THEN** an order of the clinician's own takes effect, pointing back to the recommendation that the delivery created
 
 #### Scenario: Failure: a system claims a clinician ordered something
-- **WHEN** an integration delivers an order stating that a named clinician made it, with no sign-off by that clinician in the chart
+- **WHEN** an integration delivers an order stating that a named clinician made it, with no sign-off by that clinician that the chart can confirm
 - **THEN** openChart enters it as the integration's recommendation marked not an authorized decision, with `decision_maker_not_confirmed`, names the clinician only as the claimed decision maker, and no order takes effect
 
-### Requirement: AN-09 A decision made without authority is entered in full as a recommendation, marked not an authorized decision, with no effect
+### Requirement: AN-09 Decision content entered without authority is kept in full as a recommendation, marked not an authorized decision, with no effect
 A decision made without authority SHALL still be entered in the chart, in full, as a recommendation and not a decision (owner ruling 80, clause 13). The recommendation record SHALL hold:
-- the proposed act's class, type and action;
-- its content, in one of three forms: validated under `openchart-clinical-act-content` (CA-01); or exactly as given, when the writing path declared it under another schema, such as the AI write contract's own, with `content_schema` naming the schema it was declared under (its identifier, version and SHA-256); or, for an action on an existing act, that act's version and the action;
+- the proposed action, and the act class and act type as the writer gave them. The class is kept as given, whether or not this chart defines it, and the act type is kept where the writer gave one (design call CD-51, PROPOSED);
+- the content exactly as given. openChart SHALL check it only for being well formed: an object the chart can read, within the record's own closed envelope. Where the writing path declared it under another schema, such as the AI write contract's own, `content_schema` names that schema (its identifier, version and SHA-256). For an action on an existing act, the record holds that act's version and the action (design call CD-56, PROPOSED);
 - the same identification and provenance (AN-02, AN-04);
 - the marker `not_authorized_decision`;
 - each coded `missing_authority` reason, from this closed list that every reader uses (design call CD-45, PROPOSED). Several may apply at once:
   - `no_grant_in_force`: the decision maker holds no grant in force for this action, act class and act type. For a human that is AU-02; for an AI it is the mode and scope the medical director approved, with their conditions;
-  - `no_decision_authority`: no decision maker of this kind can hold authority for this decision now. That covers an AI today (AN-12), a patient, a device or a plain integration, an act reserved to a human clinician, the management of an emergency, an AI's action on a clinician-authored record, and an act class or type this chart does not define;
+  - `no_decision_authority`: no decision maker of this kind can hold authority for this decision now. That covers an AI today (AN-12), a patient, a device or a plain integration, an act reserved to a human clinician, the management of an emergency, an AI's action on a clinician-authored record, an author co-signing their own act (CA-07), and decision content whose class or act type the chart does not define or hold in force (AN-06);
   - `decision_maker_not_confirmed`: it was added on someone's behalf without that person's own confirmed sign-off (AN-08);
   - `no_practitioner_sign_off`: no practitioner signed it off under CA-04;
-  - `wallet_not_bound`: the signer's account is not bound to the `openwallet_id` that signed;
+  - `wallet_not_bound`: the signer's account is not bound to the `openwallet_id` that signed (AU-07);
   - `licence_verification_missing`: the wallet holds no current licence verification that covers this decision;
-  - `attestation_not_verified`: the openSig attestation did not verify against the wallet over the content and provenance digests;
+  - `attestation_not_verified`: the openSig attestation did not verify against the wallet over the sign-off statement (CA-04);
   - `signing_service_unavailable`: openWallet or openSig could not be reached;
   - `practice_attestation_not_in_force`: the practice-supplied licensure or prescriber attestation that the grant rests on is not in force (AU-03);
 - optionally, the writing path's own coded reason, `path_reason`: the scheme that defines the code, the scheme's version and the code (design call CD-51, PROPOSED). A path that fails on finer reasons of its own maps each of its codes to one or more codes of the closed list, records those in `missing_authority`, and keeps its own code in `path_reason` for the source and the reviewer. `path_reason` never replaces `missing_authority`. It is shown to the reviewer beside it, and it decides nothing.
 
-A safety gate is never a missing-authority reason: the list names only which authority was missing (owner ruling 80, clauses 13 and 14). A recommendation is not gated. The prescribing-safety gate applies to the practitioner's own decision when they adopt the recommendation (AN-11, RX-02). A writing path that stops at a gate check of its own SHALL record in `missing_authority` the authority codes that are true of the entry, such as `no_practitioner_sign_off`, and SHALL keep its gate code in `path_reason` only.
+A safety gate is never a missing-authority reason: the list names only which authority was missing (owner ruling 80, clauses 13 and 14). Authority is checked first, and a recommendation is not gated. The prescribing-safety gate applies to the practitioner's own decision when they adopt the recommendation (AN-11, RX-02). A writing path that stops at a gate check of its own SHALL record in `missing_authority` the authority codes that are true of the entry, such as `no_practitioner_sign_off`, and SHALL keep its gate code in `path_reason` only.
 
-Content stored as given is kept for the source and the reviewer. This contract does not validate it, and nothing reads it as an act's content. An act class this contract does not define is kept, as declared, only with such content. A clinician who adopts the recommendation creates a new act whose content is validated under CA-01 (AN-11).
+A recommendation's content is kept for the source and the reviewer. Nothing reads it as an act's content. The act-validity rules (CA-01's class content, CA-09's act types, CA-12's code sets and the class rules of DX-01, DX-03, OR-01 and RX-01) apply only when a clinician adopts it, and a failure is recorded on the recommendation (AN-11).
 
 Wherever a recommendation is shown, to a clinician or a patient, it SHALL be clearly marked "not an authorized decision" and SHALL say which authority was missing.
 
@@ -146,6 +179,10 @@ A recommendation SHALL have no effect (clause 14). It is never an act of record.
 - **WHEN** a nurse without order `sign` scope submits a laboratory order as final
 - **THEN** openChart enters it in full as a recommendation marked "not an authorized decision", with `no_grant_in_force`, and no order exists or is released
 
+#### Scenario: A nurse's uncoded diagnosis is kept as given
+- **WHEN** a nurse without diagnosis `sign` scope submits a provisional encounter diagnosis that carries free text and no coding
+- **THEN** openChart keeps it as given in a recommendation with `no_grant_in_force`. The coding rule applies when a clinician adopts it
+
 #### Scenario: An AI's act content is kept as given, with the path's own reason
 - **WHEN** a relay delivers an AI's order whose content was declared under the AI write contract's own schema, and the AI write path records it with a code of its own for the check that failed
 - **THEN** openChart enters it as a recommendation with `missing_authority` `no_decision_authority`, keeps the content exactly as given with `content_schema` naming the declared schema, and keeps the path's scheme and code in `path_reason`
@@ -154,12 +191,18 @@ A recommendation SHALL have no effect (clause 14). It is never an act of record.
 - **WHEN** a recommendation holds a confirmed encounter diagnosis, and openPractice reads that encounter's facts, or a duplicate-therapy check lists active prescriptions
 - **THEN** the recommendation appears in neither, because it is never an act of record
 
-### Requirement: AN-10 Whoever submitted a recommendation is told at once
-Whoever or whatever submitted an addition that is entered as a recommendation SHALL be told at once that it was entered as a recommendation (owner ruling 80, clause 15). The response or receipt SHALL say `recorded_as_recommendation`, with each `missing_authority` code and the recommendation's identifier. A human in an openChart session SHALL see it before they leave the screen where they submitted it.
+### Requirement: AN-10 Whoever submitted a recommendation is told at once, and a repeat is answered with the first result
+Whoever or whatever submitted an addition that is entered as a recommendation SHALL be told at once that it was entered as a recommendation (owner ruling 80, clause 15). The response or receipt SHALL say `recorded_as_recommendation`, with each `missing_authority` code and the recommendation's identifier. A human in an openChart session SHALL see it before they leave the screen where they submitted it; that timing is design call CD-47, PROPOSED.
+
+A submission that repeats an earlier one, from the same writer with the same `submission_ref`, SHALL be answered with the first submission's result, and SHALL create no second recommendation or other addition (design call CD-64, PROPOSED).
 
 #### Scenario: A system receives its receipt
 - **WHEN** an integration submits an order that is entered as a recommendation
 - **THEN** its API response says `recorded_as_recommendation` with the codes and the recommendation's identifier
+
+#### Scenario: Failure: a retry would create a second recommendation
+- **WHEN** an integration resends the same order with the same `submission_ref` after a network timeout
+- **THEN** openChart answers with the first receipt and the same recommendation's identifier, and stores nothing new
 
 #### Scenario: Failure: a submission would look like a success
 - **WHEN** a clinician whose grant lapsed submits a prescription for signing
@@ -168,11 +211,20 @@ Whoever or whatever submitted an addition that is entered as a recommendation SH
 ### Requirement: AN-11 A recommendation goes before a clinician who holds the authority, who may adopt or decline it; it stays as written
 openChart SHALL put every recommendation in front of a clinician who holds the authority it lacked (owner ruling 80, clause 16; design call CD-47, PROPOSED). It SHALL use the review path that already exists for the writer's path where one does, such as the clinical message inbox or the AI co-review queue in their own changes. Otherwise it SHALL open a review item for the encounter's primary performer, or for the medical director where there is none. A review item SHALL stay open until a named clinician adopts or declines the recommendation. Its due time and escalation SHALL work as a co-signature requirement's do (CA-07), and no timer, default or agent SHALL close it.
 
-The clinician MAY adopt it. Adoption creates a new decision of the clinician's own, through the normal path (CA-10): a draft that the clinician may change, then a sign-off under CA-04 (owner ruling 151). The new act records `adopted_from`, naming the recommendation. The clinician MAY instead decline it, with the clinician, the time and a coded reason recorded. Either way the recommendation SHALL stay in the chart as written.
+The clinician MAY adopt it, which makes a decision of the clinician's own, signed off under CA-04 (owner ruling 151), whose record names the recommendation in `adopted_from`:
+- for proposed new content with no draft, a draft of the clinician's own that the clinician may change, then signs off;
+- for content tied to a draft (AN-14), a sign-off made on that draft. The draft keeps its identifier and becomes the clinician's act, with the clinician as author and the drafter kept as its writer (AN-04), so nothing attached to it is left pointing at a closed record;
+- for a proposed action on an existing act (a co-signature, a discontinuation, an entered-in-error mark or a cancellation), the clinician's own sign-off of that action, whose lifecycle event names the recommendation.
+
+Adoption applies the act-validity rules to the content the clinician signs off (AN-09). An adoption that does not complete, because the content fails such a rule, the clinician lacks the authority, or the sign-off fails, SHALL be recorded on the recommendation with the clinician, the time and the reasons. It SHALL create no second recommendation, and the recommendation SHALL stay open (design call CD-46, PROPOSED). The clinician MAY instead decline it, with the clinician, the time and a coded reason recorded. Either way the recommendation SHALL stay in the chart as written.
 
 #### Scenario: A clinician adopts an AI's recommendation
 - **WHEN** a clinician with order `sign` scope opens an AI's recommended laboratory order, changes its priority and signs it off with their openWallet and openSig
-- **THEN** a new order of the clinician's own takes effect with `adopted_from` naming the recommendation, and the recommendation stays as written
+- **THEN** an order of the clinician's own takes effect with `adopted_from` naming the recommendation, and the recommendation stays as written
+
+#### Scenario: A failed adoption is recorded on the recommendation
+- **WHEN** a clinician tries to adopt a recommended order while openSig cannot be reached
+- **THEN** openChart records the attempt on the recommendation with `signing_service_unavailable`, creates no second recommendation, and the recommendation stays open for the clinician to try again
 
 #### Scenario: Failure: a recommendation would be closed by default
 - **WHEN** a recommendation's review item passes its due time with no clinician's adoption or decline
@@ -180,12 +232,14 @@ The clinician MAY adopt it. Adoption creates a new decision of the clinician's o
 
 ### Requirement: AN-12 Missing authority never refuses an addition, and an AI holds no decision authority today
 Missing authority SHALL never be a reason to refuse an addition (owner ruling 80, clause 18). These still are, and openChart SHALL refuse the addition and store nothing when:
-- it cannot identify the writer (AN-01);
+- it cannot identify the writer, or a party the addition names (AN-01, AN-02);
 - it cannot match the patient;
 - the content is malformed or test data;
 - the practice has suspended the writer (AN-03).
 
-The existing rules that keep what an AI already told a patient in front of the doctor stand.
+Content is malformed only when the chart cannot read it, or when it breaks the envelope of the record it arrives in: a missing or unreadable identity, patient, provenance or content object. Content that is well formed but breaks an act-validity rule is not malformed. As decision content without authority it is kept as a recommendation, and the rule applies at adoption (design call CD-56, PROPOSED; Open Question 18). openChart SHALL recognize test data only by a context its writer declares, on the submission or in its registration (`test`, `scenario` or `simulation`), or by a patient record the practice has marked as a test patient. It SHALL never infer test data from content (design call CD-62, PROPOSED).
+
+The existing rules that keep what an AI already told a patient in front of the doctor stand (AN-01).
 
 An AI holds no decision authority today (clause 19). Advice only is the only mode that can be switched on, and limited and full practice stay specified and off (owner ruling 67, second sentence), so everything an AI adds now is information or a recommendation. An AI never manages an emergency, and the urgent hand-off to a human stays as it is (clause 20). Consent, the patient's link, the medical director's pause and narrowing, and clinician review of what an AI told a patient all still apply (clause 21).
 
@@ -196,6 +250,10 @@ An AI holds no decision authority today (clause 19). Advice only is the only mod
 #### Scenario: Failure: an addition for a patient the chart cannot match
 - **WHEN** an identified system submits an observation whose patient reference matches no openChart patient
 - **THEN** openChart refuses it and stores nothing
+
+#### Scenario: Failure: a submission declared as a simulation
+- **WHEN** a registered system submits an order in a submission it declares as `simulation`
+- **THEN** openChart refuses it as test data and stores nothing
 
 ### Requirement: AN-13 A device is identified by make, model and serial or a resolvable device ID, and a reading records when it was taken; no path for device data exists yet
 A device SHALL be identified by its `make`, `model` and `serial`, or by a `device_id` with its `device_id_kind` (`udi` or `asset_tag`) that the chart can resolve to them through the device's registration (AN-03; owner ruling 80, part B). A device reading SHALL record the device's identity, the `occurred_at` when the reading was taken and the `received_at` when the chart received it, source kind `device_reading` with a reference to the reading, and its writer. When an app relays a device's reading, the app is the writer, and the device is named on whose behalf it wrote, `asserted_by` that app (design call CD-42, PROPOSED). A device holds no decision authority (AN-07).
@@ -210,18 +268,30 @@ This change defines no path by which device data enters the chart: its service b
 - **WHEN** a registered device submits a reading in this change
 - **THEN** no operation of this change accepts it, and nothing is stored
 
-### Requirement: AN-14 A draft is its author's work in progress, and act content submitted without the authority becomes one recommendation
-Drafts, co-signatures and recommendations SHALL relate as follows, so that a nurse's unsigned draft and a nurse's unauthorized order are stages of one path, not two different things (design call CD-46, PROPOSED):
-- **A draft** is an act in status `draft` (or `in_progress` for an encounter), created only by a human who holds `draft` scope for its class (AU-02). It is its author's work in progress: not a decision, and not a recommendation. Only its author signs it off (CA-04). No other clinician signs another person's draft.
-- **Submitting act content as final**, by signing off a draft or by submitting act content in one step, is a sign-off attempt. When every check of CA-04 and AU-04 passes, it is a decision. Otherwise openChart SHALL enter the content as one recommendation (AN-09). A draft it came from SHALL be closed as `cancelled`, with a lifecycle event that has reason `recorded_as_recommendation` and names the recommendation. The content then lives only in the recommendation.
-- **Act content from a writer without `draft` scope for its class**, whether a human without it, a patient, an AI, a device or a system, SHALL be entered as a recommendation at once. No draft is created for it.
+### Requirement: AN-14 A draft is its author's work in progress; a failed sign-off never cancels it, and nothing the author wrote is lost
+Drafts, sign-off attempts, co-signatures and recommendations SHALL relate as follows (design call CD-46, PROPOSED):
+- **A draft** is an act in status `draft`, or `in_progress` for an encounter, created only by a human who holds `draft` scope for its class (AU-02). It carries `entry_class` `draft` and no signature. It is its author's work in progress: not a decision, not a recommendation, and not yet an addition (AN-05). Only its author signs it off, except by adoption (AN-11).
+- **Submitting as final**, by signing off a draft or by submitting act content in one step, is a sign-off attempt. openChart SHALL check authority first (AU-04 and CA-04's grant check), then the rest of CA-04, then any gate (RX-02, RX-03). When every check passes, it is a decision.
+- **A failure the author can cure by trying again** leaves the draft open: openWallet or openSig cannot be reached, the attestation did not verify, re-authentication failed, the signing key's custody does not evidence that the holder acted, or a check that openWallet or openSig does not yet specify cannot be made (CA-04). openChart SHALL record the attempt in the draft's trail, tell the author at once, and create no recommendation. A one-step submission that fails this way SHALL be kept as its author's draft. So while openWallet and openSig specify nothing, a practitioner's drafts stay drafts.
+- **A failure of authority**, meaning any other missing-authority reason, SHALL enter the content as one recommendation (AN-09), tied to the draft by `draft_ref`. The draft SHALL NOT be cancelled. It is held while the recommendation is open, and its author cannot revise or resubmit it. An encounter is never cancelled by a failed sign-off, so every note, diagnosis and procedure attached to it stays attached. When a clinician adopts the recommendation, the adoption is made on the draft (AN-11). When the recommendation is declined, the draft returns to its author, who may revise and resubmit it or abandon it as `cancelled`.
+- **A gate refusal** after the authority checks pass (RX-02, RX-03) leaves the draft a draft. A one-step submission that the gate refuses SHALL be kept as its author's draft. What becomes a recommendation is never gated (AN-09).
+- **A clinical note** submitted as final without the authority to sign it is not a recommendation. openChart SHALL keep its content as information under its writer's name (record kind `information`, marked not signed off). Where it came from a draft, openChart SHALL close the draft as `cancelled` with reason `kept_as_information`, naming that record. Such a note never counts as a final note (EN-04) and is never published (design call CD-63, PROPOSED; Open Question 20).
+- **Decision content from a writer without `draft` scope** for its class, whether a human without it, a patient, an AI, a device or a system, SHALL be entered as a recommendation at once. No draft is created for it.
 - **A decision made with authority and subject to a co-signature requirement** (CA-07) is a decision, never a recommendation. Until it is co-signed it is held (`before_effect`) or takes effect and is co-reviewed (`after_the_fact`), as CA-07 states. A co-signature attempted without authority SHALL be entered as a recommendation, and the requirement SHALL stay open.
 
 A clinician who wants a decision of their own from another person's work does it only by adopting the recommendation (AN-11).
 
 #### Scenario: A nurse's draft goes to a clinician
 - **WHEN** a nurse with order `draft` scope but no `sign` scope submits her draft order as final
-- **THEN** openChart closes the draft as `cancelled`, naming the recommendation it created, and the recommendation goes to a clinician who holds order `sign` scope
+- **THEN** openChart enters the content as a recommendation tied to the draft, holds the draft without cancelling it, and puts the recommendation before a clinician who holds order `sign` scope
+
+#### Scenario: A signing service outage leaves the draft open
+- **WHEN** a clinician with sign scope signs off a draft note while openSig cannot be reached
+- **THEN** the note stays a draft, the attempt is recorded in its trail, the clinician is told at once, and no recommendation is created
+
+#### Scenario: Failure: an encounter would be cancelled by a failed sign-off
+- **WHEN** a nurse without encounter `sign` scope submits an in-progress encounter with notes and a diagnosis attached
+- **THEN** the encounter stays `in_progress` with everything attached, and the content is entered as a recommendation tied to it, which a clinician may adopt on the encounter itself
 
 #### Scenario: Failure: a clinician signs someone else's draft
 - **WHEN** a clinician tries to sign a draft order whose author is a nurse

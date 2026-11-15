@@ -14,8 +14,8 @@ Checks:
   4. every invalid fixture has an entry, and every entry has a fixture;
   5. every invalid fixture fails with exactly one error, so it fails for one
      reason only;
-  6. the valid fixtures cover both record kinds, act_version and
-     recommendation (owner ruling 80).
+  6. the valid fixtures cover every record kind: act_version,
+     recommendation and information (owner ruling 80).
 Exit status 0 only when every check passes.
 """
 import json
@@ -74,7 +74,7 @@ def main():
                 failures.append(f"{path.name}: failed with {len(errors)} errors; each invalid fixture must break exactly one rule")
         else:
             failures.append(f"{path.name}: fixture name must end in .valid.json or .invalid.json")
-    for kind in ("act_version", "recommendation"):
+    for kind in ("act_version", "recommendation", "information"):
         if kind not in kinds:
             failures.append(f"no valid fixture of record_kind {kind}")
     for name in expected:

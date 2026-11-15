@@ -86,7 +86,7 @@ openChart MUST NOT silently overwrite a published fact or reuse a published vers
 ### Requirement: PB-04 Only final, confirmed, clinician-signed encounter facts are ever published
 openChart SHALL NOT publish under `openpractice-ehr-clinical-facts/1.0` any of these:
 - a patient-reported statement or a clinical communication record (CF-02);
-- a recommendation record (AN-09), or any other addition that is not a decision signed off with authority (AN-07);
+- a recommendation record (AN-09), an information record (AN-14), or any other addition that is not a decision signed off with authority (AN-07);
 - an encounter diagnosis whose verification status is not `confirmed` (owner ruling 87; CD-33);
 - a problem-list entry, clinical note text, order, prescription, draft or cancelled act;
 - an encounter that carries a restricted act (CA-15). If the encounter was already published, PB-03 retracts it;

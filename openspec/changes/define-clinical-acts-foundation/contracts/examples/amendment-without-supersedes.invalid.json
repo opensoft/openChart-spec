@@ -66,6 +66,7 @@
     "onset_date": "2026-01-10",
     "abatement_date": "2026-11-01"
   },
+  "amendment_reason": "SYN clinical status updated to resolved.",
   "signatures": [
     {
       "signature_role": "author",
@@ -79,21 +80,23 @@
       "signed_at": "2026-11-15T10:30:00Z",
       "content_sha256": "da52dcf89326bae5e17860ccba752677fbe38227749aaa1150253f06d25a1e2d",
       "sign_off": {
+        "action": "sign",
         "openwallet_id": "wal-practitioner-SYN-0002",
         "licence_verification": {
           "ref": "SYN-LICVER-0002",
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0002",
+        "challenge_ref": "SYN-CHALLENGE-0002-1030",
+        "statement_sha256": "f45df80b70efc78fc320bc4c9a1b2b1fe3a7af7edfa0e644b4e937c3ff2ae3d3",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0002-1030",
         "provenance_sha256": "c4864727dc4626ebfcc5be0be01e2ff481b150a3493e384df08e4e7034cc884c",
-        "custody_model": "syn_isolated_custody",
+        "custody_model": "isolated_per_use_authorized",
         "check": {
           "result": "passed",
           "checked_at": "2026-11-15T10:30:00Z"
         }
       }
     }
-  ],
-  "amendment_reason": "SYN clinical status updated to resolved."
+  ]
 }

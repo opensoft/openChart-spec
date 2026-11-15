@@ -1,0 +1,87 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "act_version",
+  "act_id": "SYN-ACT-RX-0001",
+  "act_version": 1,
+  "act_class": "prescription",
+  "act_type": "outpatient_prescription",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "draft",
+  "entry_class": "decision",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-CLIN-0001",
+    "author_role": "clinician",
+    "authority_basis_ref": "SYN-GRANT-0001:v3"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "provenance": {
+    "received_at": "2026-11-15T10:00:00Z",
+    "source": {
+      "kind": "clinician_observation",
+      "ref": "SYN-ACT-ENC-0001"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-CLIN-0001",
+      "clinical_role": "clinician"
+    }
+  },
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-CLIN-0001",
+      "at": "2026-11-15T10:00:00Z"
+    }
+  ],
+  "content": {
+    "medication": {
+      "text": "Synthexamol 10 unit tablet (SYNTHETIC, not a real product)"
+    },
+    "controlled_substance_classification": "not_controlled",
+    "classification_source": "clinician_entry",
+    "dosage_text": "SYN take one tablet daily",
+    "refills": 0,
+    "transmission_status": "none_recorded"
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-CLIN-0001",
+      "signer_role": "clinician",
+      "authority_basis_ref": "SYN-GRANT-0001:v3",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "76377e0297ceae0006c36d51f8297fc85a192636089ae153e38e9109c8c445f6",
+      "sign_off": {
+        "action": "sign",
+        "openwallet_id": "wal-practitioner-SYN-0001",
+        "licence_verification": {
+          "ref": "SYN-LICVER-0001",
+          "covers": "synthetic-licence-scope",
+          "verified_at": "2026-10-01T00:00:00Z"
+        },
+        "challenge_ref": "SYN-CHALLENGE-0001-1030",
+        "statement_sha256": "d88286b58be8e61c5b47e9bbbc5f178150df44fc3fdc7562a22cf3c0572105d5",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
+        "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
+        "custody_model": "isolated_per_use_authorized",
+        "check": {
+          "result": "passed",
+          "checked_at": "2026-11-15T10:30:00Z"
+        }
+      }
+    }
+  ]
+}

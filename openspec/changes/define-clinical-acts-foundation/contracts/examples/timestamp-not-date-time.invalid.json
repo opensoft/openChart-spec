@@ -2,7 +2,7 @@
   "contract": "openchart-clinical-act-content",
   "contract_version": "1.0",
   "record_kind": "recommendation",
-  "recommendation_id": "SYN-REC-0006",
+  "recommendation_id": "SYN-REC-0001",
   "patient": {
     "issuer": "SYN-OPENCHART-ISSUER-01",
     "namespace": "openchart",
@@ -25,18 +25,20 @@
   },
   "proposed": {
     "action": "sign",
-    "act_class": "treatment_plan_change",
-    "act_type": "medication_plan_change",
+    "act_class": "order",
+    "act_type": "laboratory_order",
     "content": {
-      "plan_text": "SYN synthetic change to a treatment plan, as given",
-      "review_after_days": 14
-    }
+      "order_category": "laboratory",
+      "text": "SYN synthetic laboratory panel suggested in a consult",
+      "priority": "routine"
+    },
+    "declared_entry_class": "information"
   },
   "provenance": {
-    "received_at": "2026-11-15T08:25:00Z",
+    "received_at": "yesterday",
     "source": {
       "kind": "ai_consult",
-      "ref": "SYN-CONSULT-0003"
+      "ref": "SYN-CONSULT-0001"
     },
     "added_by": {
       "kind": "system",
@@ -46,6 +48,7 @@
       "system_id": "SYN-SYS-RELAY-01",
       "operator_ref": "SYN-OPERATOR-01"
     },
+    "occurred_at": "2026-11-15T08:00:00Z",
     "on_behalf_of": [
       {
         "kind": "ai",
@@ -61,16 +64,11 @@
   },
   "receipt": {
     "code": "recorded_as_recommendation",
-    "sent_at": "2026-11-15T08:25:00Z"
+    "sent_at": "2026-11-15T08:05:00Z"
   },
   "review": {
     "state": "pending",
     "routed_to_ref": "SYN-USER-CLIN-0001",
     "due_at": "2026-11-16T10:00:00Z"
-  },
-  "path_reason": {
-    "scheme": "openchart-ai-clinical-record-write.missing_authority",
-    "scheme_version": "1.0",
-    "code": "tier2_not_in_force"
   }
 }

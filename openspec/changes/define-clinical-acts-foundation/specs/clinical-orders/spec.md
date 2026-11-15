@@ -12,7 +12,7 @@ openChart SHALL record a clinician's order as an act of class `order` with an or
 - **THEN** openChart refuses it with a coded reason
 
 ### Requirement: OR-02 An order is released when signed unless a co-signature or a deferred release time holds it
-When an order is signed, openChart SHALL set it to `released` at once, unless a `before_effect` co-signature requirement applies (CA-07) or its release time is in the future; then it SHALL be `pending_release` until the co-signature is recorded and the release time is reached. For a prescription, the co-signature and the release each also need the prescribing-safety gate at that moment (RX-02). `released` SHALL mean the order is in force in openChart and may be acted on; `pending_release` SHALL mean it is signed and not yet in force. A `pending_release` order MAY be cancelled by its author or a clinician with order `sign` scope. A `released` order SHALL move only to `completed`, recorded by a person with order `complete` scope; to `discontinued`, recorded as a signed lifecycle record with a reason by a clinician with order `discontinue` scope; or to `entered_in_error` (CA-06).
+When an order is signed, openChart SHALL set it to `released` at once, unless a `before_effect` co-signature requirement applies (CA-07) or its release time is in the future; then it SHALL be `pending_release` until the co-signature is recorded and the release time is reached. For a prescription, the co-signature and the release each also need the prescribing-safety gate at that moment (RX-02). `released` SHALL mean the order is in force in openChart and may be acted on; `pending_release` SHALL mean it is signed and not yet in force. A `pending_release` order MAY be cancelled by its author or a clinician with order `sign` scope. The cancellation is a decision, signed off under CA-04 on its `cancelled` event, and one attempted without the authority SHALL be entered as a recommended cancellation of that order (AN-09), leaving it unchanged. A `released` order SHALL move only to `completed`, recorded by a person with order `complete` scope. A completion is a record of work done, not a decision, and needs no sign-off under CA-04 (design call CD-58, PROPOSED; Open Question 21). One attempted without the `complete` scope SHALL change nothing, and SHALL be kept in the order's trail as a report attributed to its writer and shown to the order's signer. Otherwise a `released` order moves to `discontinued`, recorded as a signed-off lifecycle record with a reason by a clinician with order `discontinue` scope, or to `entered_in_error` (CA-06).
 
 #### Scenario: A deferred order releases on time
 - **WHEN** a clinician signs an imaging order with a release time tomorrow
@@ -20,7 +20,7 @@ When an order is signed, openChart SHALL set it to `released` at once, unless a 
 
 #### Scenario: A released order is discontinued
 - **WHEN** a clinician with `discontinue` scope discontinues a released referral, with a reason
-- **THEN** the order becomes `discontinued`, with a signed lifecycle record naming the clinician, the time and the reason
+- **THEN** the order becomes `discontinued`, with a lifecycle record naming the clinician, the time and the reason, and carrying the clinician's sign-off evidence (CA-04)
 
 #### Scenario: Failure: an unsigned order would be acted on
 - **WHEN** a user tries to mark a `draft` or `pending_release` order `completed`

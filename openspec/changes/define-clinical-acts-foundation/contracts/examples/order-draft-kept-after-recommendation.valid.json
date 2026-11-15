@@ -11,8 +11,8 @@
     "namespace": "openchart",
     "value": "OC-PAT-90001"
   },
-  "status": "cancelled",
-  "entry_class": "decision",
+  "status": "draft",
+  "entry_class": "draft",
   "author": {
     "author_type": "clinician",
     "author_ref": "SYN-USER-NURSE-0001",
@@ -40,12 +40,6 @@
       "event": "created",
       "by_ref": "SYN-USER-NURSE-0001",
       "at": "2026-11-15T10:00:00Z"
-    },
-    {
-      "event": "cancelled",
-      "by_ref": "SYN-USER-NURSE-0001",
-      "at": "2026-11-15T11:00:00Z",
-      "reason_code": "recorded_as_recommendation"
     }
   ],
   "content": {

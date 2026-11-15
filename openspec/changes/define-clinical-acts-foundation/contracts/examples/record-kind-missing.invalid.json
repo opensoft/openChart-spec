@@ -11,7 +11,7 @@
     "value": "OC-PAT-90001"
   },
   "status": "in_progress",
-  "entry_class": "decision",
+  "entry_class": "draft",
   "author": {
     "author_type": "clinician",
     "author_ref": "SYN-USER-CLIN-0001",

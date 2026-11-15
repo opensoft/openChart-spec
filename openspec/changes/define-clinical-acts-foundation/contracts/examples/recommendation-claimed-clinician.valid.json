@@ -57,8 +57,23 @@
           "basis": "asserted_by",
           "asserted_by_system_id": "SYN-SYS-INTEG-02"
         },
-        "account_ref": "SYN-EXT-CLIN-0099",
-        "clinical_role": "clinician"
+        "external_ref": {
+          "issuer": "SYN-OTHER-ORG-01",
+          "namespace": "practitioner",
+          "value": "SYN-EXT-CLIN-0099"
+        }
+      },
+      {
+        "kind": "system",
+        "identity_basis": {
+          "basis": "asserted_by",
+          "asserted_by_system_id": "SYN-SYS-INTEG-02"
+        },
+        "external_ref": {
+          "issuer": "SYN-OTHER-ORG-01",
+          "namespace": "system",
+          "value": "SYN-EXT-EHR-01"
+        }
       }
     ]
   },
@@ -77,7 +92,10 @@
       "basis": "asserted_by",
       "asserted_by_system_id": "SYN-SYS-INTEG-02"
     },
-    "account_ref": "SYN-EXT-CLIN-0099",
-    "clinical_role": "clinician"
+    "external_ref": {
+      "issuer": "SYN-OTHER-ORG-01",
+      "namespace": "practitioner",
+      "value": "SYN-EXT-CLIN-0099"
+    }
   }
 }

@@ -1,0 +1,60 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "act_version",
+  "act_id": "SYN-ACT-NOTE-0002",
+  "act_version": 1,
+  "act_class": "clinical_note",
+  "act_type": "nursing_note",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "cancelled",
+  "entry_class": "draft",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-NURSE-0001",
+    "author_role": "nurse",
+    "authority_basis_ref": "SYN-GRANT-0010:v2"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "provenance": {
+    "received_at": "2026-11-15T10:00:00Z",
+    "source": {
+      "kind": "clinician_observation",
+      "ref": "SYN-ACT-ENC-0001"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-NURSE-0001",
+      "clinical_role": "nurse"
+    }
+  },
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-NURSE-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "cancelled",
+      "by_ref": "SYN-USER-NURSE-0001",
+      "at": "2026-11-15T09:45:00Z",
+      "reason_code": "kept_as_information",
+      "information_ref": "SYN-INFO-0001"
+    }
+  ],
+  "content": {
+    "encounter_ref": {
+      "act_id": "SYN-ACT-ENC-0001"
+    },
+    "note_kind": "nursing",
+    "text": "SYN synthetic nursing observation.",
+    "text_format": "text/plain"
+  }
+}

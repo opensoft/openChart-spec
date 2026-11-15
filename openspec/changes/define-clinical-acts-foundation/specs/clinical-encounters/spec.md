@@ -36,7 +36,7 @@ openChart SHALL record a clinical note as an act of class `clinical_note` that r
 ### Requirement: EN-04 An encounter is signed final only when its documentation is complete
 openChart SHALL let an encounter move from `in_progress` to `final` only when every one of these holds (design call CD-15):
 - the signer is a participant on the encounter and holds encounter `sign` scope;
-- at least one `final` clinical note references the encounter;
+- at least one `final` clinical note references the encounter. A note kept as information (AN-14) is not a final note;
 - no act that references the encounter is in `draft`;
 - the encounter period has an end.
 

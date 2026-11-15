@@ -85,15 +85,18 @@
       "signed_at": "2026-11-15T10:30:00Z",
       "content_sha256": "f4e33e801acdb2a904848282530a6b1acb217d7910c5b6d21c8cd7959e4d32f8",
       "sign_off": {
+        "action": "sign",
         "openwallet_id": "wal-practitioner-SYN-0001",
         "licence_verification": {
           "ref": "SYN-LICVER-0001",
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001",
+        "challenge_ref": "SYN-CHALLENGE-0001-1030",
+        "statement_sha256": "8bca202c3b37d1de3d4be97e7e782f05bf5d48466e8f5a2469d506d98a025bd5",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
         "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
-        "custody_model": "syn_isolated_custody",
+        "custody_model": "isolated_per_use_authorized",
         "check": {
           "result": "passed",
           "checked_at": "2026-11-15T10:30:00Z"

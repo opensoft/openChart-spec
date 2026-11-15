@@ -1,0 +1,108 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "act_version",
+  "act_id": "SYN-ACT-ORD-0001",
+  "act_version": 1,
+  "act_class": "order",
+  "act_type": "laboratory_order",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "status": "released",
+  "entry_class": "decision",
+  "author": {
+    "author_type": "clinician",
+    "author_ref": "SYN-USER-NURSE-0001",
+    "author_role": "nurse",
+    "authority_basis_ref": "SYN-GRANT-0010:v2"
+  },
+  "recorded_at": "2026-11-15T10:00:00Z",
+  "provenance": {
+    "received_at": "2026-11-15T10:00:00Z",
+    "source": {
+      "kind": "clinician_observation",
+      "ref": "SYN-ACT-ENC-0001"
+    },
+    "added_by": {
+      "kind": "human",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "account_ref": "SYN-USER-NURSE-0001",
+      "clinical_role": "nurse"
+    }
+  },
+  "lifecycle": [
+    {
+      "event": "created",
+      "by_ref": "SYN-USER-NURSE-0001",
+      "at": "2026-11-15T10:00:00Z"
+    },
+    {
+      "event": "signed",
+      "by_ref": "SYN-USER-NURSE-0001",
+      "at": "2026-11-15T10:30:00Z"
+    }
+  ],
+  "content": {
+    "order_category": "laboratory",
+    "text": "SYN synthetic laboratory panel",
+    "code": {
+      "system": "urn:example:synthetic:code-system:lab",
+      "code": "SYN-LAB-0007",
+      "display": "Synthetic panel seven",
+      "code_set_ref": "SYN-CODESET-LAB:3"
+    },
+    "priority": "routine",
+    "encounter_ref": {
+      "act_id": "SYN-ACT-ENC-0001"
+    },
+    "reason_refs": [
+      {
+        "act_id": "SYN-ACT-DX-0001"
+      }
+    ]
+  },
+  "cosignature": {
+    "source": "role_grant",
+    "source_ref": "SYN-GRANT-0010:v2",
+    "mode": "before_effect",
+    "due_at": "2026-11-15T18:00:00Z",
+    "state": "pending"
+  },
+  "signatures": [
+    {
+      "signature_role": "author",
+      "signer_ref": "SYN-USER-NURSE-0001",
+      "signer_role": "nurse",
+      "authority_basis_ref": "SYN-GRANT-0010:v2",
+      "attestation": {
+        "code": "synthetic-attestation-documentation",
+        "version": "1"
+      },
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "4948e1d9acb555b084872b9f5c44cd835537dc4d40642e6305ddf2afe45e7a29",
+      "sign_off": {
+        "action": "sign",
+        "openwallet_id": "wal-practitioner-SYN-0010",
+        "licence_verification": {
+          "ref": "SYN-LICVER-0001",
+          "covers": "synthetic-licence-scope",
+          "verified_at": "2026-10-01T00:00:00Z"
+        },
+        "challenge_ref": "SYN-CHALLENGE-0001-1030",
+        "statement_sha256": "ebd8a8ab5c77cde907785db5d2924efb5d28da54af42b42e998732140f85059b",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
+        "provenance_sha256": "85094dac3742357424a885153ba328ec9d4de8302a8a46f69a3ca7ac6e1288cb",
+        "custody_model": "isolated_per_use_authorized",
+        "check": {
+          "result": "passed",
+          "checked_at": "2026-11-15T10:30:00Z"
+        }
+      }
+    }
+  ]
+}

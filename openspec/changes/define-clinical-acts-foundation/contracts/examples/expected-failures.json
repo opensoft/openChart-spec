@@ -3,6 +3,10 @@
     "expect_in_error": "'provenance' is a required property",
     "reason": "every addition records its provenance (AN-04)"
   },
+  "act-written-by-a-system.invalid.json": {
+    "expect_in_error": "added_by/kind",
+    "reason": "an act version is written by a human in the chart; a system's decision content is a recommendation (CA-10, CD-52)"
+  },
   "ai-party-without-openwallet.invalid.json": {
     "expect_in_error": "'openwallet_id' is a required property",
     "reason": "an AI is identified by its openWallet ID (AN-02)"
@@ -19,9 +23,17 @@
     "expect_in_error": "author_type",
     "reason": "an act's author type is clinician; act content from an AI is entered as a recommendation record instead (CA-02, AN-09)"
   },
+  "cosigned-without-cosigner-signature.invalid.json": {
+    "expect_in_error": "signatures",
+    "reason": "a co-signed requirement carries the co-signer's signature (CA-07)"
+  },
   "derived-from-unknown-kind.invalid.json": {
     "expect_in_error": "source_kind",
     "reason": "derivation sources are intake statements and clinical communications only"
+  },
+  "device-id-kind-without-id.invalid.json": {
+    "expect_in_error": "does not allow 'udi'",
+    "reason": "a device ID kind is given only with a device ID (AN-13)"
   },
   "device-party-without-serial.invalid.json": {
     "expect_in_error": "'serial' is a required property",
@@ -31,9 +43,13 @@
     "expect_in_error": "'code' is a required property",
     "reason": "a diagnosis of record must be coded"
   },
-  "draft-closed-without-recommendation.invalid.json": {
-    "expect_in_error": "'recommendation_ref' is a required property",
-    "reason": "a draft closed because it became a recommendation names that recommendation (AN-14)"
+  "discontinuation-signed-off-as-another-action.invalid.json": {
+    "expect_in_error": "discontinue",
+    "reason": "a sign-off names the action it was made for, so it cannot stand for another action (CA-04, CD-53)"
+  },
+  "draft-with-signature.invalid.json": {
+    "expect_in_error": "does not allow [{'signature_role'",
+    "reason": "a draft carries no signature (AN-14)"
   },
   "encounter-diagnosis-without-encounter.invalid.json": {
     "expect_in_error": "'encounter_ref' is a required property",
@@ -47,9 +63,25 @@
     "expect_in_error": "lifecycle",
     "reason": "an entered-in-error act must carry the attributed entered_in_error event with a reason code"
   },
+  "entered-in-error-without-sign-off.invalid.json": {
+    "expect_in_error": "'sign_off' is a required property",
+    "reason": "an entered-in-error mark is a decision and carries the practitioner's sign-off (CA-06)"
+  },
+  "external-human-with-role.invalid.json": {
+    "expect_in_error": "does not allow 'clinician'",
+    "reason": "a person outside this chart holds no openChart clinical role (CD-57)"
+  },
   "final-without-signature.invalid.json": {
     "expect_in_error": "'signatures' is a required property",
     "reason": "a signed status needs the author's signature"
+  },
+  "information-without-marker.invalid.json": {
+    "expect_in_error": "'not_signed_off' is a required property",
+    "reason": "a note kept as information is marked not signed off wherever it is shown (AN-14, CD-63)"
+  },
+  "note-draft-closed-without-information-ref.invalid.json": {
+    "expect_in_error": "'information_ref' is a required property",
+    "reason": "a note draft closed because its content was kept as information names that record (AN-14)"
   },
   "note-request-status.invalid.json": {
     "expect_in_error": "status",
@@ -67,6 +99,10 @@
     "expect_in_error": "namespace",
     "reason": "the patient is always the openChart triple; an external identifier never replaces it"
   },
+  "patient-self-with-representative.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-REP-0001'",
+    "reason": "a patient acting for themselves names no representative (AN-02)"
+  },
   "prescription-missing-classification.invalid.json": {
     "expect_in_error": "'controlled_substance_classification' is a required property",
     "reason": "a prescription must carry its controlled-substance classification"
@@ -77,15 +113,15 @@
   },
   "recommendation-adopted-without-act.invalid.json": {
     "expect_in_error": "'adopted_act' is a required property",
-    "reason": "adoption creates a new act of the clinician's own, and the recommendation names it (AN-11)"
+    "reason": "adoption creates a decision of the clinician's own, and the recommendation names it (AN-11)"
   },
   "recommendation-claim-without-claimant.invalid.json": {
     "expect_in_error": "'claimed_decision_maker' is a required property",
     "reason": "a decision a system carried for an unconfirmed decision maker names who was claimed (AN-08)"
   },
-  "recommendation-class-not-defined-without-schema.invalid.json": {
-    "expect_in_error": "proposed/act_class",
-    "reason": "an act class this contract does not define is kept only with content declared under another schema (AN-09, CD-51)"
+  "recommendation-claimant-without-code.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "a claimed decision maker is named only where the decision maker was not confirmed (AN-08)"
   },
   "recommendation-content-schema-on-cosign.invalid.json": {
     "expect_in_error": "proposed/action",
@@ -98,6 +134,14 @@
   "recommendation-path-reason-without-scheme.invalid.json": {
     "expect_in_error": "'scheme' is a required property",
     "reason": "a writing path's own reason names the scheme that defines it (AN-09, CD-51)"
+  },
+  "recommendation-pending-with-reason.invalid.json": {
+    "expect_in_error": "does not allow 'syn_reason_while_pending'",
+    "reason": "a decline reason belongs to a declined recommendation only (AN-11)"
+  },
+  "recommendation-sign-with-target.invalid.json": {
+    "expect_in_error": "does not allow {'act_id'",
+    "reason": "a sign-off of new content names no existing act (AN-09)"
   },
   "recommendation-signed.invalid.json": {
     "expect_in_error": "'signatures' was unexpected",
@@ -117,11 +161,31 @@
   },
   "record-kind-missing.invalid.json": {
     "expect_in_error": "'record_kind' is a required property",
-    "reason": "every record says whether it is an act version or a recommendation"
+    "reason": "every record says which record kind it is"
+  },
+  "released-while-cosignature-pending.invalid.json": {
+    "expect_in_error": "status",
+    "reason": "an order held for a before-effect co-signature is not in force until it is co-signed (CA-07, OR-02)"
+  },
+  "sign-off-holder-readable-custody.invalid.json": {
+    "expect_in_error": "isolated_per_use_authorized",
+    "reason": "only a key whose custody evidences that the holder acted can sign off (CA-04; openWallet's custody registry)"
+  },
+  "sign-off-without-statement.invalid.json": {
+    "expect_in_error": "'statement_sha256' is a required property",
+    "reason": "the openSig attestation is made over the sign-off statement, whose digest is recorded (CA-04, CD-53)"
   },
   "signature-without-sign-off.invalid.json": {
     "expect_in_error": "'sign_off' is a required property",
     "reason": "a signature carries the practitioner's openWallet and openSig sign-off evidence (CA-04, ruling 151)"
+  },
+  "signed-order-cancelled-without-sign-off.invalid.json": {
+    "expect_in_error": "lifecycle",
+    "reason": "cancelling a signed order is a decision and carries the practitioner's sign-off (OR-02)"
+  },
+  "timestamp-not-date-time.invalid.json": {
+    "expect_in_error": "received_at",
+    "reason": "every time is an RFC 3339 date-time with a time zone"
   },
   "unknown-property.invalid.json": {
     "expect_in_error": "Additional properties are not allowed",
@@ -130,5 +194,9 @@
   "writer-identity-asserted.invalid.json": {
     "expect_in_error": "verified_by_chart",
     "reason": "a writer's identity is always verified by the chart (AN-02, CD-42)"
+  },
+  "writer-named-by-external-ref.invalid.json": {
+    "expect_in_error": "asserted_by",
+    "reason": "a party named by another system's identifier is vouched for by that system and is never the writer (AN-04, CD-57)"
   }
 }

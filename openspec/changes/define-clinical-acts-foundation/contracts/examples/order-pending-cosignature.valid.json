@@ -66,6 +66,13 @@
       }
     ]
   },
+  "cosignature": {
+    "source": "role_grant",
+    "source_ref": "SYN-GRANT-0010:v2",
+    "mode": "before_effect",
+    "due_at": "2026-11-15T18:00:00Z",
+    "state": "pending"
+  },
   "signatures": [
     {
       "signature_role": "author",
@@ -79,27 +86,23 @@
       "signed_at": "2026-11-15T10:30:00Z",
       "content_sha256": "4948e1d9acb555b084872b9f5c44cd835537dc4d40642e6305ddf2afe45e7a29",
       "sign_off": {
+        "action": "sign",
         "openwallet_id": "wal-practitioner-SYN-0010",
         "licence_verification": {
           "ref": "SYN-LICVER-0001",
           "covers": "synthetic-licence-scope",
           "verified_at": "2026-10-01T00:00:00Z"
         },
-        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001",
+        "challenge_ref": "SYN-CHALLENGE-0001-1030",
+        "statement_sha256": "ebd8a8ab5c77cde907785db5d2924efb5d28da54af42b42e998732140f85059b",
+        "opensig_attestation_ref": "SYN-OPENSIG-ATT-0001-1030",
         "provenance_sha256": "85094dac3742357424a885153ba328ec9d4de8302a8a46f69a3ca7ac6e1288cb",
-        "custody_model": "syn_isolated_custody",
+        "custody_model": "isolated_per_use_authorized",
         "check": {
           "result": "passed",
           "checked_at": "2026-11-15T10:30:00Z"
         }
       }
     }
-  ],
-  "cosignature": {
-    "source": "role_grant",
-    "source_ref": "SYN-GRANT-0010:v2",
-    "mode": "before_effect",
-    "due_at": "2026-11-15T18:00:00Z",
-    "state": "pending"
-  }
+  ]
 }

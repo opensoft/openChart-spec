@@ -76,7 +76,7 @@ Only the medical director SHALL record, widen or renew a grant. A grant the medi
 
 #### Scenario: Failure: a nurse signs outside the grant
 - **WHEN** a nurse whose grant permits only `draft` for orders tries to sign one
-- **THEN** no order takes effect. openChart enters the order as a recommendation with `no_grant_in_force`, closes the draft as `cancelled` naming it, and puts it before a clinician with order `sign` scope (AN-14)
+- **THEN** no order takes effect. openChart enters the order as a recommendation with `no_grant_in_force`, tied to the draft, holds the draft without cancelling it, and puts the recommendation before a clinician with order `sign` scope (AN-14)
 
 ### Requirement: AU-03 Licensure and prescriber facts are practice-supplied attestations, recorded by someone other than their subject, and not verified by openChart
 openChart SHALL record licensure, scope and prescriber facts only as attestations supplied by the practice (design calls CD-13 and CD-34). Each attestation SHALL hold:
@@ -114,22 +114,23 @@ A grant that includes `sign` for prescriptions SHALL require a prescriber attest
 ### Requirement: AU-04 Every action is checked against its decision maker's authority in force at that moment, whatever kind of decision maker it is, and reductions apply at once
 openChart SHALL check every action below against its decision maker's authority in force at that moment, whatever kind of decision maker it is (owner ruling 80, clause 11):
 - every draft;
-- every sign-off: a signature, a new signed version, a co-signature, a completion, a discontinuation or an entered-in-error mark;
+- every sign-off: a signature, a new signed version, a co-signature, a discontinuation, an entered-in-error mark, or the cancellation of a pending-release order or prescription;
+- every completion, which is a record of work done and not a decision: it needs the `complete` scope and no sign-off (design call CD-58, PROPOSED);
 - every AI consult review;
 - every inbox action under AU-06.
 
 The authority checked is:
 - for a human, their grants in force (AU-02) and, for a sign-off, the licence verification in their openWallet and the openSig attestation (CA-04; owner ruling 151);
-- for an AI, the mode and scope the medical director has approved, of which none can be switched on today (AN-12);
+- for an AI, the mode and scope the medical director has approved. Today only advice only can be switched on, and it confers no decision authority (AN-12);
 - a device or a plain integration holds none.
 
 openChart SHALL record the authority relied on: the grant version, and for a sign-off the evidence of CA-04. For a decision added on someone's behalf, openChart SHALL judge the decision maker and SHALL confirm that they made it by their own sign-off (AN-08).
 
-An action without that authority SHALL take no effect, and SHALL NOT be refused for that reason (clause 18). openChart SHALL enter it as a recommendation (AN-09). For an AI consult review or an inbox action, the recommendation is held in the record its own change defines, and nothing is sent and no status or item changes (design call CD-50, PROPOSED). A narrowing, suspension or end of a grant SHALL apply at once to every later action. Acts already signed SHALL keep their signatures, and SHALL show the grant version in force when signed. Grant history SHALL be kept; no grant version SHALL be deleted.
+An action without that authority SHALL take no effect, and SHALL NOT be refused for that reason (clause 18). openChart SHALL enter it as a recommendation (AN-09), except a completion, which is not a decision: one attempted without the `complete` scope changes nothing and is kept in the act's trail as a report attributed to its writer (OR-02). For an AI consult review or an inbox action, the recommendation is held in the record its own change defines, and nothing is sent and no status or item changes (design call CD-50, PROPOSED). A narrowing, suspension or end of a grant SHALL apply at once to every later action. Acts already signed SHALL keep their signatures, and SHALL show the grant version in force when signed. Grant history SHALL be kept; no grant version SHALL be deleted.
 
 #### Scenario: A grant is narrowed mid-session
 - **WHEN** the medical director removes prescription signing from a clinician's grant while the clinician has a draft prescription open
-- **THEN** the clinician's next signing attempt takes no effect. openChart enters the prescription as a recommendation with `no_grant_in_force`, closes the draft as `cancelled` naming it, and tells the clinician at once
+- **THEN** the clinician's next signing attempt takes no effect. openChart enters the prescription as a recommendation with `no_grant_in_force`, tied to the draft, holds the draft without cancelling it, and tells the clinician at once
 
 #### Scenario: Failure: a stale grant is relied on
 - **WHEN** a client submits a signature citing a grant version that has been superseded
@@ -148,7 +149,7 @@ Every decision SHALL be signed off by a named human practitioner under CA-04 (ow
 
 #### Scenario: Failure: a scheduled job tries to complete orders
 - **WHEN** a registered scheduled job submits completions for released orders
-- **THEN** the orders are unchanged, and each completion is entered as a recommendation marked not an authorized decision
+- **THEN** the orders are unchanged, because only a named person with the `complete` scope records a completion, and each report is kept in its order's trail, attributed to the job
 
 ### Requirement: AU-06 The single grant model carries the clinical message inbox's scopes, and none of them reaches an act
 Owner ruling 92 places inbox authority in this single grant model, set by the medical director. For `define-clinical-message-inbox` (not yet on main), an AU-02 grant MAY carry one of the scopes below (design calls CD-39 and CD-40). None of them is an act class or creates an act, and none gives authority over any act. No AI system, agent or integration identity SHALL hold one (AU-05). Every other rule of AU-02 to AU-05 applies, including the medical director's recording, the self-grant rule, attestations, and checks at the moment of action. This change defines only these grants; the inbox's behaviour stays in that change. An inbox action or patient reply attempted without the grant SHALL take no effect, and SHALL NOT be refused for that reason (owner ruling 80, clause 18). It SHALL be recorded as a recommendation marked not an authorized decision, in the record `define-clinical-message-inbox` defines for it: nothing is sent, and no item changes. Whether any inbox action or patient reply is a medical decision that needs a practitioner's sign-off under owner ruling 151 is Open Question 13.
@@ -181,3 +182,18 @@ Owner ruling 92 places inbox authority in this single grant model, set by the me
 #### Scenario: Failure: a marker grant for a nurse
 - **WHEN** the medical director tries to record a `clinical_need_marker` grant for a person who holds only the `nurse` role
 - **THEN** openChart refuses the grant
+
+### Requirement: AU-07 A practitioner's account is bound to their wallet only in their own session, with proof of possession
+The binding that CA-04's first check reads SHALL be made only in the practitioner's own re-authenticated openChart session, with a proof of possession: a signature over a challenge that openChart issues, from a key that the wallet declares (design call CD-54, PROPOSED). Under openWallet, a wallet is a key or a declared set of keys held by its holder, and use requires proof of possession. openChart SHALL bind one wallet to at most one account. Every binding, suspension and unbinding SHALL be audited, recorded with actor and time, and listed for the medical director and the administrative role. The practitioner MAY unbind their wallet, and unbinding SHALL apply at once to every later sign-off. An administrator or the medical director MAY suspend a binding, which applies at once, but SHALL NOT create one or bind a wallet to another person's account. A binding is configuration, not an addition to a patient's chart (AN-01), and a wallet identifier never becomes the person's identifier (AN-02).
+
+#### Scenario: A practitioner binds their wallet
+- **WHEN** a clinician, re-authenticated in their own session, presents a signature over openChart's challenge from a key their openWallet declares
+- **THEN** openChart binds that wallet to the clinician's account, records the binding, and lists it for the medical director
+
+#### Scenario: Failure: an administrator binds a wallet to someone else's account
+- **WHEN** an administrator tries to bind clinician A's wallet to clinician B's account
+- **THEN** openChart refuses the binding, and B's sign-offs with A's wallet fail CA-04's first check with `wallet_not_bound`
+
+#### Scenario: Failure: a second account claims a bound wallet
+- **WHEN** a second account tries to bind a wallet that is already bound to another account
+- **THEN** openChart refuses the binding until the first is unbound
