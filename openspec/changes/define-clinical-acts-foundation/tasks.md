@@ -3,11 +3,11 @@
 - [ ] 1.1 Run `openspec validate define-clinical-acts-foundation --strict --no-interactive` on the exact revision proposed for ratification. Record the OpenSpec version, timestamp, revision, exit code and output.
 - [ ] 1.2 In this change's `contracts/` directory, run `sha256sum -c SHA256SUMS` and `python3 -I selftest.py`. The self-test needs `jsonschema` 4.18 or later. All 9 valid fixtures must validate, and all 15 invalid fixtures must fail, each for the reason stated in `examples/expected-failures.json`. Record both outputs.
 - [ ] 1.3 Obtain Brett Heap's ratification. He stamps `Ratified by` and changes `Status` from `draft` to `ratified` in `proposal.md`, in the same revision. The rulings recorded in `design.md` are not ratification. No Spec Kit feature is created before this task is complete.
-- [ ] 1.4 Record Brett Heap's disposition of tensions CT-1 to CT-14 and design calls CD-1 to CD-32. Where a disposition needs an amendment elsewhere, name the change that must carry it:
-  - `define-ai-authored-clinical-records` for CT-6, CT-7, CT-8, CT-9 and CT-10;
+- [ ] 1.4 Record Brett Heap's disposition of tensions CT-1 to CT-16 (CT-10 is resolved) and design calls CD-1 to CD-36, including owner decision 87 (CD-33). Where a disposition needs an amendment elsewhere, name the change that must carry it:
+  - `define-ai-authored-clinical-records` for CT-6, CT-7, CT-8 and CT-9;
   - `define-clinical-message-inbox` for CT-9;
-  - `opensoft/openPractice-spec` `define-mvp-practice-foundation` for CT-11;
-  - `define-openpractice-boundary` for CT-13.
+  - `opensoft/openPractice-spec` `define-mvp-practice-foundation` for CT-11 and CT-16;
+  - `define-openpractice-boundary` for CT-13 and CT-15.
 
   If the owner reads CT-1 as governing every openChart API, add a MODIFIED delta to `expanded-patient-intake` in this change before ratification.
 - [ ] 1.5 Compare this change with each dependent draft, and record both revisions for each comparison. A mismatch blocks the handoff of the affected feature.
@@ -46,12 +46,12 @@ Each feature is created from the assembly root only after task 1.3, and only aft
   - signed content cannot be edited in place or deleted; amendments are new versions; entered-in-error acts keep their content;
   - every signature records re-authentication, the grant version, the attestation and the content digest, and a lapsed or narrowed grant refuses;
   - a co-signature requirement escalates to the medical director when overdue and is never closed by a timer;
-  - with no medical director designated, nothing can be signed;
+  - with no medical director designated, nothing can be signed; a designator cannot designate itself; a self-recorded attestation is refused; a medical director's self-grant needs an independent attestation and is shown as self-granted;
   - no intake submission, statement, communication, API response or extension event creates an act, and a derived act names its source while the statement stays unchanged and patient-reported;
   - an encounter cannot be signed with a draft attached or without a final note, and later changes go through a signed encounter amendment;
-  - publication sends only final, clinician-signed encounter facts for actively linked patients, by reference, with codings as system and code only, and corrections forward-only; restricted acts, the problem list, notes, orders and prescriptions are never published;
+  - publication sends only final, clinician-signed encounter facts for actively linked patients, by reference, with codings as system and code only, and with only `confirmed` encounter diagnoses; corrections and retractions are queued whatever the link state and delivered when the link returns to `active`; a restricted act added to a published encounter, or a published diagnosis refuted later, is retracted; restricted acts, the problem list, notes, orders and prescriptions are never published;
   - a released order is never amended, and no order is transmitted;
-  - every prescription signature is refused where the prescribing-safety gate is not met, including with `System Manager`; controlled and unknown classifications are refused; no transmission or dispense state is recorded;
+  - every prescription signature, co-signature and release is refused where the prescribing-safety gate is not met, including with `System Manager`, and a refused deferred release stays `pending_release`; controlled and unknown classifications are refused; no transmission or dispense state is recorded;
   - no PHI appears in logs, errors or coded reasons;
   - all fixtures are synthetic, and no code set is bundled.
 

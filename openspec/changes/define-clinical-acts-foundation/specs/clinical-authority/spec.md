@@ -1,11 +1,26 @@
 ## ADDED Requirements
 
-### Requirement: AU-01 openChart defines clinical roles and one medical director per practice
-openChart SHALL define two clinical roles, `clinician` and `nurse`, and a medical director designation (design call CD-12). Each practice (tenant) SHALL have at most one medical director at a time: a named human with an openChart account and a clinical role, designated by an audited act of an administrative role that planning names. Every designation and its end SHALL be recorded with actor, time and effective interval. When no medical director is designated, no role grant (AU-02) and no act-type registry entry (CA-09) SHALL be recorded, so nothing can be signed. The medical director designation is the one that `define-ai-authored-clinical-records` AG-02 and `define-clinical-message-inbox` (both not yet on main) need (tension CT-9).
+### Requirement: AU-01 openChart defines clinical roles and one independently attested medical director per practice
+openChart SHALL define two clinical roles, `clinician` and `nurse`, and a medical director designation (design calls CD-12 and CD-34). Each practice (tenant) SHALL have at most one medical director at a time. A designation SHALL be recorded by an account that holds the administrative designation role named in planning, and SHALL be refused unless all of these hold:
+- the designee is a named human with their own openChart account;
+- the designating account is not the designee's account;
+- the designee holds the `clinician` role, resting on a licensure attestation in force that was recorded by a named human other than the designee (AU-03).
 
-#### Scenario: A practice designates its medical director
-- **WHEN** the administrative role designates a named clinician as medical director
-- **THEN** openChart records the designation with actor, time and effective interval
+**The first medical director.** While a practice has no medical director, nobody can record a grant, so the first designee gets a clinical role in one audited bootstrap act by the designating account. That act records three things: the designee's licensure attestation (AU-03, so recorded by a named human other than the designee); the `clinician` role resting on it; and the designation. The role confers no act-class authority. The medical director then needs a grant for each act class, under AU-02's self-grant rule.
+
+Every designation, bootstrap act and end of a designation SHALL be recorded with actor, time and effective interval, and SHALL be listed for the administrative role. When no medical director is designated, no role grant (AU-02) and no act-type registry entry (CA-09) SHALL be recorded, so nothing can be signed. This is the medical director designation that `define-ai-authored-clinical-records` AG-02 and `define-clinical-message-inbox` (both not yet on main) need (tension CT-9).
+
+#### Scenario: The first medical director is designated
+- **WHEN** an administrator designates a named physician as the practice's first medical director, recording a licensure attestation the physician did not record
+- **THEN** openChart records the attestation, the `clinician` role and the designation in one audited act, and the physician has no act-class authority until a grant is recorded
+
+#### Scenario: Failure: an administrator designates their own account
+- **WHEN** the account holding the designation role tries to designate itself as medical director
+- **THEN** openChart refuses the designation
+
+#### Scenario: Failure: the designee's licensure attestation is self-recorded
+- **WHEN** a designee's only licensure attestation was recorded by the designee
+- **THEN** openChart refuses the designation
 
 #### Scenario: Failure: no medical director is designated
 - **WHEN** a practice with no medical director tries to record a role grant
@@ -15,12 +30,29 @@ openChart SHALL define two clinical roles, `clinician` and `nurse`, and a medica
 - **WHEN** someone designates a second medical director while one is in force
 - **THEN** openChart refuses the designation until the first one ends
 
-### Requirement: AU-02 Authority to author, sign and co-sign is a role grant recorded in openChart
-Who may draft, sign, co-sign, complete or discontinue each act class SHALL be decided only by role grants recorded inside openChart (design call CD-12). A grant SHALL name the person, the clinical role, the act class, the permitted actions (`draft`, `sign`, `cosign`, `complete`, `discontinue`), optionally a subset of act types, an effective interval, the practice-supplied credential attestation it rests on (AU-03), any co-signature requirement on the holder's acts (mode and window, CA-07), the medical director who recorded it, and a version. Only the medical director SHALL record, widen or renew a grant. A person with no grant in force for an act class SHALL have no authority for it; nothing SHALL be granted by default, by role name alone, or by the `System Manager` role.
+### Requirement: AU-02 Authority to author, sign and co-sign is a role grant recorded in openChart, and a self-grant is shown and independently attested
+Who may draft, sign, co-sign, complete or discontinue each act class SHALL be decided only by role grants recorded inside openChart (design call CD-12). A grant SHALL name:
+- the person and the clinical role;
+- the act class and the permitted actions (`draft`, `sign`, `cosign`, `complete`, `discontinue`), optionally limited to a subset of act types;
+- an effective interval;
+- the practice-supplied attestation it rests on (AU-03);
+- any co-signature requirement on the holder's acts (mode and window, CA-07);
+- the medical director who recorded it;
+- a version.
+
+Only the medical director SHALL record, widen or renew a grant. A grant the medical director records for themselves SHALL be flagged `self_granted` (design call CD-34). It SHALL rest on an attestation recorded by a named human other than the medical director, SHALL be audited, and SHALL be shown as self-granted wherever the grant is shown and wherever an act signed under it shows its authority. Every self-grant SHALL be listed for the administrative role. A person with no grant in force for an act class SHALL have no authority for it. Nothing SHALL be granted by default, by role name alone, or by the `System Manager` role.
 
 #### Scenario: The medical director grants order authority
 - **WHEN** the medical director grants a clinician `draft` and `sign` for orders for one year
 - **THEN** openChart records the grant with its version, interval, attestation reference and the medical director
+
+#### Scenario: The medical director grants themselves diagnosis authority
+- **WHEN** the medical director records a diagnosis grant for themselves, resting on a licensure attestation recorded by an administrator
+- **THEN** the grant is recorded, flagged `self_granted`, listed for the administrative role, and every diagnosis signed under it shows that its authority was self-granted
+
+#### Scenario: Failure: the medical director self-grants prescribing on their own attestation
+- **WHEN** the medical director tries to grant themselves prescription `sign` scope, resting on a prescriber attestation they recorded themselves
+- **THEN** openChart refuses the grant
 
 #### Scenario: Failure: a System Manager tries to sign an order
 - **WHEN** a user holding only `System Manager` tries to sign an order
@@ -30,12 +62,26 @@ Who may draft, sign, co-sign, complete or discontinue each act class SHALL be de
 - **WHEN** a nurse whose grant permits only `draft` for orders tries to sign one
 - **THEN** openChart refuses the signature and the order stays `draft`
 
-### Requirement: AU-03 Licensure and prescriber facts are supplied by the practice and are not verified by openChart
-openChart SHALL record licensure, scope and prescriber facts only as attestations supplied by the practice: the attesting person, the time, the fact attested as a code, an expiry date and an opaque reference to the practice's own evidence (design call CD-13). openChart SHALL NOT verify them against any registry and SHALL NOT state or imply that it has. A grant that includes `sign` for prescriptions SHALL require a prescriber attestation in force; without one it SHALL be refused. When an attestation expires or is withdrawn, every grant that rests on it SHALL stop conferring authority at once.
+### Requirement: AU-03 Licensure and prescriber facts are practice-supplied attestations, recorded by someone other than their subject, and not verified by openChart
+openChart SHALL record licensure, scope and prescriber facts only as attestations supplied by the practice (design calls CD-13 and CD-34). Each attestation SHALL hold:
+- its subject;
+- the named human who recorded it;
+- the time;
+- the fact attested, as a code;
+- an expiry date;
+- an opaque reference to the practice's own evidence.
+
+The recorder SHALL hold the attestation-recording permission that planning names, and SHALL NOT be the attestation's subject. openChart SHALL refuse any attestation that a person records about themselves. openChart SHALL NOT verify attestations against any registry, and SHALL NOT state or imply that it has. It SHALL show each attestation as practice-supplied, naming its recorder.
+
+A grant that includes `sign` for prescriptions SHALL require a prescriber attestation in force; without one, the grant SHALL be refused. When an attestation expires or is withdrawn, every grant and designation that rests on it SHALL stop conferring authority at once.
 
 #### Scenario: A prescriber attestation is recorded
-- **WHEN** the practice records that a clinician is a prescriber, with an expiry date
-- **THEN** openChart stores the attestation as practice-supplied, and shows it as not verified by openChart
+- **WHEN** an authorized administrator records that a clinician is a prescriber, with an expiry date
+- **THEN** openChart stores the attestation as practice-supplied, names the administrator as its recorder, and shows it as not verified by openChart
+
+#### Scenario: Failure: a clinician records their own attestation
+- **WHEN** a clinician tries to record a licensure or prescriber attestation about themselves
+- **THEN** openChart refuses it and stores nothing
 
 #### Scenario: Failure: a prescription grant without a prescriber attestation
 - **WHEN** the medical director tries to grant `sign` for prescriptions to a clinician with no prescriber attestation in force

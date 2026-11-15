@@ -12,9 +12,11 @@ This change SHALL be the "separately governed openChart capability [that] record
 - **THEN** the capability result is false and every facts read returns `no_billable_facts`
 
 ### Requirement: PB-02 A signed, final encounter is published by reference under the clinical-facts contract
-For a patient with an `active` `openpractice` link, when an encounter becomes `final`, openChart SHALL send `encounter.documentation_final` through the durable outbound delivery of `define-openpractice-boundary` PL-14, carrying only resource references (resource type, identifier, version) for the Encounter and for each final encounter diagnosis and final procedure that references it. An authorized `facts.result` read SHALL return, validated against the canonical schema pinned by digest in PL-04 (`6b2071fe61693d144aa91f4fc68e51d0cd7563d66b5cd2086f281a959f7e69ec`):
+When an encounter becomes `final`, openChart SHALL write an `encounter.documentation_final` notification to the durable outbound store of `define-openpractice-boundary` PL-14, in the same transaction, carrying only resource references (resource type, identifier, version). The references SHALL cover the Encounter and each published Condition and Procedure. openChart SHALL deliver the notification at once when the patient's `openpractice` link is `active`. While the link is in `identity_review`, it SHALL hold the notification as a pending final, under PB-03.
+
+An authorized `facts.result` read SHALL be served only on an `active` link. It SHALL be validated against the canonical schema pinned by digest in PL-04 (`6b2071fe61693d144aa91f4fc68e51d0cd7563d66b5cd2086f281a959f7e69ec`), and SHALL return:
 - **Encounter:** act identifier and version; status (`final` and `amended` as `finished`); encounter types; period; location reference; participants, as practitioner references;
-- **Condition:** each final `encounter_diagnosis`, as category `encounter-diagnosis`, with identifier, version, coding, rank and encounter reference;
+- **Condition:** each final `encounter_diagnosis` whose verification status is `confirmed`, as category `encounter-diagnosis`, with identifier, version, coding, rank and encounter reference. A diagnosis that is `unconfirmed`, `provisional`, `differential` or `refuted` SHALL NOT be published. This rule is PROPOSED pending owner decision 87 (design call CD-33);
 - **Procedure:** each final procedure, with identifier, version, coding, quantity where documented, performed time, performer reference and encounter reference;
 - **documentation_final:** `final: true`, with the signer reference and signing time of the encounter version's signature (EN-04).
 
@@ -24,36 +26,76 @@ Every coding SHALL carry the code system and code only, never the version or dis
 - **WHEN** a clinician signs a final encounter with one confirmed encounter diagnosis and one procedure for a patient with an active `openpractice` link
 - **THEN** openChart sends `encounter.documentation_final` with three resource references, and an authorized read returns the encounter as `finished`, the diagnosis and procedure codings as system and code only, and `documentation_final` with the signer and time
 
+#### Scenario: Failure: a refuted diagnosis is never published
+- **WHEN** a final encounter for an actively linked patient carries one confirmed and one `refuted` encounter diagnosis
+- **THEN** the notification and the read include only the confirmed diagnosis, and the refuted one is never published
+
 #### Scenario: Failure: an in-progress encounter is read
 - **WHEN** openPractice reads facts for an encounter that is still `in_progress`
 - **THEN** openChart returns `no_billable_facts`
 
-#### Scenario: Failure: the patient has no active link
-- **WHEN** an encounter is finalized for a patient whose `openpractice` link is in `identity_review`, revoked or absent
-- **THEN** openChart sends no notification and serves no read for that patient
+#### Scenario: Failure: the link is in identity review at finalization
+- **WHEN** an encounter is finalized while the patient's `openpractice` link is in `identity_review`
+- **THEN** openChart sends nothing and serves no read now, and holds the documentation-final notification as a pending final under PB-03
 
-### Requirement: PB-03 Amendments and retractions are published forward-only
-When a published encounter is amended (EN-05), openChart SHALL send `clinical_fact.corrected`, with resource references to the new Encounter version and to every new or new-version Condition and Procedure, and `supersedes` references to the versions they replace. When a published encounter diagnosis or procedure is marked entered in error within an amendment, openChart SHALL send `clinical_fact.entered_in_error` with that resource's reference. When a published encounter is marked entered in error, openChart SHALL send `clinical_fact.entered_in_error` with the Encounter reference and the reference of every published Condition and Procedure on it, and a read SHALL return the encounter with status `entered-in-error`, no conditions, no procedures and `documentation_final.final` false. openChart MUST NOT silently overwrite a published fact or reuse a published version number.
+#### Scenario: Failure: the patient has no link
+- **WHEN** an encounter is finalized for a patient with no `openpractice` link
+- **THEN** openChart queues and sends nothing, and serves no read
+
+### Requirement: PB-03 Every correction or retraction of a published fact is queued, whatever the link state, and delivered forward-only
+openChart SHALL write each of the following to the durable outbound store, in the same transaction as its cause, whatever the state of the patient's `openpractice` link (`active`, `identity_review`, `revoked` or `superseded`) (design call CD-35). Each item applies once the encounter or fact named in it has been published.
+- **A published encounter is amended (EN-05):** `clinical_fact.corrected`, with resource references to the new Encounter version and to every new or new-version published Condition and Procedure, and `supersedes` references to the versions they replace.
+- **A published diagnosis is amended to a status other than `confirmed`, or marked entered in error, or a published procedure is marked entered in error:** `clinical_fact.entered_in_error` with that resource's reference. This is CA-M3's retraction (CD-33).
+- **A published encounter is marked entered in error:** `clinical_fact.entered_in_error` with the Encounter reference and the reference of every published Condition and Procedure on it. A read SHALL then return the encounter with status `entered-in-error`, no conditions, no procedures and `documentation_final.final` false.
+- **A restricted act (CA-15) is added to an encounter that has already been published:** `clinical_fact.entered_in_error` with the Encounter reference and every published Condition and Procedure on it (design call CD-36). Nothing more SHALL be published for that encounter, and every later read SHALL return `no_billable_facts`.
+
+openChart SHALL deliver queued messages in the order of their causes, each with its original `message_id`:
+- **`active` link:** at once.
+- **`identity_review` link:** openChart SHALL hold every queued message and every pending final (PB-02). When the link returns to `active`, it SHALL deliver them in order. Before delivering a pending final, it SHALL re-evaluate it, sending only facts that are still final, confirmed and unrestricted.
+- **Link that ends `revoked` or `superseded`:** openChart SHALL deliver every queued retraction, and SHALL deliver every queued correction as a `clinical_fact.entered_in_error` for the published versions it supersedes. It SHALL drop pending finals, which were never published, serve no read, and record the outcome with identifiers only (tension CT-15).
+
+openChart MUST NOT silently overwrite a published fact or reuse a published version number.
 
 #### Scenario: A diagnosis is corrected after publication
-- **WHEN** a clinician amends a published encounter to correct its primary diagnosis code
+- **WHEN** a clinician amends a published encounter to correct its primary diagnosis code, on an active link
 - **THEN** openChart sends `clinical_fact.corrected` naming the new Encounter and Condition versions and superseding the old ones, and a read returns the new versions
+
+#### Scenario: Failure: a correction arrives while the link is in identity review
+- **WHEN** a published encounter is amended while the patient's link is in `identity_review` for a date-of-birth hold
+- **THEN** openChart queues `clinical_fact.corrected`, and delivers it, followed by any pending finals, as soon as the link returns to `active`
+
+#### Scenario: Failure: the link is revoked while a correction is queued
+- **WHEN** the link is revoked while a `clinical_fact.corrected` is held for it
+- **THEN** openChart delivers a `clinical_fact.entered_in_error` for the superseded published versions, drops pending finals, and serves no read
+
+#### Scenario: Failure: a restricted act is added to a published encounter
+- **WHEN** a clinician adds a restricted diagnosis to an encounter whose facts were already published
+- **THEN** openChart sends `clinical_fact.entered_in_error` for the Encounter and every published Condition and Procedure, and publishes nothing more for that encounter
+
+#### Scenario: Failure: a published diagnosis is later refuted
+- **WHEN** a clinician amends a published, confirmed encounter diagnosis to `refuted`
+- **THEN** openChart sends `clinical_fact.entered_in_error` for that Condition, and later reads omit it
 
 #### Scenario: Failure: a published encounter is voided
 - **WHEN** a clinician marks a published encounter entered in error
 - **THEN** openChart sends `clinical_fact.entered_in_error` naming the encounter and its published facts, and a read returns status `entered-in-error` with no conditions or procedures
 
-### Requirement: PB-04 Only final, clinician-signed encounter facts are ever published
+### Requirement: PB-04 Only final, confirmed, clinician-signed encounter facts are ever published
 openChart SHALL NOT publish under `openpractice-ehr-clinical-facts/1.0` any of these:
 - a patient-reported statement or a clinical communication record (CF-02);
+- an encounter diagnosis whose verification status is not `confirmed` (PROPOSED pending owner decision 87; CD-33);
 - a problem-list entry, clinical note text, order, prescription, draft or cancelled act;
-- an encounter that carries a restricted act (CA-15);
+- an encounter that carries a restricted act (CA-15). If the encounter was already published, PB-03 retracts it;
 - an encounter whose signature has an open co-signature requirement, until it is co-signed (design call CD-11);
 - a fact that the canonical schema cannot represent, such as a code longer than the schema allows. For such an encounter, openChart SHALL publish nothing, serve no partial read, and record an integration exception with identifiers and a coded cause only.
 
 #### Scenario: Failure: an order would be published
 - **WHEN** a final encounter for a linked patient includes a released laboratory order
 - **THEN** the order appears in no notification and no read
+
+#### Scenario: Failure: a provisional diagnosis would be published
+- **WHEN** a final encounter carries an encounter diagnosis whose verification status is `provisional`
+- **THEN** that diagnosis appears in no notification and no read
 
 #### Scenario: Failure: a co-signature is still pending
 - **WHEN** an encounter is signed by a clinician whose grant requires co-signature, and the co-signature is not yet recorded

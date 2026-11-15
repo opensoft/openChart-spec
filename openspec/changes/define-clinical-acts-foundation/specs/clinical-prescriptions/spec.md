@@ -11,8 +11,8 @@ openChart SHALL record a prescription as an act of class `prescription`: the cli
 - **WHEN** a client submits a prescription with no dosage instructions
 - **THEN** openChart refuses it with a coded reason
 
-### Requirement: RX-02 No prescription is signed in a deployment where the prescribing-safety gate is not met
-openChart SHALL refuse to sign a prescription, and SHALL refuse to sign a new version of one, in any deployment where the prescribing-safety gate is not met (owner ruling 74; design call CD-30). The gate SHALL be met only when all three of these hold:
+### Requirement: RX-02 No prescription is signed, co-signed or released in a deployment where the prescribing-safety gate is not met
+openChart SHALL refuse to sign a prescription or a new version of one, to record its co-signature, and to release it from `pending_release`, including at a deferred release time, unless the prescribing-safety gate is met for that step at that moment (owner ruling 74; design call CD-30). At co-signature the co-signer SHALL see the alerts and overrides recorded so far. A release that is refused SHALL leave the prescription `pending_release` and open a work item for its signer, or for the medical director where the signer cannot act. No timer SHALL release it. The gate SHALL be met only when all three of these hold:
 - `define-prescribing-safety-checks` (not yet on main) is ratified;
 - its checking capability is built and enabled in that deployment;
 - the signing satisfies that change's signing-time conditions. Under its owner rulings 76 to 78 these include a connected, licensed or verified knowledge source and a completed check, with a recorded clinician-only path when the source is unavailable at signing.
@@ -22,6 +22,10 @@ Until `define-prescribing-safety-checks` is ratified, the gate SHALL NOT be met 
 #### Scenario: Failure: a clinician signs a prescription before checking exists
 - **WHEN** a clinician with prescription `sign` scope and a prescriber attestation in force tries to sign a prescription in a deployment where `define-prescribing-safety-checks` is not ratified, built and enabled
 - **THEN** openChart refuses the signature with reason `prescribing_safety_gate_not_met`, the prescription stays `draft`, and nothing takes effect
+
+#### Scenario: Failure: a deferred release meets a new alert
+- **WHEN** a signed prescription reaches its release time, and the release-time check raises an alert that was not answered at signing
+- **THEN** openChart keeps the prescription `pending_release` and opens a work item for its signer, and the prescription is released only after a clinician responds
 
 #### Scenario: Failure: an administrator tries to switch the gate off
 - **WHEN** a user with `System Manager` tries to disable the gate in a deployment

@@ -34,7 +34,7 @@ The scope below is ruled (owner ruling 73).
   - an act type from a registry that carries reserved and emergency-management flags.
 
   Acts are created only by a named clinician through the versioned service boundary. Nothing is created from intake automatically. Codes come from practice-supplied code sets; openChart bundles none and asserts no license status. Acts have a FHIR R4-compatible mapping at contract level, with no conformance claim.
-- **Authority** (AU-01 to AU-05). openChart defines clinical roles (`clinician`, `nurse`) and one medical director per practice. Grants per act class and action are recorded by the medical director. Licensure and prescriber facts are attestations supplied by the practice and are not verified by openChart. Every action is checked against the grant in force, and reductions apply at once. No agent or automated process authors, signs or co-signs (ruling 67).
+- **Authority** (AU-01 to AU-05). openChart defines clinical roles (`clinician`, `nurse`) and one medical director per practice. The designating account is never the designee, and the designee's role rests on a licensure attestation recorded by another named human. The first medical director is set up by one audited bootstrap act. Grants per act class and action are recorded by the medical director, and a self-grant is flagged, independently attested and shown. Licensure and prescriber facts are attestations supplied by the practice, never recorded by their own subject, and not verified by openChart. Every action is checked against the grant in force, and reductions apply at once. No agent or automated process authors, signs or co-signs (ruling 67).
 - **Encounters and notes** (EN-01 to EN-06):
   - an encounter lifecycle (in progress, final, amended);
   - an optional appointment reference only, since openPractice owns the appointment (ruling 31);
@@ -46,12 +46,13 @@ The scope below is ruled (owner ruling 73).
 - **Publication to openPractice** (PB-01 to PB-05). This change is the capability that CF-06 waits for. A signed, final encounter, with its coded diagnoses and procedures, is published under `openpractice-ehr-clinical-facts/1.0`:
   - by reference;
   - with codings carrying the system and code only;
-  - with forward-only corrections when an encounter is amended or voided.
+  - with encounter diagnoses only when `confirmed` (PROPOSED pending owner decision 87);
+  - with forward-only corrections and retractions, queued whatever the link state, delivered when the link returns to `active`, and sent when a published encounter gains a restricted act.
 
   openChart still works with no openPractice.
 - **Orders** (OR-01 to OR-04). One generic order record covers laboratory, imaging, referral, procedure and other orders. Its lifecycle is draft, pending release, released, completed, discontinued, cancelled and entered in error. A released order is never amended. openChart transmits no order and ingests no result.
 - **Prescriptions** (RX-01 to RX-04). The record of the prescribing decision carries a controlled-substance classification in which unknown counts as controlled.
-  - **Binding gate (ruling 74):** no prescription is signed in any deployment where the prescribing-safety gate of `define-prescribing-safety-checks` is not met.
+  - **Binding gate (ruling 74):** no prescription is signed, co-signed or released in any deployment where the prescribing-safety gate of `define-prescribing-safety-checks` is not met.
   - Controlled or unknown prescriptions are refused until the owner decides.
   - There is no pharmacy transmission, no controlled-substance electronic prescribing and no dispense record.
 
@@ -110,4 +111,4 @@ None. The ratified `expanded-patient-intake` requirements are cited and left unc
   - synthetic fixtures only;
   - no PHI in logs;
   - sensitive categories are an open question for counsel, with a fail-closed restricted mark meanwhile.
-- **Tensions:** fourteen are recorded in `design.md` as CT-1 to CT-14. Four of them (CT-1 to CT-4) concern ratified openChart text or published openChart contracts. Each needs the owner's disposition.
+- **Tensions:** sixteen are recorded in `design.md` as CT-1 to CT-16, and CT-10 is resolved. Four of them (CT-1 to CT-4) concern ratified openChart text or published openChart contracts. Each open tension needs the owner's disposition.
