@@ -5,7 +5,7 @@ openChart SHALL record each accepted `consult.write` as a consult record. The co
 
 The consult record SHALL hold the full exchange as written: every turn with its author type, time, text and attachment references, and the exchange's content digest. An AI-written summary MAY accompany it, labelled AI-authored, and SHALL never replace the exchange (design call AD-2). The record SHALL also hold the source system's conversation reference, so that an inbox item that names the same conversation can be associated with the consult record by reference. The inbox still files no copy (MI-24).
 
-Tier 1 SHALL be buildable without any orders, prescriptions or diagnoses model in openChart. A recorded consult MUST NOT be silently overwritten or deleted. A continuation or correction SHALL be a new consult version that references its predecessor.
+Tier 1 SHALL be buildable without any orders, prescriptions or diagnoses model in openChart. From `define-clinical-acts-foundation` (openChart-spec#5) it needs only the clinical roles and authority of AU-01 to AU-05, which that change's feature (1) builds (AG-02, AG-11). A recorded consult MUST NOT be silently overwritten or deleted. A continuation or correction SHALL be a new consult version that references its predecessor.
 
 #### Scenario: An advice consult is recorded
 - **WHEN** an AI system sends a schema-valid, authorized `consult.write` under an active `advice_only` grant for a linked patient
@@ -91,7 +91,7 @@ openChart SHALL NOT parse, classify or rewrite consult text to enforce ruling 66
 - **THEN** the clinician records the finding `advice_scope_breach`, the medical director is alerted at once, and the consult stays AI-generated communication
 
 ### Requirement: AC-06 Every consult is visible to the patient's doctor
-Every accepted consult record SHALL be visible to every clinician authorized for that patient's chart, on mobile or workstation (ruling 35). openChart SHALL list each new consult for the patient's responsible clinician where openChart records one. Where it records none, it SHALL list it for the medical director (design call AD-12). Consults selected for review, and refused AI act attempts linked to a consult, SHALL be listed with a distinct marker. Refused consult writes SHALL be visible to the medical director as integration exceptions holding only identifiers and coded causes.
+Every accepted consult record SHALL be visible to every clinician authorized for that patient's chart, on mobile or workstation (ruling 35). openChart SHALL list each new consult for the patient's responsible clinician where openChart records one. Where it records none, it SHALL list it for the medical director (design call AD-12). Consults selected for review, and refused AI act attempts linked to a consult, SHALL be listed with a distinct marker. Refused consult writes SHALL be visible to the medical director as integration exceptions holding only identifiers and coded causes. A consult refused at the grant checks SHALL also be kept as quarantined AI communication and listed for the responsible clinician (AC-11).
 
 #### Scenario: Failure: the patient has no responsible clinician recorded
 - **WHEN** a consult is recorded for a patient for whom openChart records no responsible clinician
@@ -99,12 +99,12 @@ Every accepted consult record SHALL be visible to every clinician authorized for
 
 #### Scenario: Failure: a consult write is refused for an expired grant
 - **WHEN** openChart refuses a consult write with reason `grant_expired`
-- **THEN** the medical director sees an integration exception with the identifiers and the coded cause, and no consult content
+- **THEN** the medical director sees an integration exception holding only the identifiers and the coded cause, and the consult itself is kept as quarantined AI communication and listed for the responsible clinician (AC-11)
 
 ### Requirement: AC-07 openChart selects consults for review by the medical director's sample and always-review categories
 openChart, not the AI system, SHALL select consults for clinician review (ruling 57). It SHALL select:
 - every consult that matches an always-review category in the grant's review policy, including any category the source system declared in `review_flags`;
-- every consult that matches a built-in always-review trigger, which the medical director cannot remove (design call AD-11): the emergency indicator is set; the consult has no evidence reference at all; the consult is linked to a refused act attempt, or contains content held under AC-05; or the source system declared the built-in code `red_flag` or `advice_scope_breach` in `review_flags`;
+- every consult that matches a built-in always-review trigger, which the medical director cannot remove (design call AD-11): the emergency indicator is set; the consult has no evidence reference at all; the consult is linked to a refused act attempt, or contains content held under AC-05; the source system declared the built-in code `red_flag` or `advice_scope_breach` in `review_flags`; or the consult is quarantined (AC-11);
 - a sample of the remaining consults, at the rate the review policy sets, by a selection the AI system cannot predict or influence.
 
 openChart SHALL record, for each consult, whether it was selected, why, and the review policy version that applied.
@@ -118,9 +118,9 @@ openChart SHALL record, for each consult, whether it was selected, why, and the 
 - **THEN** openChart still selects the consult for review under the built-in trigger
 
 ### Requirement: AC-08 Review status, reviewer and outcome are recorded by a named clinician, and an overdue review escalates
-Each consult record SHALL carry a review status: `not_selected`, `selected`, `in_review` or `reviewed`. A review SHALL be recorded only by a named clinician with an openChart account, with the outcome (`concur`, `concur_with_note`, `follow_up_required` or `unsafe`), an optional note, and the time (design call AD-25). No AI system and no agent SHALL record, change or close a review. A review SHALL be immutable; a later view SHALL be a new review event.
+Each consult record SHALL carry a review status: `not_selected`, `selected`, `in_review` or `reviewed`. A review SHALL be recorded only by a named clinician holding a consult review grant in force (AG-11), with the grant version relied on, the outcome (`concur`, `concur_with_note`, `follow_up_required` or `unsafe`), an optional note, and the time (design call AD-25). No AI system and no agent SHALL record, change or close a review. A review SHALL be immutable; a later view SHALL be a new review event.
 
-A selected consult that is not reviewed within the review policy's window SHALL escalate to the medical director, who keeps being alerted until it is reviewed (design call AD-13). An `unsafe` outcome SHALL alert the medical director at once and mark a clinician follow-up as owed to the patient. openChart SHALL report each outcome to the AI system as a `consult.reviewed` code only (design call AD-21). With any outcome, the reviewer MAY record the finding `advice_scope_breach` (ruling 66), which SHALL alert the medical director at once. In contract 1.0 the finding stays in openChart, and `consult.reviewed` carries the outcome code only (design call AD-31).
+A selected consult that is not reviewed within the review policy's window SHALL escalate to the medical director, who keeps being alerted until it is reviewed (design call AD-13). An `unsafe` outcome SHALL alert the medical director at once and mark a clinician follow-up as owed to the patient. openChart SHALL report each outcome to the AI system as a `consult.reviewed` code only (design call AD-21), except for a quarantined consult (AC-11), whose review is never reported. With any outcome, the reviewer MAY record the finding `advice_scope_breach` (ruling 66), which SHALL alert the medical director at once. In contract 1.0 the finding stays in openChart, and `consult.reviewed` carries the outcome code only (design call AD-31).
 
 #### Scenario: Failure: an agent tries to record a review
 - **WHEN** an AI agent tries to record a review outcome on a consult
@@ -137,7 +137,7 @@ A selected consult that is not reviewed within the review policy's window SHALL 
 ### Requirement: AC-09 openChart records consults after delivery and is never a prior sign-off
 AI answers reach the patient without a prior clinician sign-off (rulings 57 and 66). openChart SHALL NOT sit in the delivery path of an AI answer and SHALL NOT approve, hold or release delivery. Each consult record SHALL say that the answer was delivered without a prior clinician sign-off.
 
-openChart SHALL check a consult write against the grant version that was in force when the consult ended (design call AD-5). A consult that ended while the grant was active SHALL be recorded even if the grant was paused, narrowed or expired before the write arrived. A consult that ended while no grant was active SHALL be refused, with reason `no_current_grant`, `grant_paused`, `grant_expired` or `grant_revoked`, and shown to the medical director as an integration exception under AC-06.
+openChart SHALL check a consult write against the grant version that was in force when the consult ended (design call AD-5). A consult that ended while the grant was active SHALL be recorded even if the grant was paused, narrowed or expired before the write arrived. A consult that ended while no grant was active SHALL be refused, with reason `no_current_grant`, `grant_paused`, `grant_expired` or `grant_revoked`, shown to the medical director as an integration exception under AC-06, and kept as quarantined AI communication under AC-11.
 
 #### Scenario: Failure: a consult arrives after a pause
 - **WHEN** a consult ended at 10:00, the medical director paused the grant at 10:05, and the write arrives at 10:10
@@ -145,7 +145,7 @@ openChart SHALL check a consult write against the grant version that was in forc
 
 #### Scenario: Failure: a consult happened while the grant was paused
 - **WHEN** a consult ended at 10:20, after the 10:05 pause
-- **THEN** openChart refuses it with reason `grant_paused`, and the medical director sees the integration exception
+- **THEN** openChart refuses it with reason `grant_paused`, the medical director sees the integration exception, and the consult is kept as quarantined AI communication (AC-11)
 
 ### Requirement: AC-10 A consult with an emergency indicator is recorded, always reviewed and shown urgently, and is never AI emergency management
 An AI never manages an emergency in any mode (ruling 61). When a consult write carries the emergency indicator, openChart SHALL record it, select it for review (AC-07), list it for the patient's responsible clinician and the medical director with an urgent marker, and show where the source system routed the patient. openChart SHALL NOT treat any part of the consult as emergency management by the AI, and SHALL NOT record it as a clinical act (design call AD-22).
@@ -153,3 +153,35 @@ An AI never manages an emergency in any mode (ruling 61). When a consult write c
 #### Scenario: Failure: an emergency consult arrives
 - **WHEN** a consult write carries the emergency indicator and records that the patient was directed to emergency care
 - **THEN** openChart records the consult, selects it for review, lists it urgently for the responsible clinician and the medical director, and creates no clinical act
+
+### Requirement: AC-11 A consult refused at the grant checks is kept as quarantined AI communication, always reviewed and never accepted
+When openChart refuses a `consult.write` at step 8 of AW-06's precedence, after the write has passed steps 1 to 6, openChart SHALL keep the consult as quarantined AI communication (design call AD-33). Step 8 is any grant check of AG-06: `no_current_grant`, `grant_paused`, `grant_expired`, `grant_revoked`, `grant_mismatch`, `mode_mismatch`, `mode_not_permitted`, `approver_mismatch` or `legal_review_mismatch`. The AI's answer has already reached the patient (rulings 57 and 66), and the patient's doctor must be able to see what was said. Only such a write qualifies, because its source is authenticated, its content is intact, its context is operational and its patient is resolved through an existing link.
+
+A quarantined consult SHALL:
+- hold what an accepted consult record holds under AC-01 to AC-03, on MI-12's clinical communication record with origin `ai_consult`, marked `quarantined`, together with the refusal reason and the grant version openChart checked;
+- carry, on every display, the label of AC-04 and the words "delivered without a current grant";
+- be selected for review whatever the sample (AC-07), and be listed for the patient's responsible clinician, or for the medical director where openChart records none (design call AD-12);
+- be listed urgently for the responsible clinician and the medical director when its emergency indicator is set or its `review_flags` carry `red_flag`;
+- never be a diagnosis or a clinical fact of record (AC-04), and never become an accepted consult record through a later grant, approval or edit.
+
+A quarantined consult SHALL NOT count as an accepted record for the AI system. Its receipt is `refused`, with the grant reason and no `record_ref`. Its reference is never sent to the source system, a readback that names it is answered `not_found` (AW-12), and no `consult.reviewed` is sent for it. A repeat of the same `consult_id` and `consult_version` with identical content SHALL be refused the same way, and SHALL add no second quarantined copy. A consult refused at any other step, and every refused `act.write`, SHALL store no clinical content (AW-06).
+
+#### Scenario: Failure: a consult arrives with no current grant
+- **WHEN** a `consult.write` for a linked patient passes every check before the grant checks, and the practice has no current grant
+- **THEN** openChart answers `refused` with reason `no_current_grant` and no `record_ref`, keeps the consult as quarantined AI communication labelled "delivered without a current grant", selects it for review, and lists it for the responsible clinician
+
+#### Scenario: Failure: an emergency consult arrives after the grant expired
+- **WHEN** a consult with the emergency indicator set ended after the practice's grant expired
+- **THEN** openChart refuses it with reason `grant_expired`, keeps it as quarantined AI communication, and lists it urgently for the responsible clinician and the medical director
+
+#### Scenario: Failure: a red-flag consult names a configuration the grant does not record
+- **WHEN** a consult whose `review_flags` carry `red_flag` names a configuration version that the grant in force does not record
+- **THEN** openChart refuses it with reason `grant_mismatch`, keeps it as quarantined AI communication, and lists it urgently for the responsible clinician and the medical director
+
+#### Scenario: Failure: a consult refused before the grant checks stores nothing
+- **WHEN** a `consult.write` is refused with reason `patient_link_unknown`
+- **THEN** openChart stores no clinical content and keeps only the refusal record, because the consult cannot be tied to a patient
+
+#### Scenario: Failure: the grant is restored and the consult is re-sent
+- **WHEN** the medical director approves a new grant version after a consult was quarantined, and the AI system re-sends the same consult
+- **THEN** openChart checks it against the grant in force when the consult ended (AC-09), refuses it again, keeps the one quarantined copy, and never turns it into an accepted record

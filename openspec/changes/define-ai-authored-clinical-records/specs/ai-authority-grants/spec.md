@@ -24,12 +24,16 @@ A grant version, once approved, SHALL NOT be edited. Every change SHALL create a
 - **WHEN** a user tries to change the configuration version of an approved grant version
 - **THEN** the edit is refused, and only a new version approved by the medical director can carry the change
 
-### Requirement: AG-02 Only the practice's medical director, a named human, approves or changes a grant
-openChart SHALL record one medical director for each practice: a named human with an openChart account, designated by an audited act of a role decided in planning (design call AD-24). Only that person SHALL approve a grant version, widen it, resume it, record its legal review reference, or set its review policy and co-review window. The medical director, and any reduction under AG-08, MAY narrow or pause it. No AI system, agent, integration identity or other role SHALL approve, widen or resume a grant. Where no medical director is recorded, no grant SHALL be approved and the write path SHALL accept nothing.
+### Requirement: AG-02 Only the practice's medical director, as the clinical-acts foundation designates, approves or changes a grant
+The medical director SHALL be the one that `define-clinical-acts-foundation` (openChart-spec#5, not yet on main) designates under its AU-01, which is the single definition of the practice's medical director in openChart, including the clinical role and any attestation AU-01 requires. This change defines no designation of its own (design call AD-24). Only that person, while the AU-01 designation is in force, SHALL approve a grant version, widen it, resume it, record its legal review reference, set its review policy and co-review window, or record a consult review grant (AG-11). The medical director, and any reduction under AG-08, MAY narrow or pause it. No AI system, agent, integration identity or other role, `System Manager` included, SHALL approve, widen or resume a grant. Where no AU-01 designation is in force, no grant SHALL be approved and the write path SHALL accept nothing.
 
 #### Scenario: Failure: an AI agent tries to approve a grant
 - **WHEN** an AI agent, or the AI system's integration identity, tries to approve or widen a grant
 - **THEN** the action is refused and the grant is unchanged
+
+#### Scenario: Failure: a System Manager tries to approve a grant
+- **WHEN** a user who holds `System Manager` but no AU-01 designation tries to approve an `advice_only` grant
+- **THEN** the approval is refused and no grant is recorded
 
 #### Scenario: Failure: the practice has no medical director recorded
 - **WHEN** an administrator tries to activate a grant for a practice with no medical director recorded
@@ -143,3 +147,18 @@ A grant version SHALL NOT be approved without a review policy version that the m
 #### Scenario: Failure: a practice-mode grant without a co-review window
 - **WHEN** a medical director tries to approve a `limited_practice` grant with no co-review window for one of its act classes
 - **THEN** the approval is refused
+
+### Requirement: AG-11 A consult review is recorded only by a named clinician holding a consult review grant
+openChart SHALL record consult review grants, and SHALL let a person record a consult review (AC-08) only while that person holds one in force (design call AD-32). A consult review grant SHALL follow the rules of `define-clinical-acts-foundation` AU-02 and SHALL name: the person, who SHALL hold the `clinician` role under AU-01; the permitted action, recording a review of AI consult records; optionally the review categories it covers; the credential attestation it rests on (AU-03); the effective interval; the medical director who recorded it (AG-02); and a version. Only the medical director SHALL record, widen or renew one. Nothing SHALL be granted by default, by role name alone or by the `System Manager` role, and no AI system or agent SHALL hold one (AU-05). openChart SHALL check every review action against the grants in force at that moment, and SHALL record the grant version relied on (AU-04). A grant SHALL stop conferring authority at once when its interval ends, when it is narrowed or withdrawn, or when the attestation it rests on lapses (AU-03). Whether this grant is an AU-02 grant with a new scope or a record of its own is settled with that change (tension AT-12); either way it follows AU-02's rules.
+
+#### Scenario: The medical director grants consult review
+- **WHEN** the medical director records a consult review grant, for one year, for a named clinician with an attestation in force
+- **THEN** openChart records the grant with its version, interval, attestation reference and the medical director, and the clinician can record consult reviews
+
+#### Scenario: Failure: a user with no review grant records a review
+- **WHEN** a clinician account with no consult review grant in force tries to record a review outcome on a selected consult
+- **THEN** the review is refused, and the consult's review status is unchanged
+
+#### Scenario: Failure: the attestation behind a review grant lapses
+- **WHEN** the attestation a consult review grant rests on expires, and the holder then tries to record a review
+- **THEN** the review is refused, and the consult stays selected for review

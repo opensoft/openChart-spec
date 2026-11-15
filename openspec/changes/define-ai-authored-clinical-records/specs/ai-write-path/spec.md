@@ -17,10 +17,18 @@ The digest identifies the schema even after archival moves the file. openChart S
 ### Requirement: AW-02 Only a registered AI system's integration identity may write, for one source system and one practice
 openChart SHALL accept write-path messages only from an authenticated integration identity that is registered for exactly one external clinical AI system, identified by its `source_system` (issuer and namespace), and exactly one practice. The identity SHALL hold a dedicated write-path integration role that is narrower than `System Manager`, is named in planning, and is authorized for subject, tenant, purpose and role, as the ratified API requirement demands. Registering an AI system SHALL be an audited act by a named human. No AI system and no agent SHALL register, widen or re-scope an integration identity.
 
-The integration identity MAY be held by a relay that delivers one source system's writes and returns its receipts, as ruling 70 provides for the medical AI's records. The relay SHALL be registered for that one source system and practice, and each write SHALL still name the source system, not the relay. A source system's namespace SHALL be the source token that MI-12 of `define-clinical-message-inbox` uses for it, where MI-12 defines one. `healthlinc` and `openpractice_agent` SHALL NOT be write-path sources, and `openchart` SHALL NOT be a source namespace; the schema refuses all three (design call AD-30).
+The integration identity MAY be held by a relay that delivers one source system's writes and returns its receipts, as ruling 70 provides for the medical AI's records. The relay SHALL be registered for that one source system and practice, and each write SHALL still name the source system, not the relay. The registration SHALL record whether the source is relay-only. A source whose owner has ruled that it writes only through a relay SHALL be registered relay-only, by the named human, citing that ruling. For a relay-only source, openChart SHALL register only the relay's integration identity, SHALL refuse to register a direct identity for it, and SHALL refuse with `unauthorized` any write naming it that does not come from its relay. A source system's namespace SHALL be the source token that MI-12 of `define-clinical-message-inbox` uses for it, where MI-12 defines one. `healthlinc` and `openpractice_agent` SHALL NOT be write-path sources, and `openchart` SHALL NOT be a source namespace; the schema refuses all three (design call AD-30).
 
 #### Scenario: Failure: an unregistered caller writes
 - **WHEN** a caller without the write-path integration role sends a `consult.write`
+- **THEN** openChart refuses it with reason `unauthorized` and stores no clinical content
+
+#### Scenario: Failure: a direct identity is registered for a relay-only source
+- **WHEN** a named human tries to register a direct integration identity for a source registered as relay-only
+- **THEN** the registration is refused, and only the relay's identity stays registered for that source
+
+#### Scenario: Failure: a relay-only source writes without its relay
+- **WHEN** a write naming a relay-only source arrives from any identity other than its registered relay
 - **THEN** openChart refuses it with reason `unauthorized` and stores no clinical content
 
 #### Scenario: Failure: a write names HealthLinc as its source
@@ -56,7 +64,7 @@ openChart SHALL record a write only when its `context` is `operational`. A write
 - **THEN** openChart refuses it with reason `non_operational_context` and creates no record
 
 ### Requirement: AW-05 Writes are idempotent and replay-safe
-The `message_id` of each inbound message SHALL be its idempotency key. Idempotency and duplicate detection SHALL be scoped to the authenticated integration identity, that is, to its practice and source system (AW-02): a `message_id`, a `consult_id` and an `act_id` are matched only against messages and records from the same practice and source system, never across integrations. A message whose `message_id` was already processed SHALL be answered with the original receipt and SHALL change nothing. A write that repeats a `consult_id` and `consult_version`, or an `act_id` and `act_version`, under a new `message_id` with identical content SHALL be answered `duplicate` with the original `record_ref`. The same identifiers with different content SHALL be refused with reason `conflicting_duplicate`, SHALL leave the existing record unchanged, and SHALL be recorded as an integration exception that holds only identifiers and a coded cause. The `message_id` of every message openChart sends SHALL be a random UUID, reused on every retry. No key SHALL carry PHI.
+The `message_id` of each inbound message SHALL be its idempotency key. Idempotency and duplicate detection SHALL be scoped to the authenticated integration identity, that is, to its practice and source system (AW-02): a `message_id`, a `consult_id` and an `act_id` are matched only against messages and records from the same practice and source system, never across integrations. A message whose `message_id` was already processed SHALL be answered with the original receipt and SHALL change nothing. A write that repeats a `consult_id` and `consult_version`, or an `act_id` and `act_version`, under a new `message_id` with identical content SHALL be answered `duplicate` with the original `record_ref`. The same identifiers with different content SHALL be refused with reason `conflicting_duplicate`, SHALL leave the existing record unchanged, and SHALL be recorded as an integration exception that holds only identifiers and a coded cause. A quarantined consult (AC-11) is not a record for these rules: a repeat is evaluated afresh, and AC-11 keeps a single quarantined copy. The `message_id` of every message openChart sends SHALL be a random UUID, reused on every retry. No key SHALL carry PHI.
 
 #### Scenario: Failure: a write is retried three times
 - **WHEN** the same `consult.write` arrives three times with the same `message_id`
@@ -86,11 +94,15 @@ When more than one refusal reason applies, openChart SHALL check in this order a
 
 For an `authority.notice`, steps 1 to 3 apply, then `notice_would_widen`. Whatever reason a refused `act.write` carries, a set emergency indicator SHALL make its refusal record urgent for the patient's responsible clinician and the medical director (AA-06).
 
-A refused write SHALL store no clinical content. openChart SHALL keep a refusal record of it holding only identifiers, the write kind, the act class where there is one, the claimed mode, the reason code and the time (design call AD-7). The refusal record SHALL be visible as AW-09, AC-06 and AA-12 state.
+A refused write SHALL store no clinical content, with one exception. A `consult.write` refused at step 8, after passing steps 1 to 6, SHALL be kept as quarantined AI communication under AC-11, because its answer has already reached the patient, and its source, content and patient are established. What is stored then is exactly what AC-11 lists, and none of it is returned to the source system. No refused `act.write`, and no write refused at any other step, stores clinical content. For every refused write, openChart SHALL keep a refusal record holding only identifiers, the write kind, the act class where there is one, the claimed mode, the reason code and the time (design call AD-7). The refusal record SHALL be visible as AW-09, AC-06 and AA-12 state.
 
 #### Scenario: Failure: an act write is refused
 - **WHEN** openChart refuses an `act.write`
 - **THEN** the receipt carries `refused` and one reason code, openChart stores no part of the act's content, and the refusal record holds only identifiers and codes
+
+#### Scenario: Failure: a consult is refused at the grant checks
+- **WHEN** an authenticated, intact, operational `consult.write` for a linked patient is refused with reason `grant_expired`
+- **THEN** the receipt carries `refused`, the reason and no `record_ref`; the refusal record holds identifiers and codes; and the consult is kept only as quarantined AI communication (AC-11)
 
 #### Scenario: Failure: an act arrives under advice only before Tier 2 exists
 - **WHEN** an `act.write` arrives for a practice whose grant is `advice_only`, on a deployment where Tier 2 is not in force
@@ -148,7 +160,7 @@ The write path SHALL be covered by contract tests, written first, that validate 
 - **THEN** schema validation fails, and the test expects that failure
 
 ### Requirement: AW-12 The writing source system can read back what openChart stored, by digest and code only
-openChart SHALL answer a `record.readback_request` with exactly one `record.readback`, so that the source system that wrote a record, or a relay acting for it, can confirm what openChart stored (design call AD-28). Only the integration identity of the source system that wrote the record SHALL be answered with `found`. For a found record, the answer SHALL carry only: the record reference; the source system's record identifier and version; the stored content digest, recomputed by openChart from what it stored (for a consult, as `exchange.content_sha256` is defined; for an act, over its stored `act_content`); the grant version it was checked against; its current state; and its review or co-review status. A readback MUST NOT carry exchange text, summary text, act content, patient identifiers or any other clinical content. A request from any other identity SHALL be answered `unauthorized`, and one for an unknown record `not_found`, each with no record detail.
+openChart SHALL answer a `record.readback_request` with exactly one `record.readback`, so that the source system that wrote a record, or a relay acting for it, can confirm what openChart stored (design call AD-28). Only the integration identity of the source system that wrote the record SHALL be answered with `found`. For a found record, the answer SHALL carry only: the record reference; the source system's record identifier and version; the stored content digest, recomputed by openChart from what it stored (for a consult, as `exchange.content_sha256` is defined; for an act, over its stored `act_content`); the grant version it was checked against; its current state; and its review or co-review status. A readback MUST NOT carry exchange text, summary text, act content, patient identifiers or any other clinical content. A request from any other identity SHALL be answered `unauthorized`, and one for an unknown record `not_found`, each with no record detail. A quarantined consult (AC-11) is not an accepted record: its reference is never sent to the source system, and a readback that names it SHALL be answered `not_found`.
 
 #### Scenario: A relay confirms a stored consult
 - **WHEN** the writing source system requests a readback of a consult it wrote and openChart accepted
