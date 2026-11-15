@@ -12,5 +12,6 @@
   "direction": "from_ai_system",
   "grant_version": 1,
   "change": "paused",
-  "effective_at": "2026-11-14T11:00:00Z"
+  "effective_at": "2026-11-14T11:00:00Z",
+  "configuration_version": "cfg-2026.12.01-2"
 }

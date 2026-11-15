@@ -1,0 +1,121 @@
+{
+  "act-write-limited-practice.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "note": "every act is a recommendation while Tier 2 is not in force (AA-01, AW-16)"
+  },
+  "act-write-full-practice.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "note": "every act is a recommendation while Tier 2 is not in force (AA-01, AW-16)"
+  },
+  "act-write-unknown-act-class.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "act_type_unsupported",
+    "note": "the class is kept as declared (AN-06; ruling 188)"
+  },
+  "act-write-missing-legal-review-ref.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "legal_review_mismatch",
+    "note": "a missing field of the claim is the step-8 code it would answer (AD-63)"
+  },
+  "act-write-limited-missing-allowlist-entry.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "allowlist_entry_unknown",
+    "note": "a missing field of the claim is the step-9 code it would answer (AD-63)"
+  },
+  "act-write-no-evidence.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "note": "recorded, shown as resting on no evidence reference and flagged for review (AD-63)"
+  },
+  "act-write-without-act-type.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "act_type_unsupported",
+    "note": "the clinician who adopts it completes the missing parts (ruling 188; AD-63)"
+  },
+  "act-write-without-authority.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "grant_mismatch",
+    "note": "no authority claimed names no grant version, the first grant check it can fail while a grant is current (AD-63)"
+  },
+  "act-write-without-declared-flags.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "emergency_management_refused",
+    "note": "absent declared_reserved and emergency_indicated mean true, shown as defaulted; listed urgently (AD-63, AA-06)"
+  },
+  "act-write-without-consent-ref.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "consent_ref_missing",
+    "note": "no consent reference is not refused (AD-62, PROPOSED)"
+  },
+  "act-write-without-content-schema.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "note": "the content is kept as given with no declared schema (AD-63)"
+  },
+  "act-write-declared-clinical-note.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "act_type_unsupported",
+    "note": "declared a note, but its content is not the foundation's note content, so it is a recommendation with no_decision_authority; note content would be recorded_as_information (the foundation's AN-06 and CD-65; ruling 187; AD-68)"
+  },
+  "act-write-discontinue-with-target.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "under_tier2": "targets_clinician_record",
+    "note": "proposed action discontinue on the target as given; under Tier 2, targets_clinician_record where the target is a clinician's record (AD-68)"
+  },
+  "act-write-sign-supersedes-own-act.valid.json": {
+    "receipt": "recorded_as_recommendation",
+    "code": "tier2_not_in_force",
+    "note": "a new recommendation that corrects the source's earlier one (AN-09; AW-16)"
+  },
+  "consult-write-advice-only.valid.json": {
+    "receipt": "accepted",
+    "note": "an advice-only consult under its current grant (AC-01)"
+  },
+  "consult-write-scenario-context.valid.json": {
+    "receipt": "refused",
+    "note": "declared test data is refused with non_operational_context (AW-04)"
+  },
+  "consult-write-ai-without-openwallet-id.valid.json": {
+    "receipt": "quarantined",
+    "code": "openwallet_id_missing",
+    "note": "held outside the chart, never refused (ruling 194; AD-60)"
+  },
+  "consult-write-missing-models.valid.json": {
+    "receipt": "accepted",
+    "note": "the record shows the AI's model and version from on_behalf_of (AD-63)"
+  },
+  "consult-write-missing-consent-ref.valid.json": {
+    "receipt": "quarantined",
+    "code": "consent_ref_missing",
+    "note": "quarantined in the chart and flagged to the medical director (AD-62, PROPOSED)"
+  },
+  "consult-write-without-authority.valid.json": {
+    "receipt": "quarantined",
+    "code": "grant_mismatch",
+    "note": "no authority claimed names no grant version: quarantined in the chart (AD-63)"
+  },
+  "consult-write-without-emergency-indicator.valid.json": {
+    "receipt": "accepted",
+    "note": "absent emergency_indicated means true: listed urgently and always reviewed, shown as defaulted (AD-63)"
+  },
+  "consult-write-declarations-absent.valid.json": {
+    "receipt": "quarantined",
+    "code": "consent_ref_missing",
+    "note": "nothing but the envelope, identity, patient, provenance and content: quarantined in the chart for want of consent, emergency defaulted to true (AD-62, AD-63)"
+  },
+  "consult-write-pdf-attachment.valid.json": {
+    "receipt": "accepted",
+    "note": "a display-only attachment, never parsed or imported (AC-04)"
+  }
+}

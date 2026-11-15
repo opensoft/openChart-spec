@@ -28,7 +28,7 @@
       "kind": "system",
       "system": {
         "issuer": "syn-ai-system.example",
-        "namespace": "healthlinc"
+        "namespace": "syn_ai_system"
       },
       "operator_ref": "SYN-OPERATOR-0001"
     }

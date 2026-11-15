@@ -74,9 +74,9 @@
   "knowledge_basis": "cited_sources",
   "act_content": {
     "content_schema": {
-      "id": "syn.foundation.order",
+      "id": "syn.foundation.diagnosis",
       "version": "0.0-placeholder",
-      "sha256": "adbfc74ecaef434eb888918a11bdceee0a0060fee1e6d0655a9384149e53961e"
+      "sha256": "9b6470bbe11d9dfa068ffc690e06cc3b4331d476fec0225366e2d4e4ece0ef85"
     },
     "content": {
       "syn_note": "SYN placeholder: the clinical-acts foundation defines this body."

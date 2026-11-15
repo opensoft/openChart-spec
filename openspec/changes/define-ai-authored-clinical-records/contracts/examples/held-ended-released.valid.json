@@ -1,0 +1,21 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "held.ended",
+  "message_id": "0d1e2f3a-4b5c-4d6e-b580-91a2b3c4d5e6",
+  "sent_at": "2026-11-15T10:00:02Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "write_kind": "consult",
+  "record_ref": "OC-AIH-00003",
+  "source_record_id": "SYN-CONSULT-0001",
+  "source_record_version": 1,
+  "quarantine_cause": "openwallet_id_not_covered",
+  "ending": "released",
+  "released_record_ref": "OC-AIC-00009",
+  "released_record_state": "recorded",
+  "at": "2026-11-15T10:00:00Z"
+}

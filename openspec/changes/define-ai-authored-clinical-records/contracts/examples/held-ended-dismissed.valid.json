@@ -1,0 +1,20 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "held.ended",
+  "message_id": "1e2f3a4b-5c6d-4e7f-8691-a2b3c4d5e6f7",
+  "sent_at": "2026-11-15T10:00:02Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "write_kind": "act",
+  "record_ref": "OC-AIH-00001",
+  "source_record_id": "SYN-ACT-0001",
+  "source_record_version": 1,
+  "quarantine_cause": "openwallet_id_not_covered",
+  "ending": "dismissed",
+  "at": "2026-11-15T10:00:00Z",
+  "dismissal_reason": "not_for_this_patient"
+}
