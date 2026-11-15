@@ -50,7 +50,7 @@ openChart SHALL record a write only when its `context` is `operational`. A write
 - **THEN** openChart refuses it with reason `non_operational_context` and creates no record
 
 ### Requirement: AW-05 Writes are idempotent and replay-safe
-The `message_id` of each inbound message SHALL be its idempotency key. A message whose `message_id` was already processed SHALL be answered with the original receipt and SHALL change nothing. A write that repeats a `consult_id` and `consult_version`, or an `act_id` and `act_version`, under a new `message_id` with identical content SHALL be answered `duplicate` with the original `record_ref`. The same identifiers with different content SHALL be refused with reason `conflicting_duplicate`, SHALL leave the existing record unchanged, and SHALL be recorded as an integration exception that holds only identifiers and a coded cause. The `message_id` of every message openChart sends SHALL be a random UUID, reused on every retry. No key SHALL carry PHI.
+The `message_id` of each inbound message SHALL be its idempotency key. Idempotency and duplicate detection SHALL be scoped to the authenticated integration identity, that is, to its practice and source system (AW-02): a `message_id`, a `consult_id` and an `act_id` are matched only against messages and records from the same practice and source system, never across integrations. A message whose `message_id` was already processed SHALL be answered with the original receipt and SHALL change nothing. A write that repeats a `consult_id` and `consult_version`, or an `act_id` and `act_version`, under a new `message_id` with identical content SHALL be answered `duplicate` with the original `record_ref`. The same identifiers with different content SHALL be refused with reason `conflicting_duplicate`, SHALL leave the existing record unchanged, and SHALL be recorded as an integration exception that holds only identifiers and a coded cause. The `message_id` of every message openChart sends SHALL be a random UUID, reused on every retry. No key SHALL carry PHI.
 
 #### Scenario: Failure: a write is retried three times
 - **WHEN** the same `consult.write` arrives three times with the same `message_id`
@@ -60,14 +60,35 @@ The `message_id` of each inbound message SHALL be its idempotency key. A message
 - **WHEN** a second write for an existing `consult_id` and `consult_version` carries a different exchange
 - **THEN** openChart refuses it with reason `conflicting_duplicate`, the existing record is unchanged, and an integration exception holds only identifiers and the coded cause
 
+#### Scenario: Failure: two integrations use the same consult identifier
+- **WHEN** two practices' AI systems each write a consult with `consult_id` `SYN-CONSULT-0001` and `consult_version` 1, with different content
+- **THEN** openChart records both, each under its own practice and source system, and answers neither as `duplicate` or `conflicting_duplicate`
+
 ### Requirement: AW-06 Every write and every notice gets exactly one receipt, and a refused write stores no clinical content
 openChart SHALL answer every `consult.write`, `act.write` and `authority.notice` it receives with exactly one `write.receipt`. The receipt SHALL carry `accepted`, `duplicate` or `refused`. An accepted or duplicate receipt SHALL carry openChart's `record_ref`. A refused receipt SHALL carry one reason code from the schema and no `record_ref`. openChart SHALL durably record every receipt it sends.
+
+When more than one refusal reason applies, openChart SHALL check in this order and report the first that applies (design call AD-29):
+1. `schema_invalid`, then `unsupported_major_version`;
+2. `unauthorized`;
+3. a replayed `message_id` (the original receipt), then `duplicate` or `conflicting_duplicate` (AW-05);
+4. `non_operational_context`;
+5. `content_digest_mismatch`;
+6. `patient_link_unknown`, `patient_link_mismatch`, `patient_link_in_review`;
+7. for an `act.write`: `tier2_not_in_force`, then `act_type_unsupported` (AA-01);
+8. the grant checks, in the order of AG-06's table;
+9. for an `act.write`: `emergency_management_refused`, `reserved_act_refused`, `targets_clinician_record`, `allowlist_entry_unknown`, `allowlist_entry_mismatch`, `conditions_unverified`.
+
+For an `authority.notice`, steps 1 to 3 apply, then `notice_would_widen`. Whatever reason a refused `act.write` carries, a set emergency indicator SHALL make its refusal record urgent for the patient's responsible clinician and the medical director (AA-06).
 
 A refused write SHALL store no clinical content. openChart SHALL keep a refusal record of it holding only identifiers, the write kind, the act class where there is one, the claimed mode, the reason code and the time (design call AD-7). The refusal record SHALL be visible as AW-09, AC-06 and AA-12 state.
 
 #### Scenario: Failure: an act write is refused
 - **WHEN** openChart refuses an `act.write`
 - **THEN** the receipt carries `refused` and one reason code, openChart stores no part of the act's content, and the refusal record holds only identifiers and codes
+
+#### Scenario: Failure: an act arrives under advice only before Tier 2 exists
+- **WHEN** an `act.write` arrives for a practice whose grant is `advice_only`, on a deployment where Tier 2 is not in force
+- **THEN** openChart refuses it with reason `tier2_not_in_force`, which step 7 reports before the grant checks of step 8
 
 ### Requirement: AW-07 No PHI in logs, errors, receipts, notifications, diagnostics or keys
 openChart's logs, errors, diagnostics, idempotency keys, clinician notifications and every receipt, notice and status message it sends under the contract MUST NOT contain names, dates of birth, contact details, patient identifier values, exchange or summary text, act content or any other clinical content. Diagnostics SHALL reference writes only by `message_id`, `consult_id`, `act_id`, `record_ref` and grant identifiers. A clinician notification on any device SHALL say only that a record awaits attention, with a coded cause and an opaque reference. Opening the record SHALL require an authenticated openChart session.

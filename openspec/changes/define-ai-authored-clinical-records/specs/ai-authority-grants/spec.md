@@ -72,7 +72,7 @@ openChart SHALL NOT encode any legal or regulatory rule as fact. The topics the 
 - **THEN** the grant stops accepting writes with reason `grant_expired` until a current review is recorded and the medical director approves a new version
 
 ### Requirement: AG-06 Every write is checked against the current grant, and anything missing, expired, paused, narrowed or mismatched fails closed
-For every `consult.write` and `act.write`, openChart SHALL find the grant for the write's practice and source system, and SHALL refuse the write when any of these holds:
+For every `consult.write` and `act.write`, openChart SHALL find the grant for the write's practice and source system, and SHALL refuse the write when any of these holds, checking in the order of this table after the earlier steps of AW-06's precedence (for an `act.write`, `tier2_not_in_force` comes first):
 
 | Condition | Reason |
 |---|---|
@@ -92,7 +92,7 @@ A narrowing (AG-08) SHALL count: a write that relies on scope removed by a narro
 - **THEN** openChart refuses it with reason `grant_mismatch` and stores no clinical content
 
 #### Scenario: Failure: an advice-only grant receives an act
-- **WHEN** an `act.write` arrives for a practice whose grant is `advice_only`
+- **WHEN** an `act.write` arrives for a practice whose grant is `advice_only`, on a deployment where Tier 2 is in force
 - **THEN** openChart refuses it with reason `mode_not_permitted`
 
 ### Requirement: AG-07 Limited practice is an allowlist the medical director approves, and anything not listed goes to the human doctor

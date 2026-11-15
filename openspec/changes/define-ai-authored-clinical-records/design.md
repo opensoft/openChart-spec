@@ -111,7 +111,7 @@ These names are used identically in this change and in `MedxSoft/MedxEHR-spec` c
 | `record.readback` | openChart → AI system or its relay | The stored record's identifiers, content digest, grant version, state and review status; no content (AW-12) |
 | `message.ack` | both | Acknowledges a status or notice |
 
-The refusal reasons are closed: `schema_invalid`, `unsupported_major_version`, `unauthorized`, `non_operational_context`, `patient_link_unknown`, `patient_link_mismatch`, `patient_link_in_review`, `no_current_grant`, `grant_paused`, `grant_expired`, `grant_revoked`, `grant_mismatch`, `mode_mismatch`, `mode_not_permitted`, `allowlist_entry_unknown`, `allowlist_entry_mismatch`, `conditions_unverified`, `reserved_act_refused`, `emergency_management_refused`, `approver_mismatch`, `legal_review_mismatch`, `targets_clinician_record`, `act_type_unsupported`, `tier2_not_in_force`, `conflicting_duplicate`, `content_digest_mismatch` and `notice_would_widen`.
+The refusal reasons are closed, and AW-06 fixes the order in which they are checked: `schema_invalid`, `unsupported_major_version`, `unauthorized`, `non_operational_context`, `patient_link_unknown`, `patient_link_mismatch`, `patient_link_in_review`, `no_current_grant`, `grant_paused`, `grant_expired`, `grant_revoked`, `grant_mismatch`, `mode_mismatch`, `mode_not_permitted`, `allowlist_entry_unknown`, `allowlist_entry_mismatch`, `conditions_unverified`, `reserved_act_refused`, `emergency_management_refused`, `approver_mismatch`, `legal_review_mismatch`, `targets_clinician_record`, `act_type_unsupported`, `tier2_not_in_force`, `conflicting_duplicate`, `content_digest_mismatch` and `notice_would_widen`.
 
 `contracts/examples/` holds 35 synthetic fixtures: 13 that must validate and 22 that must fail, each for one stated reason. They are part of the contract-test suite (AW-11).
 
@@ -263,6 +263,7 @@ Each item goes beyond the rulings and is proposed, not ruled. Where a ruling is 
 | AD-26 | A refused write for a patient-link mismatch or a conflicting duplicate records an integration exception with identifiers and a coded cause only. | AW-03, AW-05 |
 | AD-27 | An AI turn, and an act, may carry its own evidence references and a neutral knowledge basis (`cited_sources`, `model_knowledge`, `mixed`), so that a reviewer can see which statements rest on cited sources and which on the model's own knowledge. Only AI turns may carry them. | AC-03, AA-02 |
 | AD-28 | The contract carries a digest-only readback, answered only to the source system that wrote the record, so that a writer or its relay can confirm what the chart stored without any clinical content crossing back. | AW-12 |
+| AD-29 | When several refusal reasons apply, openChart reports the first in a fixed precedence (AW-06): `tier2_not_in_force` comes before every grant, mode and act check, so a Tier 1 deployment answers every act write the same way. Idempotency is scoped to the authenticated practice and source system (AW-05). A set emergency indicator makes any refused act's record urgent, whatever its reason. | AW-05, AW-06 |
 
 ## Conflicts and tensions
 
@@ -294,7 +295,7 @@ Nine are recorded. Each needs the owner's disposition before ratification. None 
 
 ## Migration Plan
 
-1. Validate strictly. Brett Heap disposes AT-1 to AT-9 and AD-1 to AD-28, stamps `Ratified by` and sets `Status: ratified`. `define-clinical-message-inbox` is ratified first or together (AD-3).
+1. Validate strictly. Brett Heap disposes AT-1 to AT-9 and AD-1 to AD-29, stamps `Ratified by` and sets `Status: ratified`. `define-clinical-message-inbox` is ratified first or together (AD-3).
 2. Adopt openChart's constitution through separate governance.
 3. Create the single Spec Kit feature from the assembly root, starting with Tier 1: the write-path role, the grant record for `advice_only`, the legal-review record, the review policy, the consult record and its review, and refusal of every `act.write` with `tier2_not_in_force`. Contract tests run against an AI-system double alongside the standalone regression suite.
 4. Enable advice-only for a practice only when its gates are recorded (AG-04).
@@ -306,7 +307,7 @@ Nine are recorded. Each needs the owner's disposition before ratification. None 
 Each question is routed in `tasks.md` §2 to the gate it blocks.
 
 1. **Constitution adoption.** openChart's constitution is the unfilled template. This blocks planning.
-2. **Owner dispositions** of AT-1 to AT-9 and AD-1 to AD-28, including proposed decision 65. These block ratification.
+2. **Owner dispositions** of AT-1 to AT-9 and AD-1 to AD-29, including proposed decision 65. These block ratification.
 3. **The clinical-acts foundation.** Who drafts `define-clinical-acts-foundation`, and when? This blocks Tier 2.
 4. **The responsible clinician.** openChart records no care team today. Which change defines a patient's responsible clinician? Meanwhile, AD-12's fallback to the medical director applies.
 5. **The AI system's patient link.** Is it registered through the ratified external-identifier path, or through a governed link contract like PL-02's? Meanwhile, AD-23 applies.
