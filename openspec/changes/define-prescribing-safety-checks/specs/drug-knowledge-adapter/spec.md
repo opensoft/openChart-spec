@@ -31,7 +31,7 @@ Every result SHALL carry the source reference, version and effective date. A mes
 - **THEN** openChart treats the source as unavailable for that check (KA-05), and stores the failure with a coded reason
 
 ### Requirement: KA-03 A source is usable only after the medical director records its verification
-A connected source SHALL be usable for checks only after the medical director, as defined by `define-clinical-acts-foundation` AU-01, records a verification (design call PD-8). The verification SHALL hold:
+A connected source SHALL be usable for checks only after the medical director, as defined by `define-clinical-acts-foundation` AU-01, records a verification (owner rulings 78 and 82; design call PD-8). The verification SHALL hold:
 - the source identity and version;
 - the adapter identity and version;
 - an opaque reference to the practice's own licence or permission evidence;
@@ -49,15 +49,19 @@ openChart SHALL NOT judge the licence. It records the practice's attestation and
 - **WHEN** the adapter reports a source version different from the verified one
 - **THEN** the source is not usable until a new verification is recorded, and the gate treats it as not verified
 
-### Requirement: KA-04 A source older than the practice's policy age counts as unavailable
-The medical director SHALL set a currency policy: the maximum age of a source, measured from its declared effective date (design call PD-9). A source older than that age SHALL be treated as unavailable. Until a currency policy is set, no source SHALL be usable, so the gate is not met. openChart SHALL alert the medical director when a source becomes stale.
+### Requirement: KA-04 A source older than the practice's policy age counts as unavailable, and signing stops past the staleness limit
+The medical director SHALL set a currency policy with two values, both measured from the source's declared effective date (design calls PD-9 and PD-12): the maximum age of a source, and a staleness limit longer than that age. This change sets neither value. A source older than its maximum age is stale. A stale source SHALL be treated as unavailable, so a step may complete only on the outage path (PG-02), and openChart SHALL alert the medical director when the source becomes stale (owner ruling 82). A source older than the staleness limit SHALL NOT be used to sign: the gate decision for every signature, co-signature and release SHALL be `refused` with reason `source_stale_beyond_limit`, and no outage path is offered (owner ruling 82). Until a currency policy with both values is set, no source SHALL be usable, so the gate is not met.
 
 #### Scenario: A source goes stale
-- **WHEN** a source's effective date passes the policy's maximum age
-- **THEN** openChart treats it as unavailable, alerts the medical director, and every signing uses the gate's unavailable path (PG-02)
+- **WHEN** a source's effective date passes the policy's maximum age, but not its staleness limit
+- **THEN** openChart treats it as unavailable, alerts the medical director, and every signing uses the gate's outage path (PG-02)
+
+#### Scenario: Failure: the source passes the staleness limit
+- **WHEN** a stale source's effective date also passes the policy's staleness limit
+- **THEN** every prescription signature, co-signature and release is refused with `source_stale_beyond_limit`, and no outage path is offered
 
 #### Scenario: Failure: no currency policy
-- **WHEN** a deployment has a verified source and no currency policy
+- **WHEN** a deployment has a verified source and no currency policy, or a policy without a staleness limit
 - **THEN** the source is not usable, and no prescription can be signed
 
 ### Requirement: KA-05 An adapter failure makes the source unavailable and is never read as "no alerts"

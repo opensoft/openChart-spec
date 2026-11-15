@@ -8,7 +8,7 @@ These facts about what is built were checked at `opensoft/openChart-code` revisi
 - There is no clinician-confirmed allergy list, no medication list, no prescription, no drug knowledge and no check.
 
 **Related drafts, none on main:**
-- `define-clinical-acts-foundation` (openChart-spec#5, head `dfb2100`) specifies the prescription record (RX-01 to RX-04), its signing gate (RX-02), the act model (CA-01 to CA-15) and authority (AU-01 to AU-06). It names this change as required before any prescription is signed, with minimum contents (checked below).
+- `define-clinical-acts-foundation` (openChart-spec#5, head `b375dc2`) specifies the prescription record (RX-01 to RX-04), its signing gate (RX-02), the act model (CA-01 to CA-15) and authority (AU-01 to AU-06). It names this change as required before any prescription is signed, with minimum contents (checked below).
 - `define-ai-authored-clinical-records` (openChart-spec#4, read at `dbb1fc5` and in part at `6989780`) has a Tier 2 that would accept AI-authored prescriptions. PG-01 covers that acceptance, and it needs `open`.
 - `define-openpractice-boundary` (openChart-spec#2, `e7c3090`) has CF-03.
 
@@ -31,6 +31,11 @@ Every row is a ruling by **Brett Heap**. **Rulings are not ratification.** This 
 | 76 | 2026-11-15 | When the knowledge source is unavailable at signing, a clinician may sign only with a recorded statement that checks were unavailable and that a manual review was done. The prescription is flagged and re-checked when the source returns. A non-clinician author, including any future AI author, can never use that path. | PG-02 |
 | 77 | 2026-11-15 | The first checks are allergy, drug–drug interaction and duplicate therapy. Drug–supplement interaction is included only where the knowledge source declares that it supports it. Later changes: dose range, drug–condition, pregnancy and lactation, renal and hepatic adjustment, paediatric and geriatric rules. | PC-03 |
 | 78 | 2026-11-15 | openChart bundles no drug knowledge. Each practice connects a licensed or verified source through the adapter contract, and no prescription can be signed without one. | KA-01 to KA-03, PG-01 |
+| 82 | 2026-11-15 | A stale drug knowledge source is handled as the outage path, with the medical director alerted. Signing stops after a policy staleness limit. A source never verified cannot be used to sign. | KA-03, KA-04, PG-01, PG-02; PT-2, settled |
+| 83 | 2026-11-15 | The prescribing-safety change refuses controlled-substance prescriptions and prescriptions of unknown classification. | PG-01 (with the foundation's reason code `controlled_classification_not_permitted`); the foundation's RX-03 |
+| 84 | 2026-11-15 | The ratified sentence that no API response or event creates a prescription, diagnosis or order (openChart's feature `001-expanded-patient-intake`) is read narrowly, with a small clarifying amendment. | PT-1, settled; the amendment's wording is proposed in `define-clinical-acts-foundation` (its CT-1) |
+
+Rulings 79 to 98 were made together on 2026-11-15, when Brett Heap accepted the recommended form of every numbered decision except 80, which stays open. The rows above are the ones that touch this change.
 
 ## Goals / Non-Goals
 
@@ -115,18 +120,18 @@ A practice's medication codings come from its own code sets (foundation CA-12). 
 ### 5. Verification, currency and failures
 
 - **Verification.** A source is usable only after the medical director records a verification (KA-03, PD-8). It holds the source and adapter identities and versions, the practice's evidence reference, a passing contract test, an effective date and a review date. openChart does not judge the licence. A new version or a passed review date needs a new verification.
-- **Currency.** The medical director sets a maximum source age. A source past that age is unavailable, and with no policy set no source is usable (KA-04, PD-9).
+- **Currency (ruling 82).** The medical director sets a maximum source age and a longer staleness limit. A source past the maximum age is stale: it is handled as the outage path, and the medical director is alerted. Past the staleness limit, signing stops and no outage path is offered. With no policy set, no source is usable (KA-04, PD-9, PD-12).
 - **Failures.** A timeout, an error, an invalid result or an omitted input never reads as "no alerts" (KA-05, PD-10).
 
-### 6. The gate (rulings 74, 76 and 78)
+### 6. The gate (rulings 74, 76, 78, 82 and 83)
 
 One decision is made per signature, co-signature and release attempt (PG-01, PD-19):
 
 | Decision | When |
 |---|---|
 | `open` | Capability enabled; legal review in force; source verified and current; that step's check complete for the exact digest; every alert and warning answered under PC-06 |
-| `outage_path` | Everything else holds, but the verified source is unavailable at that step (unreachable, failing, or stale) |
-| `refused` | `capability_disabled`, `legal_review_missing`, `no_verified_source`, `currency_policy_missing`, `check_not_completed`, `check_stale` or `alerts_unanswered` |
+| `outage_path` | Everything else holds, but the verified source is unavailable at that step (unreachable, failing, or stale but within the staleness limit) |
+| `refused` | `controlled_classification_not_permitted`, `capability_disabled`, `legal_review_missing`, `no_verified_source`, `currency_policy_missing`, `source_stale_beyond_limit`, `check_not_completed`, `check_stale` or `alerts_unanswered` |
 
 **The outage path** (PG-02, ruling 76; mechanics PD-11 and PD-22):
 - only an author whose type is `clinician`, holding prescription `sign` scope (or `cosign` scope for a co-signature), may use it;
@@ -139,7 +144,9 @@ One decision is made per signature, co-signature and release attempt (PG-01, PD-
 
 A future AI author always needs `open`.
 
-**How rulings 76 and 78 fit together** (tension PT-2; PD-12). Ruling 78 ("no prescription can be signed without one") governs configuration: with no verified source connected, the decision is `refused` and no outage path exists. Ruling 76 governs a connected, verified source that is unavailable at signing. Following the authoring brief, staleness counts as unavailable, and it also alerts the medical director.
+**Controlled and unknown classifications** (ruling 83). A prescription classified `controlled` or `unknown` under the foundation's RX-03 is refused at every step with `controlled_classification_not_permitted`, the foundation's own reason code, whatever the source's state. It never takes the outage path.
+
+**How rulings 76, 78 and 82 fit together** (tension PT-2, settled by ruling 82; PD-12). Ruling 78 ("no prescription can be signed without one") governs configuration: with no verified source connected, the decision is `refused` and no outage path exists, and ruling 82 confirms that a source never verified cannot be used to sign. Ruling 76 governs a connected, verified source that is unavailable at signing. Ruling 82 puts staleness under ruling 76: a stale source is handled as the outage path, with the medical director alerted, until the policy's staleness limit, after which signing stops.
 
 **Go-live** needs a recorded legal and regulatory review (PG-04, PD-13). Its topics are listed in the requirement. No rule is asserted about medical-device or other regulation.
 
@@ -174,7 +181,7 @@ The value sets are to be checked in planning against the FHIR R4 specification (
 | 4 | The first checks (ruling 77) | PC-03 |
 | 5 | Checks at drafting, at each change and at signing; severities; overrides with reasons; individual critical overrides; a record of each check; labels as advice | PC-04 to PC-08 |
 | 6 | No bundled knowledge; a versioned adapter contract with schema and SHA256SUMS; nothing asserted about vendors; synthetic fixtures | KA-01, KA-02, KA-06 |
-| 7 | Gates: a verified, current source; the outage path for clinicians only; a recorded legal and regulatory review | KA-03, KA-04, PG-01, PG-02, PG-04 |
+| 7 | Gates: a verified source, with a stale source on the outage path until a policy staleness limit stops signing (ruling 82); the outage path for clinicians only; a recorded legal and regulatory review; controlled and unknown classifications refused (ruling 83) | KA-03, KA-04, PG-01, PG-02, PG-04 |
 | 8 | One gate decision per signing attempt that RX-02 relies on | PG-01 |
 | 9 | Boundaries: no source needed except for signing; nothing to openPractice; FHIR mapping | BD-01 to BD-03 |
 
@@ -189,13 +196,13 @@ All nine are met.
 | Submissions versioned and idempotent; statements preserve reported detail | Untouched. Checks read statements and never change them. |
 | Amendments preserve accepted history | SL-03 (the foundation's CA-05 and CA-06), PC-07 (immutable check records). |
 | APIs and hooks authorized and versioned | Lists follow the foundation's CA-10. The adapter contract is versioned by MAJOR version and digest. |
-| Intake does not confer clinician or autonomous authority | SL-04. Nothing is promoted automatically, and statements stay patient-reported. Alerts advise and create nothing. **Tension PT-1.** |
+| Intake does not confer clinician or autonomous authority | SL-04. Nothing is promoted automatically, and statements stay patient-reported. Alerts advise and create nothing. **Tension PT-1, read narrowly under ruling 84.** |
 
-One possible conflict with ratified text is recorded, as PT-1. No other conflict with ratified text was found.
+One possible conflict with ratified text is recorded, as PT-1, and ruling 84 settles it. No other conflict with ratified text was found.
 
 ## Design calls for owner review
 
-Each item goes beyond the rulings and is proposed, not ruled. Where a ruling is silent on something consequential, the binding text fails closed and cites the design call.
+Each item goes beyond the rulings and is proposed, not ruled. Where an item implements a ruling, it cites the ruling, and its mechanics stay a proposed design call. Where a ruling is silent on something consequential, the binding text fails closed and cites the design call.
 
 | # | Design call | Where |
 |---|---|---|
@@ -207,29 +214,29 @@ Each item goes beyond the rulings and is proposed, not ruled. Where a ruling is 
 | PD-6 | Responses are coded reasons with optional text. Each `critical` and `high` alert and every warning gets its own response. Only `moderate`, `low` and `info` alerts may share one reason. | PC-06 |
 | PD-7 | The signing-time check runs against the exact content digest being signed. Any change to the prescription or an input makes a result stale. | PC-04 |
 | PD-8 | The medical director records the source verification, with the practice's evidence reference and a passing contract test. A new version or a passed review date needs a new verification. | KA-03 |
-| PD-9 | The medical director sets the currency policy. With none set, no source is usable. A stale source alerts the medical director. | KA-04 |
+| PD-9 | The medical director sets the currency policy: a maximum age and a longer staleness limit, both measured from the source's effective date. This change sets neither value. With either missing, no source is usable. A stale source alerts the medical director. | KA-04 |
 | PD-10 | Every adapter failure, and every omitted input, is "unavailable" or "could not be checked", never "no alerts". | KA-05 |
 | PD-11 | Outage-path mechanics beyond ruling 76: listing for the signer and the medical director, automatic re-check on return, and a work item that no timer closes. | PG-02 |
-| PD-12 | A stale source counts as unavailable, so the outage path applies; the authoring brief directs this, and the medical director is alerted. | KA-04, PG-02 |
+| PD-12 | **Under ruling 82.** A stale source counts as unavailable, so the outage path applies, and the medical director is alerted. Past the staleness limit, the decision is `refused` with `source_stale_beyond_limit` at every step, and no outage path is offered. | KA-04, PG-01, PG-02 |
 | PD-13 | The medical director records the legal and regulatory review, with the topics in PG-04. A lapse refuses every signature. | PG-04 |
 | PD-14 | Adapter requests carry codes only and no patient identity. The schema enforces closed objects, no label or patient fields, a code without whitespace, a URI code system and a token version. openChart enforces at runtime that a coding is sent only in a system the source declares, and only with the version recorded for its loaded code set, because no schema pattern can tell a version from an identifier. | KA-06 |
 | PD-15 | Released prescriptions are not re-checked when the lists change, except outage-flagged prescriptions. That waits for a later change. | Non-Goals |
 | PD-16 | One Spec Kit feature, built after foundation features (1) and (2) and enabled before, or together with, foundation feature (5). | PG-05 |
 | PD-17 | A "reviewed, not added" record leaves the statement unchanged and still in the check inputs. | SL-04 |
 | PD-18 | Alert text is stored in the check record as shown, so the record shows what the clinician saw. Whether the source's licence permits this is Open Question 5. | PC-07 |
-| PD-19 | The gate decision codes and their order are as tabulated in Decision 6. | PG-01 |
+| PD-19 | The gate decision codes and their order are as tabulated in Decision 6. Under ruling 83, a `controlled` or `unknown` classification is refused first, whatever the source's state, with the foundation's reason code `controlled_classification_not_permitted`, and never takes the outage path. | PG-01 |
 | PD-20 | Free text (a patient's own wording, or any uncoded description) goes to a source only when the source's verification records `free_text_agreement_ref`, the agreement counsel requires (Open Question 9). Otherwise uncoded entries stay local as "could not be checked". | KA-03, KA-06, PC-02 |
 | PD-21 | Checks also run at co-signature and at release, each against the exact digest. The co-signer sees every earlier alert and override and answers new findings. A finding at release that was not answered before holds the prescription in `pending_release` and opens a work item; no timer releases it. A finding counts as already answered only for the same inputs and source version. | PC-04, PG-01; foundation RX-02 |
 | PD-22 | At an outage step, the review list is PC-01's input list by reference, less the prescription itself, so every active patient-reported statement appears, reconciled or not. It adds every `draft` or `refuted` entry for the same substance and any missing allergy status. openChart shows one entry at a time, and the clinician answers each entry on its own. The statement uses code `prescribing.checks_unavailable_manual_review` and is recorded on that step's check record; it is also the attestation of a signature or co-signature. Only the signing step sets the signed content flag `checks_unavailable_at_signing`; co-signature and release change no signed content. | PG-02, SL-03 |
 
 ## Conflicts and tensions
 
-Five are recorded. Each needs the owner's disposition before ratification. None is resolved by this draft on its own authority.
+Five are recorded. PT-1 and PT-2 are settled by owner rulings 84 and 82. Each of the other three needs the owner's disposition before ratification. None is resolved by this draft on its own authority.
 
 | # | Tension | Status |
 |---|---|---|
-| PT-1 | **Ratified text.** `expanded-patient-intake`, "Intake does not confer clinician or autonomous authority": "No intake, supplement statement, API response or extension event SHALL create a prescription, diagnosis, order, administration, treatment recommendation or autonomous action." A patient-reported allergy or supplement statement becomes an input that can raise an alert about a clinician's draft. | Reading proposed: an alert is advice about the clinician's own draft. It creates no record of care, no treatment recommendation of record and no action, and the statement stays patient-reported. Owner confirms. If the owner reads an alert as a "treatment recommendation", this change needs a MODIFIED delta. |
-| PT-2 | **Rulings 76 and 78 read together.** Ruling 78 says "no prescription can be signed without one" (a connected, licensed or verified source). Ruling 76 lets a clinician sign when the source is unavailable at signing. The brief also counts a stale source as unavailable. | Reading proposed (PD-12): ruling 78 governs configuration, so with no verified source connected there is no outage path. Ruling 76 governs a connected, verified source that is unreachable, failing or stale at signing. Owner confirms, especially whether staleness belongs under ruling 76 rather than ruling 78. |
+| PT-1 | **Ratified text.** `expanded-patient-intake`, "Intake does not confer clinician or autonomous authority": "No intake, supplement statement, API response or extension event SHALL create a prescription, diagnosis, order, administration, treatment recommendation or autonomous action." A patient-reported allergy or supplement statement becomes an input that can raise an alert about a clinician's draft. | **Settled by ruling 84: read narrowly.** An alert is advice about the clinician's own draft. It creates no record of care, no treatment recommendation of record and no action, and the statement stays patient-reported. No MODIFIED delta is needed. The clarifying amendment that ruling 84 calls for is proposed in `define-clinical-acts-foundation` (its CT-1), for the owner to apply to the ratified feature text at ratification. |
+| PT-2 | **Rulings 76 and 78 read together.** Ruling 78 says "no prescription can be signed without one" (a connected, licensed or verified source). Ruling 76 lets a clinician sign when the source is unavailable at signing. The brief also counts a stale source as unavailable. | **Settled by ruling 82.** A stale source is handled as the outage path, with the medical director alerted; signing stops after a policy staleness limit; and a source never verified cannot be used to sign. Ruling 78 governs configuration, so with no verified source connected there is no outage path (PD-12, KA-04, PG-01). |
 | PT-3 | `define-clinical-acts-foundation` (draft) CA-01 records "exactly six act classes" and refuses any other. This change adds `allergy_intolerance` and `medication_list_entry`. | That change needs a governed revision: CA-01 wording and a MINOR version of `openchart-clinical-act-content` that adds both classes (PD-1). This change does not edit it. |
 | PT-4 | `define-ai-authored-clinical-records` (draft) accepts a Tier 2 act at receipt (AA-03) and does not mention prescribing-safety checks. Under ruling 76, an AI-authored prescription always needs a completed check and never uses the outage path. | That change should state that acceptance of an AI-authored prescription calls PG-01 and needs `open`. Meanwhile PG-02 refuses the outage path to any non-clinician author, and foundation RX-02 refuses any prescription signature without the gate. |
 | PT-5 | openChart `AGENTS.md`: "Do not enable autonomous clinical actions by default." Some steps here are automatic: checks at drafting, re-checks when the source returns, and work items. | Not a conflict by its letter. Each step informs a clinician and decides nothing; signing stays a clinician's act. Recorded for the owner's confirmation. |
@@ -239,7 +246,8 @@ Five are recorded. Each needs the owner's disposition before ratification. None 
 - **[Alert fatigue]** → Severity scale; shared acknowledgement below `critical`; individual overrides for `critical` only.
 - **[A silent gap in checking]** → Explicit warnings for every uncheckable input and every check kind not run; failures never read as "no alerts".
 - **[Outage abuse]** → Clinician only, a recorded statement, a flag, listing for the medical director, and an automatic re-check.
-- **[A stale or unverified source]** → Verification and a currency policy recorded by the medical director, with a stale source counted as unavailable.
+- **[A stale or unverified source]** → Verification and a currency policy recorded by the medical director, with a stale source counted as unavailable and signing stopped past the staleness limit (ruling 82).
+- **[Controlled-substance prescribing]** → Refused at every step, and never through the outage path (ruling 83).
 - **[Licensing of drug knowledge]** → Nothing bundled; practice-supplied sources; the practice's evidence recorded; Open Question 5 on stored alert text.
 - **[Regulatory status of decision support]** → A recorded legal and regulatory review before go-live; no rule asserted.
 - **[PHI leaving through the adapter]** → Closed schema with no patient fields.
@@ -247,11 +255,11 @@ Five are recorded. Each needs the owner's disposition before ratification. None 
 
 ## Migration Plan
 
-1. Validate strictly, check the schema digest and run the self-test. Brett Heap disposes PT-1 to PT-5 and PD-1 to PD-22, stamps `Ratified by` and sets `Status: ratified`.
+1. Validate strictly, check the schema digest and run the self-test. Brett Heap disposes PT-3 to PT-5 and PD-1 to PD-22, including the design calls made under rulings 82 and 83 (PD-9, PD-12, PD-19), stamps `Ratified by` and sets `Status: ratified`.
 2. Adopt openChart's constitution through separate governance.
 3. After foundation features (1) and (2) land, create this change's single feature: the lists, checks, adapter client, check record, verification, currency and legal-review records, and the gate. Contract tests run against an adapter double.
 4. A governed revision of `define-clinical-acts-foundation` publishes the MINOR content-schema version with the two act classes (PT-3).
-5. Enable the gate before, or together with, foundation feature (5) in each deployment, after the medical director records the verification, currency policy and legal review.
+5. Enable the gate before, or together with, foundation feature (5) in each deployment, after the medical director records the verification, the currency policy (maximum age and staleness limit) and the legal review.
 6. Rollback: disable the capability, which refuses every prescription signature. Records stay; nothing is deleted.
 
 ## Open Questions
@@ -259,7 +267,7 @@ Five are recorded. Each needs the owner's disposition before ratification. None 
 Each question is routed in `tasks.md` §2 to the gate it blocks.
 
 1. **Constitution adoption.** This blocks planning.
-2. **Owner dispositions** of PT-1 to PT-5 and PD-1 to PD-22. These block ratification.
+2. **Owner dispositions** of PT-3 to PT-5 and PD-1 to PD-22 (PT-1 and PT-2 are settled by rulings 84 and 82). These block ratification.
 3. **The legal and regulatory review.** Counsel decides its content for each jurisdiction, including whether this capability is regulated as a medical device or otherwise. This change asserts no rule. It blocks go-live in each deployment, not the build.
 4. **Which sources a practice may connect.** Each practice verifies its own source and licence; openChart names none. This blocks go-live in each deployment.
 5. **Storing alert text.** May a check record keep a source's alert text as shown, under that source's licence? The practice and counsel decide. Meanwhile, PD-18 stores it, and a practice whose licence forbids that must not go live until a governed revision stores a reference instead.

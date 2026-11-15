@@ -3,12 +3,13 @@
 ### Requirement: PG-01 One gate decision governs every prescription signature, co-signature and release
 openChart SHALL decide exactly one gate decision, with a coded reason, for each attempt to sign a prescription or a new version of one, to co-sign it, or to release it from `pending_release`. Once a governed amendment puts `define-ai-authored-clinical-records` Tier 2 in force, it SHALL also decide one for each acceptance of an AI-authored prescription, which SHALL need `open` (PG-02; tension PT-4). `define-clinical-acts-foundation` RX-02 (not yet on main) SHALL rely on this decision (owner rulings 74 and 78). The decision SHALL be `open` only when all of these hold:
 - this capability is built and enabled in the deployment;
+- the prescription's controlled-substance classification (`define-clinical-acts-foundation` RX-03) is neither `controlled` nor `unknown` (owner ruling 83);
 - a recorded legal and regulatory review is in force (PG-04);
 - a source is connected, verified (KA-03) and current (KA-04);
 - a check for that step has completed against the exact content digest (PC-04);
 - every alert and warning from that check has a response that meets PC-06.
 
-When the source is connected and verified but unavailable at that step (KA-04, KA-05), the decision SHALL be `outage_path`, governed by PG-02. In every other case it SHALL be `refused`, with one of these reasons: `capability_disabled`, `legal_review_missing`, `no_verified_source`, `currency_policy_missing`, `check_not_completed`, `check_stale` or `alerts_unanswered`.
+A prescription classified `controlled` or `unknown` SHALL get `refused` with reason `controlled_classification_not_permitted`, the foundation's own reason code, at every step and whatever the source's state. It SHALL never get `outage_path` (owner ruling 83). When the source is connected and verified but unavailable at that step (KA-04, KA-05), and not past its staleness limit (KA-04), the decision SHALL be `outage_path`, governed by PG-02. In every other case it SHALL be `refused`, with one of these reasons: `controlled_classification_not_permitted`, `capability_disabled`, `legal_review_missing`, `no_verified_source`, `currency_policy_missing`, `source_stale_beyond_limit`, `check_not_completed`, `check_stale` or `alerts_unanswered`.
 
 #### Scenario: Every condition holds
 - **WHEN** a clinician signs a prescription after a completed signing-time check, with every alert answered, in a deployment with a verified, current source and a recorded review
@@ -22,8 +23,12 @@ When the source is connected and verified but unavailable at that step (KA-04, K
 - **WHEN** a clinician tries to sign with a `high` alert unanswered
 - **THEN** the gate decision is `refused` with reason `alerts_unanswered`
 
+#### Scenario: Failure: a controlled or unknown classification
+- **WHEN** a clinician tries to sign a prescription classified `unknown`, whether the source is verified and current with a completed check, or unavailable
+- **THEN** the gate decision is `refused` with reason `controlled_classification_not_permitted`, no outage path is offered, and the prescription stays `draft`
+
 ### Requirement: PG-02 When the source is unavailable at a step, only a clinician may complete it, after an entry-by-entry local review and a recorded statement, and the prescription is re-checked
-When the gate decision is `outage_path`, openChart SHALL let the step (signature, co-signature or release) complete only when all four of these hold (owner ruling 76; design call PD-22):
+When the gate decision is `outage_path`, openChart SHALL let the step (signature, co-signature or release) complete only when all four of these hold (owner rulings 76 and 82; design call PD-22):
 - the acting clinician's author type is `clinician`;
 - the acting clinician holds prescription `sign` scope, or `cosign` scope for a co-signature;
 - **the local review is done, entry by entry.** The review list SHALL be PC-01's input list, taken by reference, so that a change to PC-01 changes this list with it. It SHALL NOT be narrowed. openChart SHALL show, one entry at a time:
