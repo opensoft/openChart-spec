@@ -202,11 +202,11 @@ Items marked ⚑ are design calls this change makes beyond Brett Heap's rulings.
    - **What is applied.** The reviewer confirms against the latest snapshot received on the link, read side by side with the `OC Patient`. openChart applies exactly that snapshot in the same transaction, never a snapshot received before the confirmation that the reviewer did not read.
    - **`applied_version`.** `link.review_resolved` carries that snapshot's `demographic_version` as `applied_version`. Each link request carries a snapshot, so a confirmation always has one to read.
    - **A later snapshot.** One that arrives after the reviewer's reading is not applied by the confirmation. openChart applies the next snapshot openPractice publishes on the link.
-   - **What the contract fixes.** `openpractice-ehr-patient-link/1.0` leaves `applied_version` optional and gives it no further meaning. It has a provenance reason, `republish_after_review`, but no rule says when it is used. The resume rule of `define-mvp-practice-foundation` EB-08, "publishing the current snapshot if it is newer than the applied version", covers held updates only. So openPractice may learn of an older `applied_version` and still publish nothing until its next change.
+   - **What the contract and the companion fix.** `openpractice-ehr-patient-link/1.0` leaves `applied_version` optional and gives it no further meaning. Its provenance reason `republish_after_review` is now put to use by `define-mvp-practice-foundation` EB-08 (its design call F-24, PROPOSED there): after any `confirmed` resolution whose `applied_version` is lower than openPractice's current demographic version, or that carries none, openPractice publishes its current snapshot on the link. openChart applies it under PL-07, so a later snapshot reaches the chart without waiting for the patient's next change.
    - **Why.** A snapshot that arrived while nothing confirmed the two records as one person was never checked against this patient. Applying it unread would let a confirmation carry demographics that nobody compared.
    - **The other reading** was to apply the latest snapshot received, read or not. That is simpler, but it applies data no human compared with the patient.
 
-   Recommendation: confirm. The companion change should extend EB-08's resume rule to every `confirmed` resolution: openPractice republishes its current snapshot, with reason `republish_after_review`, when `applied_version` is lower than its current version.
+   Recommendation: confirm.
 
 4. ⚑ **`revoked` and `superseded` are terminal** (PL-02, PL-06, PL-08, PL-11, PL-16).
    - **The finding.** PL-08's rejection set a link "back to `active`" unconditionally. A hold rejected after the link was revoked would have reactivated it, and with it demographic application and clinical-fact reads. PL-06 and PL-11 gave revocation precedence over confirmation only, and nothing gave supersession precedence at all.
@@ -218,13 +218,16 @@ Items marked ⚑ are design calls this change makes beyond Brett Heap's rulings.
 
    Recommendation: confirm.
 5. ⚑ **What openChart expects back for a correction request** (PL-10, PL-11). This follows `opensoft/openPractice-spec` `define-mvp-practice-foundation` EB-09 (its design call F-22, PROPOSED there).
-   - openPractice answers every correction request `received`, even through a link it holds in identity review. That includes a review it raised on a link openChart holds `active`.
+   - openPractice answers a correction request `received` even through a link it holds in identity review. That includes a review it raised on a link openChart holds `active`. It may also answer `rejected` with a `reject_reason`, for example `link_revoked` for a request in flight when the link ended. A rejected request is closed unapplied and its correction kept. A reason that concerns the message rather than the link also raises an integration exception.
    - It decides nothing on such a request while the review is open.
-   - It sends no `correction.resolved` for a request whose link ends `revoked`.
+   - It sends no `correction.resolved` for an undecided request whose link ends.
    - openChart therefore records `received` as received only, and waits without error.
-   - openPractice closes such a request unapplied without telling openChart. A request still unresolved when its link ends `revoked` or `superseded` is therefore treated by openChart as closed unapplied: the reason is recorded, no error is raised, and no `correction.resolved` is expected.
-   - The correction itself is not lost. It stays visible on the patient's record to the staff who handle demographic corrections. It is re-sent, as a new request, through the next link established for the patient, unless that link's applied snapshot already carries the proposed value.
-   - openPractice's EB-09 relies on this.
+   - openPractice closes such a request unapplied without telling openChart. A request still unresolved when its link ends `revoked` or `superseded` is therefore treated by openChart as closed unapplied: the reason is recorded, no error is raised, and no `correction.resolved` is expected. One that arrives after the close is recorded and changes nothing.
+   - The correction itself is not lost. It stays visible on the patient's record to the staff who handle demographic corrections.
+   - It is re-sent, as a new request, through the next link established for the patient from the **same openPractice issuer**, because it was addressed to that practice's record. A link from another issuer is another practice's record.
+   - The re-sent request names only the fields whose proposed value that link's applied snapshot does not carry, compared as the contract represents them. Nothing is re-sent if it carries them all.
+   - **More than one established link.** Where the patient has established links from more than one issuer, a refused edit is sent as a separate request through each of them, since each practice decides on its own record.
+   - openPractice's EB-09 closes a request unapplied whenever its link ends before the request is decided, whether or not a review is open, and its design call F-22 relies on this re-send.
    - A `link.review_resolved` `revoked` from openPractice for a review it raised is handled as a revocation, since it is the only way openChart learns that such a review ended the link.
    - The patient-link contract is unchanged: no reject reason was added, so PL-04 still pins `76f465e144893000de4bd2240adb9f547899e2e8100315f698c3cc6cb885b802`.
 
