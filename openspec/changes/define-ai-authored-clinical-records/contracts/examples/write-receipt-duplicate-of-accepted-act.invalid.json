@@ -1,0 +1,17 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "write.receipt",
+  "message_id": "4fad6e7c-3051-4293-aebf-5a6b7c8d9ea5",
+  "sent_at": "2026-11-14T09:02:01Z",
+  "in_reply_to": "0b6f2a3e-9c1d-4e5f-8a7b-1c2d3e4f5a61",
+  "write_kind": "act",
+  "result": "duplicate",
+  "record_ref": "OC-AIC-00001",
+  "grant_checked": {
+    "grant_id": "SYN-GRANT-0001",
+    "grant_version": 3
+  },
+  "received_at": "2026-11-14T09:02:01Z",
+  "first_result": "accepted"
+}

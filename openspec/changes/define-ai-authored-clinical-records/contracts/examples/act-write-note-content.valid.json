@@ -1,0 +1,86 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "act.write",
+  "message_id": "4b5c6d7e-8f90-4a1b-8c2d-3e4f5a6b7c8d",
+  "sent_at": "2026-11-14T10:00:00Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "added_by": {
+    "kind": "system",
+    "system": {
+      "issuer": "syn-ai-system.example",
+      "namespace": "syn_ai_system"
+    },
+    "operator_ref": "SYN-OPERATOR-0001"
+  },
+  "on_behalf_of": [
+    {
+      "kind": "ai",
+      "openwallet_id": "did:example:syn-ai-wallet-0001",
+      "model": "syn-model-assess",
+      "model_version": "2026.11.0"
+    }
+  ],
+  "source": {
+    "kind": "ai_consult",
+    "ref": "SYN-CONSULT-0003"
+  },
+  "context": "operational",
+  "patient": {
+    "issuer": "syn-openchart-site-a.example",
+    "namespace": "openchart",
+    "value": "OC-PAT-00001"
+  },
+  "source_patient_ref": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system",
+    "value": "SYN-AIPAT-0001"
+  },
+  "consent_ref": "SYN-CONSENT-0001",
+  "act_id": "SYN-ACT-0005",
+  "act_version": 1,
+  "act_class": "clinical_note",
+  "authority": {
+    "grant_id": "SYN-GRANT-0001",
+    "grant_version": 3,
+    "mode": "advice_only",
+    "configuration_version": "cfg-2026.11.14-1"
+  },
+  "models": [
+    {
+      "model_id": "syn-model-assess",
+      "model_version": "2026.11.0",
+      "role": "assessment"
+    }
+  ],
+  "occurred_at": "2026-11-14T09:59:00Z",
+  "consult_ref": {
+    "consult_id": "SYN-CONSULT-0002",
+    "consult_version": 1
+  },
+  "evidence_refs": [
+    {
+      "kind": "protocol",
+      "namespace": "syn_protocols",
+      "ref": "SYN-PROTOCOL-0007",
+      "version": "2"
+    }
+  ],
+  "declared_reserved": false,
+  "emergency_indicated": false,
+  "knowledge_basis": "cited_sources",
+  "act_content": {
+    "content": {
+      "encounter_ref": {
+        "act_id": "SYN-ENC-0001"
+      },
+      "note_kind": "progress",
+      "text_format": "text/plain",
+      "text": "SYN: AI consult note. Two-day mild headache, no warning signs reported; general information given."
+    }
+  }
+}

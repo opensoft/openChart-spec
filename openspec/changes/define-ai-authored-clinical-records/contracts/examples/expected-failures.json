@@ -1,0 +1,307 @@
+{
+  "act-status-carries-text.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('note' was unexpected)",
+    "reason": "a status message carries codes only, never free text (AW-07)"
+  },
+  "act-write-missing-act-class.invalid.json": {
+    "expect_in_error": "'act_class' is a required property",
+    "reason": "an act's class is part of its content object: an act with none cannot be read as an act (ruling 188; AN-12)"
+  },
+  "act-write-missing-act-content.invalid.json": {
+    "expect_in_error": "'act_content' is a required property",
+    "reason": "a write with no content object is malformed (ruling 188; AN-12)"
+  },
+  "authority-notice-cap-suspended.invalid.json": {
+    "expect_in_error": "[2, 'properties', 'change', 'enum']",
+    "reason": "the cap suspends nothing, so there is no cap_suspended notice (AW-13, AD-64)"
+  },
+  "authority-notice-paused-without-grant.invalid.json": {
+    "expect_in_error": "'grant_id' is a required property",
+    "reason": "a grant change names its grant (AG-08)"
+  },
+  "authority-notice-superseded-without-grant-version.invalid.json": {
+    "expect_in_error": "'grant_version' is a required property",
+    "reason": "every grant-change notice from openChart carries grant_version (AD-47)"
+  },
+  "authority-notice-suspended-from-ai-system.invalid.json": {
+    "expect_in_error": "change 'suspended' is not one of ['paused', 'narrowed']",
+    "reason": "only openChart announces a change in the source's standing; from the AI system only a reduction (AG-08, AW-13)"
+  },
+  "authority-notice-suspension-lifted-with-new-mode.invalid.json": {
+    "expect_in_error": "[2, 'allOf', 2, 'then', 'not']",
+    "reason": "a standing notice carries no scope (AD-45)"
+  },
+  "authority-notice-widen-from-ai-system.invalid.json": {
+    "expect_in_error": "change 'resumed' is not one of ['paused', 'narrowed']",
+    "reason": "a notice from the AI system can only reduce authority (AG-08)"
+  },
+  "consult-write-bad-message-id.invalid.json": {
+    "expect_in_error": "message_id 'SYN-not-a-uuid' does not match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'",
+    "reason": "message_id is a UUID, checked by pattern; a record identifier that cannot be read refuses the write (AW-01; AD-63)"
+  },
+  "consult-write-major-2.invalid.json": {
+    "expect_in_error": "contract_version '2.0' does not match '^1\\\\.(0|[1-9][0-9]*)$'",
+    "reason": "only MAJOR 1 is defined; another MAJOR is refused (AW-01)"
+  },
+  "consult-write-missing-added-by.invalid.json": {
+    "expect_in_error": "'added_by' is a required property",
+    "reason": "every write names its writer (ruling 80, clause 6; AW-02)"
+  },
+  "consult-write-missing-consult-id.invalid.json": {
+    "expect_in_error": "'consult_id' is a required property",
+    "reason": "a consult with no record identifiers cannot be stored, versioned or answered as a repeat: refused, one of the closed list (ruling 188; AD-63)"
+  },
+  "consult-write-missing-context.invalid.json": {
+    "expect_in_error": "'context' is a required property",
+    "reason": "a write that declares no context cannot be told from test data: refused, one of the closed list of what is still refused (ruling 188; AW-04; AD-63)"
+  },
+  "consult-write-missing-exchange.invalid.json": {
+    "expect_in_error": "'exchange' is a required property",
+    "reason": "a consult with no exchange has no content object (ruling 188; AN-12)"
+  },
+  "consult-write-patient-not-openchart-namespace.invalid.json": {
+    "expect_in_error": "patient/namespace 'openchart' was expected",
+    "reason": "the patient is named by the openChart triple (AW-03)"
+  },
+  "consult-write-source-ref-openchart-namespace.invalid.json": {
+    "expect_in_error": "[0, 'properties', 'source_patient_ref', 'properties', 'namespace', 'allOf', 1, 'not']",
+    "reason": "the source system's patient reference is never in the openchart namespace (AW-03)"
+  },
+  "consult-write-writer-healthlinc.invalid.json": {
+    "expect_in_error": "[0, 'properties', 'added_by', 'properties', 'system', 'properties', 'namespace', 'allOf', 1, 'not']",
+    "reason": "healthlinc is never a writer, so no such writer is registered (AD-30; AD-63)"
+  },
+  "consult-write-writer-without-operator.invalid.json": {
+    "expect_in_error": "added_by 'operator_ref' is a required property",
+    "reason": "a system is identified with who operates it (ruling 80, part B)"
+  },
+  "grant-readback-cap-suspended.invalid.json": {
+    "expect_in_error": "source_status 'cap_suspended' is not one of ['active', 'over_cap']",
+    "reason": "the cap suspends nothing; source_status is active or over_cap (AW-14, AD-64)"
+  },
+  "grant-readback-current-without-grant.invalid.json": {
+    "expect_in_error": "'grant' is a required property",
+    "reason": "grant_current carries the grant in force (AW-14)"
+  },
+  "grant-readback-expired-with-active-grant.invalid.json": {
+    "expect_in_error": "grant/state 'expired' was expected",
+    "reason": "grant_expired carries a grant in state expired (AD-45)"
+  },
+  "grant-readback-no-grant-with-grant.invalid.json": {
+    "expect_in_error": "[9, 'allOf', 3, 'then', 'not']",
+    "reason": "no_grant carries no grant (AD-45)"
+  },
+  "grant-readback-paused-with-active-grant.invalid.json": {
+    "expect_in_error": "grant/state 'paused' was expected",
+    "reason": "grant_paused carries a grant in state paused (AD-45)"
+  },
+  "grant-readback-request-carries-patient.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('patient' was unexpected)",
+    "reason": "a grant readback carries no patient (AW-14)"
+  },
+  "grant-readback-revoked-with-active-grant.invalid.json": {
+    "expect_in_error": "grant/state 'revoked' was expected",
+    "reason": "grant_revoked carries a grant in state revoked (AD-45)"
+  },
+  "grant-readback-unauthorized-with-grant.invalid.json": {
+    "expect_in_error": "[9, 'allOf', 2, 'then', 'not']",
+    "reason": "unauthorized carries nothing else (AW-14)"
+  },
+  "held-ended-in-chart-cause.invalid.json": {
+    "expect_in_error": "quarantine_cause 'grant_expired' is not one of ['openwallet_id_missing', 'openwallet_id_not_covered', 'source_system_not_covered', 'ai_not_identified']",
+    "reason": "held.ended is only for a write held outside the chart, with a held cause (AD-65)"
+  },
+  "held-ended-released-consult-as-information.invalid.json": {
+    "expect_in_error": "released_record_state 'information' is not one of ['recorded', 'quarantined']",
+    "reason": "a released consult is recorded or quarantined in the chart, never information (AC-11, AD-65)"
+  },
+  "held-ended-released-openwallet-id-missing.invalid.json": {
+    "expect_in_error": "[11, 'allOf', 3, 'then', 'properties', 'quarantine_cause', 'not']",
+    "reason": "a write held because its AI cannot be identified is never released (AD-65)"
+  },
+  "held-ended-released-without-new-record.invalid.json": {
+    "expect_in_error": "'released_record_ref' is a required property",
+    "reason": "a release names the record the held write became (AD-65)"
+  },
+  "record-readback-carries-text.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('text' was unexpected)",
+    "reason": "a readback carries no clinical content (AW-12)"
+  },
+  "record-readback-consent-flag-on-information.invalid.json": {
+    "expect_in_error": "record_state 'recommendation' was expected",
+    "reason": "consent_ref_missing is a recommendation's flag only (AD-62)"
+  },
+  "record-readback-consult-co-review-pending.invalid.json": {
+    "expect_in_error": "review_status 'co_review_pending' is not one of ['not_selected', 'selected', 'in_review', 'reviewed']",
+    "reason": "co-review statuses are an accepted act's, which 1.0 never has (ruling 157; m5)"
+  },
+  "record-readback-dismissed-without-reason.invalid.json": {
+    "expect_in_error": "'dismissal_reason' is a required property",
+    "reason": "a dismissal carries its reason from the closed list (AD-65)"
+  },
+  "record-readback-found-without-received-at.invalid.json": {
+    "expect_in_error": "'received_at' is a required property",
+    "reason": "a found record states when openChart received it (AW-15)"
+  },
+  "record-readback-held-act-grant-cause.invalid.json": {
+    "expect_in_error": "quarantine_cause 'grant_expired' is not one of ['openwallet_id_missing', 'openwallet_id_not_covered', 'source_system_not_covered', 'ai_not_identified']",
+    "reason": "a held write carries a held cause, never a grant check's (AD-60, AD-65)"
+  },
+  "record-readback-held-with-grant-checked.invalid.json": {
+    "expect_in_error": "[7, 'then', 'allOf', 4, 'then', 'not']",
+    "reason": "a held write was held before any authority check, so no grant was checked (AD-60)"
+  },
+  "record-readback-not-found-with-digest.invalid.json": {
+    "expect_in_error": "[7, 'else', 'not']",
+    "reason": "not_found carries no record detail (AW-12)"
+  },
+  "record-readback-quarantined-without-cause.invalid.json": {
+    "expect_in_error": "'quarantine_cause' is a required property",
+    "reason": "a quarantined consult carries its cause (AC-11)"
+  },
+  "record-readback-recommendation-with-review-status.invalid.json": {
+    "expect_in_error": "[7, 'then', 'allOf', 0, 'then', 'not']",
+    "reason": "a recommendation reports no review status (AW-12)"
+  },
+  "record-readback-recommendation-without-path-reason.invalid.json": {
+    "expect_in_error": "'path_reason' is a required property",
+    "reason": "a recommendation carries both code sets (AD-57)"
+  },
+  "record-readback-recorded-act.invalid.json": {
+    "expect_in_error": "write_kind 'consult' was expected",
+    "reason": "in 1.0 no readback says an act took effect (ruling 157; m5)"
+  },
+  "record-readback-released-act-as-recorded.invalid.json": {
+    "expect_in_error": "released_record_state 'recorded' is not one of ['recommendation', 'information', 'quarantined']",
+    "reason": "a released act becomes a recommendation or information, never a recorded act (AD-65)"
+  },
+  "record-readback-released-ai-not-identified.invalid.json": {
+    "expect_in_error": "[7, 'then', 'allOf', 8, 'then', 'properties', 'quarantine_cause', 'not']",
+    "reason": "a write held because its AI cannot be identified is never released (AD-65)"
+  },
+  "record-readback-released-consult-as-information.invalid.json": {
+    "expect_in_error": "released_record_state 'information' is not one of ['recorded', 'quarantined']",
+    "reason": "a released consult is recorded or quarantined in the chart, never information (AC-11, AD-65)"
+  },
+  "record-readback-released-without-new-record.invalid.json": {
+    "expect_in_error": "'released_record_ref' is a required property",
+    "reason": "a release names the record the held write became (AD-65)"
+  },
+  "record-readback-voided.invalid.json": {
+    "expect_in_error": "[7, 'properties', 'record_state', 'enum']",
+    "reason": "voided is an accepted act's state, which 1.0 never reports (ruling 157; m5)"
+  },
+  "write-receipt-accepted-for-act.invalid.json": {
+    "expect_in_error": "write_kind 'act' is not one of ['consult', 'authority_notice']",
+    "reason": "in 1.0 no receipt says an act was accepted (ruling 157; m5)"
+  },
+  "write-receipt-accepted-with-missing-authority.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 5, 'then', 'not']",
+    "reason": "an accepted write carries no missing-authority code (AW-06)"
+  },
+  "write-receipt-accepted-with-reason.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 5, 'then', 'not']",
+    "reason": "an accepted write carries no refusal reason (AW-06)"
+  },
+  "write-receipt-co-review-due-at.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('co_review_due_at' was unexpected)",
+    "reason": "a co-review due time is an accepted act's, which the Tier 2 MINOR version adds (ruling 157; m5)"
+  },
+  "write-receipt-consent-flag-on-quarantined.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 1, 'then', 'anyOf']",
+    "reason": "consent_ref_missing is a recommendation's flag; a quarantined write carries the code as its cause (AD-62)"
+  },
+  "write-receipt-consent-path-without-flag.invalid.json": {
+    "expect_in_error": "'consent_ref_missing' is a required property",
+    "reason": "a recommendation whose path code is consent_ref_missing carries the flag too (AD-62)"
+  },
+  "write-receipt-duplicate-accepted-with-codes.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 9, 'then', 'allOf', 0, 'then', 'not']",
+    "reason": "a duplicate of an accepted write carries no authority codes (AW-05)"
+  },
+  "write-receipt-duplicate-of-accepted-act.invalid.json": {
+    "expect_in_error": "write_kind 'consult' was expected",
+    "reason": "in 1.0 no duplicate says an act was accepted (ruling 157; m5)"
+  },
+  "write-receipt-duplicate-without-first-result.invalid.json": {
+    "expect_in_error": "'first_result' is a required property",
+    "reason": "a duplicate carries the first result (AD-61)"
+  },
+  "write-receipt-information-for-consult.invalid.json": {
+    "expect_in_error": "write_kind 'act' was expected",
+    "reason": "only an act.write declared clinical_note or document whose content validates as that kind's shape is kept as information; a consult record is MI-12's record (AC-04, AD-68)"
+  },
+  "write-receipt-notice-with-submission-conflict.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 3, 'then', 'not']",
+    "reason": "a notice has no record identifiers to conflict (AW-05)"
+  },
+  "write-receipt-quarantined-source-cap-suspended.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'quarantine_cause', 'enum']",
+    "reason": "the cap suspends nothing, so source_cap_suspended is no cause (AW-13, AD-64)"
+  },
+  "write-receipt-quarantined-without-record-ref.invalid.json": {
+    "expect_in_error": "'record_ref' is a required property",
+    "reason": "a quarantined write was kept, and its receipt names the record (AD-52)"
+  },
+  "write-receipt-recommendation-both-codes.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 6, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'not']",
+    "reason": "each path code maps to exactly one foundation code (AD-57)"
+  },
+  "write-receipt-recommendation-code-not-mapped.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 6, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'contains']",
+    "reason": "tier2_not_in_force maps to no_decision_authority (AD-57); the code set both lacks the mapped code and holds the other",
+    "error_count": 2
+  },
+  "write-receipt-recommendation-for-consult.invalid.json": {
+    "expect_in_error": "write_kind 'act' was expected",
+    "reason": "only an act is recorded as a recommendation (AW-06)"
+  },
+  "write-receipt-recommendation-other-scheme.invalid.json": {
+    "expect_in_error": "path_reason/scheme 'openchart-ai-clinical-record-write.missing_authority' was expected",
+    "reason": "path_reason is this contract's scheme (AD-57)"
+  },
+  "write-receipt-recommendation-sign-off-check-code.invalid.json": {
+    "expect_in_error": "missing_authority/2 'wallet_not_bound' is not one of ['no_grant_in_force', 'no_decision_authority', 'no_practitioner_sign_off']",
+    "reason": "only three of the foundation's codes can occur on this path (AD-57)"
+  },
+  "write-receipt-recommendation-without-missing-authority.invalid.json": {
+    "expect_in_error": "'missing_authority' is a required property",
+    "reason": "a recommendation carries the foundation's codes (AD-57)"
+  },
+  "write-receipt-recommendation-without-path-reason.invalid.json": {
+    "expect_in_error": "'path_reason' is a required property",
+    "reason": "a recommendation carries this contract's code (AD-57)"
+  },
+  "write-receipt-recommendation-without-sign-off-code.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'missing_authority', 'contains']",
+    "reason": "every recommendation on this path carries no_practitioner_sign_off (ruling 151; AD-57)"
+  },
+  "write-receipt-refused-conflicting-duplicate.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'reason', 'enum']",
+    "reason": "a repeat with other content is kept and flagged, never refused (AD-61)"
+  },
+  "write-receipt-refused-for-grant-check.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'reason', 'enum']",
+    "reason": "missing authority never refuses a write (ruling 80, clause 18)"
+  },
+  "write-receipt-refused-for-missing-authority.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'reason', 'enum']",
+    "reason": "missing authority never refuses a write (ruling 80, clause 18)"
+  },
+  "write-receipt-refused-with-set-aside.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 0, 'then', 'not']",
+    "reason": "a refused write stored nothing, so it set nothing aside (AD-74)"
+  },
+  "write-receipt-refused-with-submission-conflict.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 4, 'then', 'not']",
+    "reason": "a refused write stored nothing, so nothing conflicts (AW-05)"
+  },
+  "write-receipt-refused-without-reason.invalid.json": {
+    "expect_in_error": "'reason' is a required property",
+    "reason": "a refusal carries its reason (AW-06)"
+  },
+  "write-receipt-unknown-reason.invalid.json": {
+    "expect_in_error": "[3, 'properties', 'reason', 'enum']",
+    "reason": "refusal reasons are closed (AW-06)"
+  }
+}

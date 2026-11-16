@@ -1,0 +1,1342 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openchart:contract:openchart-ai-clinical-record-write:1.0",
+  "title": "openchart-ai-clinical-record-write 1.0",
+  "description": "Canonical message schema for the write path by which an external clinical AI system, operating under a declared authority, records AI-authored content in openChart. Owned by opensoft/openChart-spec change define-ai-authored-clinical-records. Tier 1 is the AI consult record (consult.write); Tier 2 is the AI-authored clinical act (act.write), which no 1.x receiver accepts as an act: under owner ruling 157 an AI only ever makes recommendations until a practitioner signs, so in 1.0 no receipt, readback or other message says an act took effect. openChart checks every write against its own record of the medical director's authority grant and never trusts the claim a write carries. Under owner ruling 80, every write names its writer (added_by), the AI on whose behalf it was written, by its openWallet ID with the model and model version that produced the content, and any system between them (on_behalf_of), and where its information came from (source). Missing authority never refuses a write: an act.write that fails an authority check is recorded in full as a recommendation that has no effect, kept as a recommendation record of openchart-clinical-act-content/1.0 (SHA-256 3c2e1afdb2d365bd84ef9f5f159e9addb6c93d7c2048af33da3cb9396b9548ec, owned by define-clinical-acts-foundation, as of its head f1cfe74), and answered write.receipt recorded_as_recommendation with that contract's missing_authority codes and this contract's own code in path_reason; a consult.write, or an act.write whose content is kept as information, that fails a grant check or carries no consent reference is quarantined in the chart (write.receipt quarantined, with quarantine_cause), and an act recorded as a recommendation without a consent reference carries consent_ref_missing. A write from an identified, registered writer whose on_behalf_of does not identify, in the form this path reads, the AI it speaks for and the hands it passed through, or that names its AI without an openWallet ID, model or model version, or with a value outside its form, or whose openWallet ID or source system the writer's registration does not cover, is held in quarantine outside the chart and never refused (owner ruling 194); the source learns how a held write ended from held.ended and from a readback. Only content the chart cannot read at all is refused (owner ruling 188): a write is refused, and stores no clinical content, only when its writer cannot be identified, is not registered, is suspended or writes for another practice, when its writer, its patient, its declared context, its record identifiers or its content object is missing or cannot be read, when it is not a message of this contract or of a MAJOR version the receiver supports, when the message is beyond the message limit, larger than 134217728 bytes (128 MiB) as received or nested more than 32 levels deep, the limit this contract names as the clinical-acts foundation's AN-12 requires, which openChart checks beside the schema and answers with schema_invalid, when its content does not match its digest, which this contract reads as content openChart cannot read, because such content cannot be read back by its digest and nothing shows that it arrived as it was sent (owner ruling 188; the clinical-acts foundation's AN-12 and its design call CD-56; design call AD-63, PROPOSED), when it is declared test data, or when its patient cannot be matched. Apart from these, no value refuses a write: a declaration outside its form is set aside, kept as given, named in the receipt's set_aside and given the outcome its absence takes (the clinical-acts foundation's AN-12 and its design call CD-56; design calls AD-63 and AD-74). A single value beyond its size bound (declarationBound, valueBound, onBehalfOfBound) is a value outside its form: openChart sets it aside or, where it is the AI's identification, holds the write, and keeps only the SHA-256 of its RFC 8785 canonical JSON serialization and that serialization's length in bytes; a consult turn beyond it is kept as given (the clinical-acts foundation's AN-12 and its design call CD-56; design calls AD-74 and AD-75). A value openChart could not read is kept as given with the record of the write; it is never used or displayed in place of the field it was given for; anyone who can read the chart can read it on request, marked as a value openChart could not read; and it never appears in an alert, a notification, a log line, a diagnostic or an acknowledgement, nor in any other message under this contract, a receipt's set_aside naming its field only (design call AD-74; the clinical-acts foundation's AN-12 and its design call CD-56). Every other field of a write is a declaration whose absence takes the outcome its description states, never a refusal: a write whose on_behalf_of is missing or cannot be read is held; one that leaves out source is given ai_consult, the source this path implies, marked as defaulted; and where the time its information arose is missing, unreadable or later than its receipt, openChart takes the time of receipt, marked as defaulted. A repeat is answered with the first result; a repeat of a record's identifiers with different content is kept as a new record flagged submission_ref_conflict, and a reused message_id with different content is processed as a new message flagged message_id_conflict. Every rule holds whether or not a validator asserts format: timestamps and UUIDs are checked by pattern only, the timestamp pattern being the clinical-acts foundation's own, and openChart refuses as malformed a timestamp that names a day its month does not have in a message other than a write; in a write it is a time that cannot be read, which never refuses it (design call AD-70). Every object is closed except act_content.content, the one open object, which is reserved for the content schemas of the clinical-acts foundation; a write's declarations, consult turns and the parties of on_behalf_of, which the schema accepts as any values so that openChart judges them beside it, their size bounds included; and a write itself, whose members the schema does not define are set aside unread. message_id is the idempotency key and carries no PHI. Receipts, notices, status messages and readbacks carry identifiers, digests and codes only, never clinical content; record.readback lets the writing source system confirm what openChart stored. exchange.content_sha256 is the SHA-256 of the RFC 8785 canonical JSON serialization of exchange.turns. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR with reason unsupported_major_version.",
+  "oneOf": [
+    { "$ref": "#/$defs/consultWrite" },
+    { "$ref": "#/$defs/actWrite" },
+    { "$ref": "#/$defs/authorityNotice" },
+    { "$ref": "#/$defs/writeReceipt" },
+    { "$ref": "#/$defs/actStatus" },
+    { "$ref": "#/$defs/consultReviewed" },
+    { "$ref": "#/$defs/readbackRequest" },
+    { "$ref": "#/$defs/readbackResult" },
+    { "$ref": "#/$defs/grantReadbackRequest" },
+    { "$ref": "#/$defs/grantReadback" },
+    { "$ref": "#/$defs/messageAck" },
+    { "$ref": "#/$defs/heldEnded" }
+  ],
+  "$defs": {
+    "contract": { "const": "openchart-ai-clinical-record-write" },
+    "contractVersion": {
+      "description": "MAJOR.MINOR. Only MAJOR 1 is defined by this schema.",
+      "type": "string",
+      "pattern": "^1\\.(0|[1-9][0-9]*)$"
+    },
+    "uuid": {
+      "description": "A UUID in its hyphenated hexadecimal form, checked by pattern only, so that no rule depends on whether a validator asserts format.",
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "timestamp": {
+      "description": "An RFC 3339 date-time with a time zone, checked by pattern only, with month, day, hour, minute and second ranges and one to nine fractional-second digits: the clinical-acts foundation's pattern, character for character (its design, section 1). A day that the month does not have, such as 30 February, passes the pattern; openChart refuses it as malformed by a check beside the schema in a message other than a write, and in a write reads it as a time that cannot be read (design call AD-70).",
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+    },
+    "issuer": {
+      "description": "A deployment's configured, stable issuer identifier, unique across deployments and never derived from a host path.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 255
+    },
+    "namespaceToken": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+    "codeToken": { "type": "string", "pattern": "^[a-z][a-z0-9_.:-]{0,63}$" },
+    "opaqueRef": {
+      "description": "Opaque reference. Carries no name, date of birth, contact detail or clinical content.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9:_./-]{1,128}$"
+    },
+    "versionLabel": { "type": "string", "pattern": "^[A-Za-z0-9._:+-]{1,64}$" },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "mode": {
+      "description": "The mode the medical director set. advice_only is the default; limited_practice is an allowlist; full_practice is full practice authority with a reserved list.",
+      "enum": ["advice_only", "limited_practice", "full_practice"]
+    },
+    "context": {
+      "description": "Only operational writes may be recorded. scenario and simulation are schema-valid so that the receiver can refuse them with non_operational_context and store nothing.",
+      "enum": ["operational", "scenario", "simulation"]
+    },
+    "sourceSystem": {
+      "description": "A system's identity: its issuer and namespace token. As a write's source_system it is the external clinical AI system, and its namespace is the token under which openChart stores its patient references; where the clinical communication record (define-clinical-message-inbox MI-12) defines a source token for the system, the namespace is that token (for example medxfactory). The same shape identifies the writer and is the form in which the AI check reads a system named in on_behalf_of. The tokens healthlinc and openpractice_agent are never write-path systems, and openchart is never a system namespace: the schema refuses them for the writer, and openChart holds a write that names one as its source system or in on_behalf_of (design calls AD-30, AD-49 and AD-60).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": {
+          "allOf": [
+            { "$ref": "#/$defs/namespaceToken" },
+            { "not": { "enum": ["openchart", "healthlinc", "openpractice_agent"] } }
+          ]
+        }
+      }
+    },
+    "writeSourceSystem": {
+      "description": "A write's source_system: the external clinical AI system the write names as its source, by issuer and namespace token. Its namespace is the namespace in which the patient's link is resolved (AW-03), so a source_system that cannot be read is a patient that cannot be matched. Before it resolves the patient, openChart checks whether the writer's registration covers the source system. Where it does not, no receipt shows whether a link exists in that namespace: the AI check holds the write, openChart answers quarantined whatever the link, and where no link matches, the held write is kept outside every chart, in front of the medical director, and ends only by dismissal (design call AD-60, PROPOSED; the clinical-acts foundation's CD-72). No registration covers a namespace that is never a write-path system (healthlinc, openpractice_agent) or never a system namespace (openchart), so such a write is held, never refused for that, and never released. For healthlinc or openpractice_agent, no relay's on_behalf_of can name it as the source system in the form the AI check reads, which holds the write with ai_not_identified. An openchart source system never matches its patient, because a source_patient_ref is never in that namespace (externalPatientRef), so such a write is always kept outside every chart (owner ruling 194; design calls AD-30, AD-60 and AD-74).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace"],
+      "properties": { "issuer": { "$ref": "#/$defs/issuer" }, "namespace": { "$ref": "#/$defs/namespaceToken" } }
+    },
+    "openchartPatientRef": {
+      "description": "The openChart patient triple (openChart issuer, openchart, OC Patient identifier). It is never replaced by an external identifier.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace", "value"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": { "const": "openchart" },
+        "value": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "externalPatientRef": {
+      "description": "The source system's own patient reference. It must match an active OC Patient External Identifier row on the named OC Patient, in the source system's namespace.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace", "value"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": {
+          "allOf": [
+            { "$ref": "#/$defs/namespaceToken" },
+            { "not": { "const": "openchart" } }
+          ]
+        },
+        "value": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "conversationRef": {
+      "description": "The source system's reference to the conversation, so that an inbox item naming the same conversation can be associated with the consult record by reference. This contract defines no conversation retrieval (owner ruling 69).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issuer", "namespace", "value"],
+      "properties": {
+        "issuer": { "$ref": "#/$defs/issuer" },
+        "namespace": { "$ref": "#/$defs/namespaceToken" },
+        "value": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "modelIdentity": {
+      "description": "One model the source system used, by identifier and version. role is an optional label for the model's part in producing the content.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["model_id", "model_version"],
+      "properties": {
+        "model_id": { "type": "string", "pattern": "^[A-Za-z0-9._:/@+-]{1,128}$" },
+        "model_version": { "$ref": "#/$defs/versionLabel" },
+        "role": { "$ref": "#/$defs/codeToken" }
+      }
+    },
+    "openwalletId": {
+      "description": "The identifier shape of an openWallet ID (owner ruling 80, part B): the shape that openWallet's wallet record contract gives wallet_id (opensoft/openWallet-code, contracts/openxwallet/openxwallet-record.schema.yaml, $defs/identifier), as the clinical-acts foundation's walletId has it. openChart's AI check reads an AI's openwallet_id in this form, through aiParty. No message applies it, so a value outside it is held with ai_not_identified, never refused, and is kept as a value openChart could not read (owner ruling 194; design calls AD-60 and AD-74). A value in the shape is compared exactly with the registration of the writer that delivers the write. It never identifies a person or a patient (design call AD-49).",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$"
+    },
+    "systemParty": {
+      "description": "A system named on a write: its registered system identity and who operates it (owner ruling 80, part B). openChart compares both with its registration. It is the writer's form, and the form in which openChart's AI check reads a relay's source system in on_behalf_of (design call AD-60).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "system", "operator_ref"],
+      "properties": {
+        "kind": { "const": "system" },
+        "system": { "$ref": "#/$defs/sourceSystem" },
+        "operator_ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "aiParty": {
+      "description": "The form in which openChart's AI check reads the AI that produced the content: its openWallet ID, and the model and model version that produced it (owner ruling 80, part B), and nothing else. No message applies it: on_behalf_of carries its parties as given (partyAsGiven), and the AI check holds, never refusing, a write whose AI is not in this form (owner ruling 194; design call AD-60): with no openWallet ID, openwallet_id_missing; with no model or no model version, a value outside its pattern, or a property this form does not define, ai_not_identified. The model's pattern is that of modelIdentity.model_id, and the model version's that of versionLabel. A write whose openWallet ID the writer's registration does not cover is held with openwallet_id_not_covered. The openWallet ID names the AI as the author of a record; it never identifies a patient or a person, and nothing needs the wallet to be reachable to read the chart (owner ruling 183).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "openwallet_id", "model", "model_version"],
+      "properties": {
+        "kind": { "const": "ai" },
+        "openwallet_id": { "$ref": "#/$defs/openwalletId" },
+        "model": { "type": "string", "pattern": "^[A-Za-z0-9._:/@+-]{1,128}$" },
+        "model_version": { "$ref": "#/$defs/versionLabel" }
+      }
+    },
+    "onBehalfOf": {
+      "description": "Every party the write passed through before its writer, in order from the originator to the writer (owner ruling 80, clause 7). openChart's AI check reads it in one form only: from the source system's own identity, the AI alone, in the form of aiParty; from a relay, the AI and then the source system, in the form of systemParty with its system equal to source_system (design call AD-49). The 1.0 contract admits no other party and no human. The schema accepts any value, so that a value this path cannot read is never refused: a value that is not a list, an empty list, a party that is not an object, parties out of order, a human, two AIs, more than two parties, a party with a property or a kind this path does not read, or a system other than the source system. The AI check holds such a write in quarantine outside the chart with ai_not_identified, as it holds one with no on_behalf_of, and never reorders the parties or guesses which is the AI, because clause 7 makes their order meaningful (owner ruling 194; design call AD-60). The parties are kept as they arrived and stay out of every alert, log and message. One beyond onBehalfOfBound, more than 16 parties among them, cannot be read either: the AI check holds the write with ai_not_identified, and openChart keeps only its SHA-256 and its length (design call AD-74)."
+    },
+    "onBehalfOfBound": {
+      "description": "The size bound of on_behalf_of, which openChart judges beside the schema; no message applies it: a list of at most 16 parties within partyBound, eight times the two this path reads, or a value within valueBound. An on_behalf_of beyond it cannot be read: the AI check holds the write with ai_not_identified, and openChart keeps only its SHA-256 and its length (owner ruling 194; design calls AD-60 and AD-74).",
+      "maxLength": 1024,
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/partyBound" },
+      "maxProperties": 16,
+      "propertyNames": { "maxLength": 1024 },
+      "additionalProperties": { "$ref": "#/$defs/valueBound" }
+    },
+    "valueAsGiven": {
+      "description": "A value the schema accepts as given so that openChart, not the schema, judges it: a member of a party in on_behalf_of, or a time a write declares. Any JSON value: the schema bounds none of it, so that no single value refuses a write (owner rulings 188 and 194; design calls AD-60, AD-63 and AD-70). openChart judges it beside the schema against its form and against valueBound."
+    },
+    "valueBound": {
+      "description": "The size bound of a member of a party in on_behalf_of, or of a time a write declares, which openChart judges beside the schema; no message applies it: a string of at most 1024 characters, or an object or a list of at most 16 scalars of the same bound. 1024 is five times the longest identification the AI check admits (an openWallet ID of 200 characters; a model is at most 128 and a model version 64), and the longest timestamp is 35, so a value that is merely written wrong, such as a model name with a space or a time with no zone, is held or defaulted and kept as given. A value beyond it is held or defaulted in the same way, and openChart keeps only its SHA-256 and its length (design calls AD-60, AD-70 and AD-74).",
+      "maxLength": 1024,
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/scalarBound" },
+      "maxProperties": 16,
+      "propertyNames": { "maxLength": 1024 },
+      "additionalProperties": { "$ref": "#/$defs/scalarBound" }
+    },
+    "scalarBound": { "type": ["string", "number", "boolean", "null"], "maxLength": 1024 },
+    "partyBound": {
+      "description": "The size bound of a party of on_behalf_of, which openChart judges beside the schema; no message applies it: an object of at most 16 members, each named in at most 1024 characters, whose values are within valueBound, as a system's identity is an object; a list of at most 16 values within valueBound; or a string of at most 1024 characters. openChart's AI check reads a party in the form of aiParty or systemParty and holds what it cannot read, a party that is not an object included (design call AD-60).",
+      "maxLength": 1024,
+      "maxItems": 16,
+      "items": { "$ref": "#/$defs/valueBound" },
+      "maxProperties": 16,
+      "propertyNames": { "maxLength": 1024 },
+      "additionalProperties": { "$ref": "#/$defs/valueBound" }
+    },
+    "provenanceSource": {
+      "description": "Where the information came from (owner ruling 80, clause 5): its kind, and the source system's reference to it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "ref"],
+      "properties": {
+        "kind": { "enum": ["patient_statement", "device_reading", "ai_consult", "clinician_observation", "external_record", "chart_entry"] },
+        "ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "evidenceRef": {
+      "description": "A reference to evidence the source system relied on, by namespace, reference, version and digest. Evidence content never crosses.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "namespace", "ref"],
+      "properties": {
+        "kind": { "enum": ["patient_record", "knowledge_source", "protocol", "other"] },
+        "namespace": { "$ref": "#/$defs/namespaceToken" },
+        "ref": { "$ref": "#/$defs/opaqueRef" },
+        "version": { "$ref": "#/$defs/versionLabel" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "authorityClaim": {
+      "description": "The authority the source system says it acted under. openChart compares every field with its own grant record; a difference is missing authority, recorded as a quarantine cause or a path code, and never a refusal. Every field is optional, and so is the claim itself: a missing field is answered by the step-8 code of the check it would have answered (no grant version or configuration version, grant_mismatch; no mode, mode_mismatch; no approver or legal review where the grant names one, approver_mismatch or legal_review_mismatch; for limited practice, no allowlist entry, allowlist_entry_unknown, and no protocol, allowlist_entry_mismatch), a consult's quarantine cause or an act's path code, never a refusal (owner ruling 188; design call AD-63).",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "grant_id": { "$ref": "#/$defs/opaqueRef" },
+        "grant_version": { "type": "integer", "minimum": 1 },
+        "mode": { "$ref": "#/$defs/mode" },
+        "configuration_version": { "$ref": "#/$defs/versionLabel" },
+        "allowlist_entry_id": { "$ref": "#/$defs/opaqueRef" },
+        "protocol_ref": { "$ref": "#/$defs/opaqueRef" },
+        "approver_ref": { "$ref": "#/$defs/opaqueRef" },
+        "legal_review_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_authority_ref": {
+          "description": "The AI system's own reference to the configuration it acted under. openChart records it and, where the grant records one, compares it.",
+          "$ref": "#/$defs/opaqueRef"
+        }
+      }
+    },
+    "knowledgeBasis": {
+      "description": "What an AI turn's or act's clinical statements rest on: the cited evidence, the model's own knowledge with no cited source, or both.",
+      "enum": ["cited_sources", "model_knowledge", "mixed"]
+    },
+    "attachmentRef": {
+      "description": "An attachment by reference and digest. It is opaque: openChart never parses or imports it, and only displays it. Its media type is one that is only displayed, a PDF or a picture, the three that the foundation's documentAttachment admits under owner ruling 204 (define-clinical-acts-foundation AN-06, at f1cfe74), so no structured content is ever displayed from a consult record (AC-04). It is the form of a turn's attachment: an attachment outside it is kept by reference and digest only, never displayed as an attachment, parsed or imported, its reference and media type readable on request as a value openChart could not read, and the consult is selected for review (design calls AD-74 and AD-75).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref", "media_type", "sha256"],
+      "properties": {
+        "ref": { "$ref": "#/$defs/opaqueRef" },
+        "media_type": { "enum": ["application/pdf", "image/png", "image/jpeg"] },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "consultTurn": {
+      "description": "One turn of the exchange. author_type uses the author types of the clinical communication record (define-clinical-message-inbox MI-12): patient, representative or ai. A consult write never carries clinician, staff, system or unknown content. Only an ai turn may carry evidence_refs and knowledge_basis.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["turn_id", "seq", "author_type", "at", "text"],
+      "properties": {
+        "turn_id": { "$ref": "#/$defs/opaqueRef" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "author_type": { "enum": ["patient", "representative", "ai"] },
+        "at": { "$ref": "#/$defs/timestamp" },
+        "text": { "type": "string", "minLength": 1, "maxLength": 20000 },
+        "attachments": {
+          "type": "array",
+          "maxItems": 20,
+          "items": { "$ref": "#/$defs/attachmentRef" }
+        },
+        "evidence_refs": {
+          "type": "array",
+          "maxItems": 50,
+          "items": { "$ref": "#/$defs/evidenceRef" }
+        },
+        "knowledge_basis": { "$ref": "#/$defs/knowledgeBasis" }
+      },
+      "if": { "properties": { "author_type": { "const": "ai" } }, "required": ["author_type"] },
+      "else": {
+        "not": {
+          "anyOf": [
+            { "required": ["evidence_refs"] },
+            { "required": ["knowledge_basis"] }
+          ]
+        }
+      }
+    },
+    "escalation": {
+      "description": "Where the source system routed the patient. An AI never manages an emergency; emergency_services_guidance records that the patient was directed to emergency care.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["routed_to"],
+      "properties": {
+        "routed_to": { "enum": ["none", "human_clinician", "emergency_services_guidance"] },
+        "route_ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "writeEnvelope": {
+      "description": "What every write must carry to be read at all: the envelope, the writer, its declared context and its patient, with the record identifiers and the content object that each message kind requires (owner ruling 188; define-clinical-acts-foundation AN-12). on_behalf_of is not part of it: a write whose on_behalf_of is missing or cannot be read is held in quarantine outside the chart (owner ruling 194; design call AD-60). Nor is the time its information arose, nor sent_at: where either is missing or cannot be read, or the first is later than the write's receipt, openChart takes the time of receipt and marks it as defaulted (design call AD-70). Every other field is a declaration, carried as given and judged beside the schema (declarationForms; design call AD-74). Nor is source: openChart supplies ai_consult, the source this path implies, and marks it as defaulted (design call AD-63). consent_ref is not part of it: a write with no consent reference is not refused; a consult is quarantined in the chart with quarantine_cause consent_ref_missing, kept, marked not accepted, in front of a clinician and flagged to the medical director (owner ruling 199), and an act is recorded as a recommendation carrying the flag consent_ref_missing (design call AD-62, PROPOSED).",
+      "type": "object",
+      "required": ["contract", "contract_version", "message_type", "message_id", "practice_ref", "source_system", "added_by", "context", "patient", "source_patient_ref"]
+    },
+    "consultWrite": {
+      "description": "Tier 1. An external clinical AI system records one consult: the full exchange, the models, the evidence references and the authority it operated under. A consult record is AI-generated communication and never a diagnosis or a clinical fact of record. In advice_only mode (owner ruling 66) the AI content gives information, an assessment and next steps, with no diagnosis language and no treatment directives. A consult record is information (owner ruling 80, clause 9): one that fails a grant check, or carries no consent reference, is quarantined in the chart and is never refused for that. Its source.kind is always ai_consult; absent, openChart supplies ai_consult with consult_id as its reference, marked as defaulted (design call AD-63). Its exchange and summary are the consult record's published shape, pinned by this contract's digest (define-clinical-acts-foundation AN-06). Besides the envelope, a consult must carry its identifiers and its exchange; every other field, its start and end included, is a declaration, carried as given and judged against its form in declarationForms. A declaration that is absent, or outside its form and so set aside, takes the outcome its description states, and a member the schema does not define is set aside unread and raises an integration exception to the administrative role that carries the writer as the practice registered it, the coded cause and a count, and nothing taken from the write (AW-07; the clinical-acts foundation's AN-01 and its design call CD-61; owner ruling 188; design calls AD-63, AD-70 and AD-74).",
+      "type": "object",
+      "allOf": [{ "$ref": "#/$defs/writeEnvelope" }, { "required": ["consult_id", "consult_version", "exchange"] }],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "consult.write" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": {
+          "description": "When the source sent the message, as it declares it. It is the message's own time, not its information's. Where it is absent or not a timestamp in this contract's pattern naming a real calendar day, openChart uses received_at wherever a sending time is needed, marked as defaulted, and keeps the value given with its record of the write; it is never refused (design call AD-70). AD-66's message digest leaves it out.",
+          "$ref": "#/$defs/valueAsGiven"
+        },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/writeSourceSystem" },
+        "added_by": { "$ref": "#/$defs/systemParty" },
+        "on_behalf_of": { "$ref": "#/$defs/onBehalfOf" },
+        "source": {
+          "description": "Always ai_consult, with the source system's reference to the consult. Absent, openChart supplies ai_consult with consult_id as its reference, marked as defaulted (design call AD-63). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "context": { "$ref": "#/$defs/context" },
+        "patient": { "$ref": "#/$defs/openchartPatientRef" },
+        "source_patient_ref": { "$ref": "#/$defs/externalPatientRef" },
+        "consent_ref": {
+          "description": "The source system's own reference to the patient's consent, as the source system records it, to the AI service whose output the write records and to that output being written to this practice's chart. The source system, or its operator, holds the consent it names; openChart holds only the reference. openChart checks only that a reference is present: it does not resolve or verify it (design calls AD-14 and AD-62; Open Question 21). Absent, a consult or an act whose content is information is quarantined in the chart with consent_ref_missing, and any other act is recorded as a recommendation carrying the flag consent_ref_missing (owner ruling 199 for a consult; design call AD-62). A value outside the form of an opaque reference is a missing consent reference: consent_ref_missing, as ruling 199 requires for a consult (design call AD-74).",
+          "$ref": "#/$defs/valueAsGiven"
+        },
+        "consult_id": { "$ref": "#/$defs/opaqueRef" },
+        "consult_version": { "type": "integer", "minimum": 1 },
+        "predecessor_version": {
+          "description": "The version of this consult that this version continues or corrects (AC-01). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "conversation_ref": {
+          "description": "The source system's reference to the conversation, in conversationRef's form. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "authority": {
+          "description": "The authority the source system says it acted under; openChart compares it with its own grant record and never trusts it. Each field is judged on its own against authorityClaim: a field outside its form is set aside, kept as given as a value openChart could not read, named in the receipt's set_aside as authority.<field>, and answered by the check it would have answered, as a missing field is (grant_mismatch, mode_mismatch, approver_mismatch, legal_review_mismatch, allowlist_entry_unknown, allowlist_entry_mismatch). A claim that is not an object, or a member the claim does not define, is set aside as authority, and the claim is then answered as if absent, or as if without that member (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "models": {
+          "description": "The models the source system used. Absent, the record shows the AI's model and model version from on_behalf_of only. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "started_at": {
+          "description": "When the consult started, as the writer declares it. Where it is absent or is not a timestamp in this contract's pattern that names a real calendar day, the record shows the start as not stated and keeps the value given, if any, with openChart's record of the write; it is never refused (owner ruling 188; design call AD-70).",
+          "$ref": "#/$defs/valueAsGiven"
+        },
+        "ended_at": {
+          "description": "When the consult ended, which is when its information arose (owner ruling 80, clause 4) and the time at which its grant is checked (AC-09). Where it is absent, is not a timestamp in this contract's pattern that names a real calendar day, or is later than openChart's receipt of the write by more than 5 minutes, openChart takes received_at in its place, marks it as defaulted and keeps the value given, if any, with its record of the write; it is never refused (owner ruling 188; design call AD-70). An ended_at earlier than a started_at that can be read is a time that cannot be read: openChart takes received_at, shows the start as not stated and keeps both values given only with its record of the write, never as occurred_at_as_declared (design call AD-70). A value given that is later than the time openChart takes in its place, and so a timestamp in this pattern naming a real day, is also kept as the clinical-acts foundation's occurred_at_as_declared; any other value given, one that cannot be read included, stays only with openChart's record of the write, kept as given as a value openChart could not read (the foundation's AN-04 and CD-73 at f1cfe74, under which a defaulted time is retrieved_at where the path recorded it, which this path never does, otherwise a released item's first arrival, otherwise received_at; design call AD-70).",
+          "$ref": "#/$defs/valueAsGiven"
+        },
+        "exchange": {
+          "description": "The consult's content object: its turns, as given, and their digest. It can be read when it is an object with a list of 1 to 500 turns and a content_sha256 that the turns recompute. Each turn is judged beside the schema against consultTurn: a turn outside that form, an author_type a consult does not admit, an attachment of a media type that is not only displayed, evidence or a knowledge basis on a turn that is not an AI's, a turn time that cannot be read, or no AI turn at all, keeps the consult, keeps the turn as given and shows only what is in its form; except for a turn time, the consult is always selected for review for content outside its shape (design call AD-75). The schema bounds no turn: a turn beyond declarationBound is content outside the consult's shape, kept as given (design calls AD-74 and AD-75). A member other than turns and content_sha256 is set aside unread.",
+          "type": "object",
+          "required": ["turns", "content_sha256"],
+          "properties": {
+            "turns": { "type": "array", "minItems": 1, "maxItems": 500, "items": { "$ref": "#/$defs/declarationAsGiven" } },
+            "content_sha256": { "$ref": "#/$defs/sha256" }
+          },
+          "additionalProperties": { "$ref": "#/$defs/declarationAsGiven" }
+        },
+        "summary": {
+          "description": "Optional AI-written summary. It is labelled AI-authored and never replaces the exchange. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "evidence_refs": {
+          "description": "Absent or empty, the consult has no evidence reference for the whole consult, and if no AI turn carries one it is shown so and always selected for review (AC-03, AC-07). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "review_flags": {
+          "description": "Review category codes the source system declares, drawn from the vocabulary of the medical director's review policy. Two built-in codes always put the consult in review: red_flag, and advice_scope_breach (diagnosis language or a treatment directive in advice-only content). Absent, the source declared none, as with an empty list. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, and named in the receipt's set_aside; failing closed, the consult is then selected, and listed, as if red_flag were declared (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "emergency_indicated": {
+          "description": "Whether the consult involved an emergency. Absent means true, failing closed: the consult is listed urgently and always reviewed, and the record shows that the value was defaulted (design call AD-63). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "escalation": {
+          "description": "Where the source system routed the patient. Absent, the record shows that the routing was not stated. A consult whose escalation names emergency_services_guidance is listed urgently (AC-10; design call AD-74, PROPOSED). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, and named in the receipt's set_aside; the routing is shown as not stated, as if absent, and the consult is selected for review and listed urgently, failing closed (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "linked_act_ids": {
+          "description": "The source's acts that this consult is linked to. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, and named in the receipt's set_aside; as if absent, and, because a link it may have named could be to an act recorded as a recommendation, the consult is selected for review (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        }
+      },
+      "additionalProperties": { "$ref": "#/$defs/declarationAsGiven" }
+    },
+    "actWrite": {
+      "description": "Tier 2. An external clinical AI system records one AI-authored clinical act. No 1.x receiver accepts it as an act: openChart records it in full as a recommendation that has no effect and answers recorded_as_recommendation with missing_authority and path_reason (owner rulings 80 and 157). Besides the envelope, an act must carry its identifiers, its class and its content object; every other field, when it arose included, is a declaration, carried as given and judged against its form in declarationForms. A declaration that is absent, or outside its form and so set aside, takes the outcome its description states, never a refusal, and a member the schema does not define is set aside unread and raises an integration exception to the administrative role that carries the writer as the practice registered it, the coded cause and a count, and nothing taken from the write (AW-07; the clinical-acts foundation's AN-01 and its design call CD-61; owner ruling 188; design calls AD-63, AD-70 and AD-74).",
+      "type": "object",
+      "allOf": [{ "$ref": "#/$defs/writeEnvelope" }, { "required": ["act_id", "act_version", "act_class", "act_content"] }],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "act.write" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": {
+          "description": "When the source sent the message, as it declares it. It is the message's own time, not its information's. Where it is absent or not a timestamp in this contract's pattern naming a real calendar day, openChart uses received_at wherever a sending time is needed, marked as defaulted, and keeps the value given with its record of the write; it is never refused (design call AD-70). AD-66's message digest leaves it out.",
+          "$ref": "#/$defs/valueAsGiven"
+        },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/writeSourceSystem" },
+        "added_by": { "$ref": "#/$defs/systemParty" },
+        "on_behalf_of": { "$ref": "#/$defs/onBehalfOf" },
+        "source": {
+          "description": "An AI's act is the AI's own output, so its source is always ai_consult, with the source system's reference to the consult or exchange it came from; what it relied on goes in evidence_refs. Absent, openChart supplies ai_consult, marked as defaulted, with consult_ref.consult_id as its reference where the write names a consult in consult_ref's form, and with no reference otherwise, as the clinical-acts foundation's provenance at f1cfe74 allows (its AN-04; design call AD-63). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "context": { "$ref": "#/$defs/context" },
+        "patient": { "$ref": "#/$defs/openchartPatientRef" },
+        "source_patient_ref": { "$ref": "#/$defs/externalPatientRef" },
+        "consent_ref": {
+          "description": "The source system's own reference to the patient's consent, as the source system records it, to the AI service whose output the write records and to that output being written to this practice's chart. The source system, or its operator, holds the consent it names; openChart holds only the reference. openChart checks only that a reference is present: it does not resolve or verify it (design calls AD-14 and AD-62; Open Question 21). Absent, a consult or an act whose content is information is quarantined in the chart with consent_ref_missing, and any other act is recorded as a recommendation carrying the flag consent_ref_missing (owner ruling 199 for a consult; design call AD-62). A value outside the form of an opaque reference is a missing consent reference: consent_ref_missing, as ruling 199 requires for a consult (design call AD-74).",
+          "$ref": "#/$defs/valueAsGiven"
+        },
+        "act_id": { "$ref": "#/$defs/opaqueRef" },
+        "act_version": { "type": "integer", "minimum": 1 },
+        "act_class": {
+          "description": "The class as the AI system gave it, kept as declared whether or not the chart defines it (define-clinical-acts-foundation AN-06). In 1.0 every act is recorded as a recommendation with tier2_not_in_force; under Tier 2 a class it does not cover takes act_type_unsupported.",
+          "$ref": "#/$defs/codeToken"
+        },
+        "act_type": {
+          "description": "The act type as the AI system gave it, kept as declared. Absent, the recommendation names none, and under Tier 2 the act takes act_type_unsupported; the clinician who adopts it completes the missing parts (owner ruling 188). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "action": {
+          "description": "What the AI intended, in the foundation's action codes. Absent, a write is sign for new content, or new_version when it names target_record_ref. A write whose target is not an act version becomes a recommendation of new content that corrects that record where openChart resolves it to an addition (define-clinical-acts-foundation AN-09; design call AD-68). Outside its form, a sign that names a target, or an action on an existing record that names none (target_record_ref absent or itself set aside), sets the action aside: the default action applies and the value given is kept with openChart's record of the write (design calls AD-68 and AD-74). A write whose action or target_record_ref was set aside is never accepted as an act: it is recorded as a recommendation, and the default action is only its proposed action (design call AD-74, PROPOSED).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "authority": {
+          "description": "The authority the source system says it acted under; openChart compares it with its own grant record and never trusts it. Each field is judged on its own against authorityClaim: a field outside its form is set aside, kept as given as a value openChart could not read, named in the receipt's set_aside as authority.<field>, and answered by the check it would have answered, as a missing field is (grant_mismatch, mode_mismatch, approver_mismatch, legal_review_mismatch, allowlist_entry_unknown, allowlist_entry_mismatch). A claim that is not an object, or a member the claim does not define, is set aside as authority, and the claim is then answered as if absent, or as if without that member (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "models": {
+          "description": "The models the source system used. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "occurred_at": {
+          "description": "When the act's information arose (owner ruling 80, clause 4), and, for content kept as information, the time at which its grant is checked (AW-06). Where it is absent, is not a timestamp in this contract's pattern that names a real calendar day, or is later than openChart's receipt of the write by more than 5 minutes, openChart takes received_at in its place, marks it as defaulted and keeps the value given, if any, with its record of the write; it is never refused (owner ruling 188; design call AD-70). A value given that is later than the time openChart takes in its place, and so a timestamp in this pattern naming a real day, is also kept as the clinical-acts foundation's occurred_at_as_declared; any other value given, one that cannot be read included, stays only with openChart's record of the write, kept as given as a value openChart could not read (the foundation's AN-04 and CD-73 at f1cfe74, under which a defaulted time is retrieved_at where the path recorded it, which this path never does, otherwise a released item's first arrival, otherwise received_at; design call AD-70).",
+          "$ref": "#/$defs/valueAsGiven"
+        },
+        "consult_ref": {
+          "description": "The consult the act came from. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "evidence_refs": {
+          "description": "Absent or empty, the act is recorded, shown as resting on no evidence reference and flagged for review, as AC-03 does for a consult. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "knowledge_basis": {
+          "description": "What the act's clinical statements rest on. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "conditions_met": {
+          "description": "For limited_practice: each condition of the allowlist entry that the source system states was met, with its evidence. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "declared_reserved": {
+          "description": "Whether the source system classifies the act as reserved (for example controlled-substance prescribing). openChart also applies its own classification; either one makes the act reserved. Absent means true, failing closed, and the record shows that the value was defaulted (design call AD-63). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "emergency_indicated": {
+          "description": "Whether the act is part of managing an emergency. true is never accepted as an act: openChart records it as a recommendation and lists it urgently; for content kept as information it lists the record urgently for clinician review, as for a consult (design call AD-69). Absent means true, failing closed, and the record shows that the value was defaulted (design call AD-63). Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "supersedes_act": {
+          "description": "A prior AI-authored act by the same source system that this act visibly supersedes. A clinician-authored record can never be named here. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "target_record_ref": {
+          "description": "The existing chart record that the act acts upon, if any, kept as given in the recommendation's target_as_given. A clinician-authored target is never acted upon: under Tier 2 the write is recorded as a recommendation with path_reason targets_clinician_record. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74). The write is then never accepted as an act, only recorded as a recommendation (design call AD-74, PROPOSED).",
+          "$ref": "#/$defs/declarationAsGiven"
+        },
+        "act_content": {
+          "description": "The act's content object: content, the one open object, which must be an object; and the schema it was declared under.",
+          "type": "object",
+          "required": ["content"],
+          "properties": {
+            "content_schema": {
+              "description": "The schema the content was declared under, where the AI system names one. Absent, the content is kept as given with no declared schema. Outside its form (declarationForms) it is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside, and given the outcome its absence takes (design calls AD-63 and AD-74).",
+              "$ref": "#/$defs/declarationAsGiven"
+            },
+            "content": {
+              "description": "The one open object. It is validated against the clinical-acts foundation's content schema named by content_schema, at that digest, once a MINOR version of this contract pins it. Until then openChart stores it as given, with the content_schema it declares, in a recommendation.",
+              "type": "object"
+            }
+          },
+          "additionalProperties": { "$ref": "#/$defs/declarationAsGiven" }
+        }
+      },
+      "additionalProperties": { "$ref": "#/$defs/declarationAsGiven" }
+    },
+    "declarationAsGiven": {
+      "description": "A declaration, a consult turn or an unknown member as the writer gave it: any JSON value. The schema bounds none of it, so that no single value refuses a write; only a whole message beyond the message limit is refused, beside the schema (AW-01; design call AD-63). openChart judges the value beside the schema, against its form (declarationForms, consultTurn) and against declarationBound. A declaration or an unknown member beyond declarationBound is set aside like any value outside its form, and openChart keeps only its SHA-256 and its length; a consult turn beyond it is content outside the consult's shape and is kept as given, because the content object is what the patient was told (owner ruling 188; design calls AD-74 and AD-75)."
+    },
+    "declarationBound": {
+      "description": "The size bound of a declaration, a consult turn or an unknown member, which openChart judges beside the schema; no message applies it: nested at most four levels deep, with strings of at most 20000 characters, lists of at most 500 items and objects of at most 64 members, each named in at most 1024 characters. These are the largest string (a turn's text) and the longest list (a consult's turns) that the contract admits anywhere, and twice the members of the largest object it defines, so no value within its form is beyond them (design call AD-74).",
+      "maxLength": 20000,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/declarationLevel2" },
+      "maxProperties": 64,
+      "propertyNames": { "maxLength": 1024 },
+      "additionalProperties": { "$ref": "#/$defs/declarationLevel2" }
+    },
+    "declarationLevel2": {
+      "maxLength": 20000,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/declarationLevel3" },
+      "maxProperties": 64,
+      "propertyNames": { "maxLength": 1024 },
+      "additionalProperties": { "$ref": "#/$defs/declarationLevel3" }
+    },
+    "declarationLevel3": {
+      "maxLength": 20000,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/declarationLevel4" },
+      "maxProperties": 64,
+      "propertyNames": { "maxLength": 1024 },
+      "additionalProperties": { "$ref": "#/$defs/declarationLevel4" }
+    },
+    "declarationLevel4": {
+      "maxLength": 20000,
+      "maxItems": 500,
+      "items": { "$ref": "#/$defs/declarationScalar" },
+      "maxProperties": 64,
+      "propertyNames": { "maxLength": 1024 },
+      "additionalProperties": { "$ref": "#/$defs/declarationScalar" }
+    },
+    "declarationScalar": { "type": ["string", "number", "boolean", "null"], "maxLength": 20000 },
+    "declarationForms": {
+      "description": "The form of each declaration a write may carry, which openChart judges beside the schema (AW-01, AW-06; design calls AD-63 and AD-74). No message applies it: a write carries its declarations as given (declarationAsGiven, valueAsGiven), so that a value outside its form never refuses the write. A value outside its form here is set aside: kept as given with openChart's record of the write as a value openChart could not read, named in the receipt's set_aside by field name only, and given the outcome its absence takes, failing closed. A value beyond its size bound (declarationBound, valueBound) is outside its form too, and openChart keeps only its SHA-256 and its length. Each authority-claim field is judged on its own against authorityClaim; each consult turn against consultTurn (design call AD-75); a times' reading is AD-70's.",
+      "type": "object",
+      "properties": {
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "source": { "allOf": [{ "$ref": "#/$defs/provenanceSource" }, { "properties": { "kind": { "const": "ai_consult" } } }] },
+        "consent_ref": { "$ref": "#/$defs/opaqueRef" },
+        "predecessor_version": { "type": "integer", "minimum": 1 },
+        "conversation_ref": { "$ref": "#/$defs/conversationRef" },
+        "authority": { "$ref": "#/$defs/authorityClaim" },
+        "models": { "type": "array", "minItems": 1, "maxItems": 16, "items": { "$ref": "#/$defs/modelIdentity" } },
+        "started_at": { "$ref": "#/$defs/timestamp" },
+        "ended_at": { "$ref": "#/$defs/timestamp" },
+        "occurred_at": { "$ref": "#/$defs/timestamp" },
+        "summary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["text"],
+          "properties": { "text": { "type": "string", "minLength": 1, "maxLength": 4000 } }
+        },
+        "evidence_refs": { "type": "array", "maxItems": 200, "items": { "$ref": "#/$defs/evidenceRef" } },
+        "review_flags": { "type": "array", "maxItems": 50, "uniqueItems": true, "items": { "$ref": "#/$defs/codeToken" } },
+        "emergency_indicated": { "type": "boolean" },
+        "escalation": { "$ref": "#/$defs/escalation" },
+        "linked_act_ids": { "type": "array", "maxItems": 50, "uniqueItems": true, "items": { "$ref": "#/$defs/opaqueRef" } },
+        "act_type": { "$ref": "#/$defs/codeToken" },
+        "action": { "enum": ["sign", "new_version", "cosign", "discontinue", "enter_in_error", "cancel"] },
+        "consult_ref": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["consult_id"],
+          "properties": { "consult_id": { "$ref": "#/$defs/opaqueRef" }, "consult_version": { "type": "integer", "minimum": 1 } }
+        },
+        "knowledge_basis": { "$ref": "#/$defs/knowledgeBasis" },
+        "conditions_met": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["condition_ref", "evidence_refs"],
+            "properties": {
+              "condition_ref": { "$ref": "#/$defs/opaqueRef" },
+              "evidence_refs": { "type": "array", "minItems": 1, "maxItems": 50, "items": { "$ref": "#/$defs/evidenceRef" } }
+            }
+          }
+        },
+        "declared_reserved": { "type": "boolean" },
+        "supersedes_act": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["act_id", "act_version"],
+          "properties": { "act_id": { "$ref": "#/$defs/opaqueRef" }, "act_version": { "type": "integer", "minimum": 1 } }
+        },
+        "target_record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "content_schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version", "sha256"],
+          "properties": { "id": { "$ref": "#/$defs/codeToken" }, "version": { "$ref": "#/$defs/versionLabel" }, "sha256": { "$ref": "#/$defs/sha256" } }
+        }
+      }
+    },
+    "setAsideField": {
+      "description": "A field of a write that openChart set aside because its value was outside its form, by field name only (design call AD-74). authority names the claim as a whole, or a member it does not define; exchange.turns.* names the part of a turn that is outside the turn's form, and exchange.turns any other (design call AD-75); unknown_property stands for every member the schema does not define, whose name is never returned. A time openChart replaced with received_at because it was later than receipt is named too (design call AD-70).",
+      "enum": [
+        "sent_at",
+        "source",
+        "consent_ref",
+        "predecessor_version",
+        "conversation_ref",
+        "authority",
+        "authority.grant_id",
+        "authority.grant_version",
+        "authority.mode",
+        "authority.configuration_version",
+        "authority.allowlist_entry_id",
+        "authority.protocol_ref",
+        "authority.approver_ref",
+        "authority.legal_review_ref",
+        "authority.source_authority_ref",
+        "models",
+        "started_at",
+        "ended_at",
+        "occurred_at",
+        "summary",
+        "evidence_refs",
+        "review_flags",
+        "emergency_indicated",
+        "escalation",
+        "linked_act_ids",
+        "act_type",
+        "action",
+        "consult_ref",
+        "knowledge_basis",
+        "conditions_met",
+        "declared_reserved",
+        "supersedes_act",
+        "target_record_ref",
+        "act_content.content_schema",
+        "exchange.turns",
+        "exchange.turns.at",
+        "exchange.turns.author_type",
+        "exchange.turns.attachments",
+        "exchange.turns.evidence",
+        "unknown_property"
+      ]
+    },
+    "authorityNotice": {
+      "description": "A change in authority or in the source's standing. From the AI system, only a reduction (paused or narrowed) is accepted, and openChart applies it at once; a widening is only ever the medical director's act in openChart. From openChart, every change to its grant is announced, and so is every change to the source's standing: suspended (a manual suspension; every write is refused), deregistered (the last notice before the identity stops being served), suspension_lifted (a manual suspension lifted) and no_medical_director (no medical director designation is in force, so no grant is current). grant_id and configuration_version are required for a grant change, and present for a standing change only where a grant exists. A grant change from openChart also carries grant_version, the version in force once the change applies. A standing change carries no new_mode and no removed_allowlist_entry_ids (design calls AD-45 and AD-47).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "direction", "change", "effective_at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "authority.notice" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" },
+        "direction": { "enum": ["from_ai_system", "from_openchart"] },
+        "grant_id": { "$ref": "#/$defs/opaqueRef" },
+        "grant_version": { "type": "integer", "minimum": 1 },
+        "change": { "enum": ["paused", "narrowed", "resumed", "expired", "revoked", "superseded", "suspended", "deregistered", "suspension_lifted", "no_medical_director"] },
+        "effective_at": { "$ref": "#/$defs/timestamp" },
+        "configuration_version": { "$ref": "#/$defs/versionLabel" },
+        "new_mode": { "$ref": "#/$defs/mode" },
+        "removed_allowlist_entry_ids": {
+          "type": "array",
+          "maxItems": 200,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/opaqueRef" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "direction": { "const": "from_ai_system" } }, "required": ["direction"] },
+          "then": { "properties": { "change": { "enum": ["paused", "narrowed"] } } }
+        },
+        {
+          "if": { "properties": { "change": { "enum": ["paused", "narrowed", "resumed", "expired", "revoked", "superseded"] } }, "required": ["change"] },
+          "then": { "required": ["grant_id", "configuration_version"] }
+        },
+        {
+          "if": { "properties": { "change": { "enum": ["suspended", "deregistered", "suspension_lifted", "no_medical_director"] } }, "required": ["change"] },
+          "then": {
+            "not": { "anyOf": [{ "required": ["new_mode"] }, { "required": ["removed_allowlist_entry_ids"] }] }
+          }
+        },
+        {
+          "if": {
+            "properties": { "direction": { "const": "from_openchart" }, "change": { "enum": ["paused", "narrowed", "resumed", "expired", "revoked", "superseded"] } },
+            "required": ["direction", "change"]
+          },
+          "then": { "required": ["grant_version"] }
+        }
+      ]
+    },
+    "grantReadbackRequest": {
+      "description": "The source system, or the relay acting for it, asks openChart for the state of its own authority, as a heartbeat. It carries no patient or clinical content.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "grant.readback_request" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" }
+      }
+    },
+    "grantReadback": {
+      "description": "openChart's answer to a grant readback, from its own records at read time, with no patient or clinical content. unauthorized answers an identity that is not the source's registered one or its relay, and a manually suspended or deregistered identity. grant_current means an active grant with a medical director designation in force; grant_not_current gives the reason, and carries no grant for no_grant and a grant whose state matches grant_paused, grant_expired or grant_revoked (design call AD-45). source_status says whether the source is over its cap, which folds its listings into a digest and refuses nothing (design call AD-64).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "result", "read_at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "grant.readback" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "in_reply_to": { "$ref": "#/$defs/uuid" },
+        "result": { "enum": ["grant_current", "grant_not_current", "unauthorized"] },
+        "read_at": { "$ref": "#/$defs/timestamp" },
+        "source_status": { "enum": ["active", "over_cap"] },
+        "not_current_reason": { "enum": ["no_grant", "grant_paused", "grant_expired", "grant_revoked", "no_medical_director"] },
+        "grant": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["grant_id", "grant_version", "mode", "configuration_version", "state", "effective_at"],
+          "properties": {
+            "grant_id": { "$ref": "#/$defs/opaqueRef" },
+            "grant_version": { "type": "integer", "minimum": 1 },
+            "mode": { "$ref": "#/$defs/mode" },
+            "configuration_version": { "$ref": "#/$defs/versionLabel" },
+            "state": { "enum": ["active", "paused", "expired", "revoked"] },
+            "effective_at": { "$ref": "#/$defs/timestamp" },
+            "expires_at": { "$ref": "#/$defs/timestamp" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "result": { "const": "grant_current" } }, "required": ["result"] },
+          "then": {
+            "required": ["source_status", "grant"],
+            "properties": { "grant": { "properties": { "state": { "const": "active" } } } },
+            "not": { "required": ["not_current_reason"] }
+          }
+        },
+        {
+          "if": { "properties": { "result": { "const": "grant_not_current" } }, "required": ["result"] },
+          "then": { "required": ["source_status", "not_current_reason"] }
+        },
+        {
+          "if": { "properties": { "result": { "const": "unauthorized" } }, "required": ["result"] },
+          "then": { "not": { "anyOf": [{ "required": ["source_status"] }, { "required": ["grant"] }, { "required": ["not_current_reason"] }] } }
+        },
+        {
+          "if": { "properties": { "not_current_reason": { "const": "no_grant" } }, "required": ["not_current_reason"] },
+          "then": { "not": { "required": ["grant"] } }
+        },
+        {
+          "if": { "properties": { "not_current_reason": { "const": "grant_paused" } }, "required": ["not_current_reason"] },
+          "then": { "properties": { "grant": { "properties": { "state": { "const": "paused" } } } } }
+        },
+        {
+          "if": { "properties": { "not_current_reason": { "const": "grant_expired" } }, "required": ["not_current_reason"] },
+          "then": { "properties": { "grant": { "properties": { "state": { "const": "expired" } } } } }
+        },
+        {
+          "if": { "properties": { "not_current_reason": { "const": "grant_revoked" } }, "required": ["not_current_reason"] },
+          "then": { "properties": { "grant": { "properties": { "state": { "const": "revoked" } } } } }
+        }
+      ]
+    },
+    "rejectReason": {
+      "description": "Why a write or notice was refused. A refused write stores no clinical content. Each reason for a write is a ground that owner ruling 80, clause 18 keeps: schema_invalid, unsupported_major_version and content_digest_mismatch, malformed content, schema_invalid also answering a message beyond the message limit and, in a message other than a write, a calendar day that does not exist, each checked beside the schema; unauthorized, a writer that cannot be identified, is not registered for what the write claims, or is suspended; non_operational_context, test data its writer declares; and the three patient-link reasons, a patient that cannot be matched. Missing authority is never a reason to refuse an addition, so no authority check appears here, and a repeat with different content is kept and flagged, not refused.",
+      "enum": [
+        "schema_invalid",
+        "unsupported_major_version",
+        "unauthorized",
+        "non_operational_context",
+        "patient_link_unknown",
+        "patient_link_mismatch",
+        "patient_link_in_review",
+        "content_digest_mismatch",
+        "notice_would_widen"
+      ]
+    },
+    "pathAuthorityCode": {
+      "description": "This contract's own code for the first authority check an act.write failed, in the receiver's order: the code list of the scheme openchart-ai-clinical-record-write.missing_authority, carried in path_reason. Two codes keep names that end in refused: they name the missing authority and refuse nothing.",
+      "enum": [
+        "tier2_not_in_force",
+        "act_type_unsupported",
+        "no_current_grant",
+        "grant_paused",
+        "grant_expired",
+        "grant_revoked",
+        "grant_mismatch",
+        "mode_mismatch",
+        "mode_not_permitted",
+        "approver_mismatch",
+        "legal_review_mismatch",
+        "consent_ref_missing",
+        "emergency_management_refused",
+        "reserved_act_refused",
+        "targets_clinician_record",
+        "allowlist_entry_unknown",
+        "allowlist_entry_mismatch",
+        "conditions_unverified"
+      ]
+    },
+    "missingAuthority": {
+      "description": "The closed list of missing-authority codes that every reader uses, as the clinical-acts foundation defines it (define-clinical-acts-foundation AN-09; openchart-clinical-act-content/1.0, SHA-256 3c2e1afdb2d365bd84ef9f5f159e9addb6c93d7c2048af33da3cb9396b9548ec, as of its head f1cfe74, $defs/missingAuthority).",
+      "enum": [
+        "no_grant_in_force",
+        "no_decision_authority",
+        "decision_maker_not_confirmed",
+        "no_practitioner_sign_off",
+        "wallet_not_bound",
+        "licence_verification_missing",
+        "attestation_not_verified",
+        "signing_service_unavailable",
+        "practice_attestation_not_in_force"
+      ]
+    },
+    "missingAuthorityList": {
+      "description": "The foundation's missing-authority codes for an AI act recorded as a recommendation. Of its nine codes only three can be true of an addition on this path, and no_practitioner_sign_off is always among them: no practitioner signed it off, and this contract carries no sign-off (owner ruling 151; design call AD-57). The foundation's contract requires it of every recommendation whose decision maker is not a human.",
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {
+        "allOf": [
+          { "$ref": "#/$defs/missingAuthority" },
+          { "enum": ["no_grant_in_force", "no_decision_authority", "no_practitioner_sign_off"] }
+        ]
+      },
+      "contains": { "const": "no_practitioner_sign_off" }
+    },
+    "pathReason": {
+      "description": "This contract's own code, in the shape of the foundation's path_reason (define-clinical-acts-foundation AN-09, design call CD-51): the scheme, its version and the code. It is kept beside missing_authority, never replaces it, and decides nothing.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scheme", "scheme_version", "code"],
+      "properties": {
+        "scheme": { "const": "openchart-ai-clinical-record-write.missing_authority" },
+        "scheme_version": { "$ref": "#/$defs/contractVersion" },
+        "code": { "$ref": "#/$defs/pathAuthorityCode" }
+      }
+    },
+    "recommendationCodes": {
+      "description": "Both code sets of a recommendation, and the mapping from this contract's code to the foundation's codes (design call AD-57): tier2_not_in_force, act_type_unsupported, mode_not_permitted, emergency_management_refused, reserved_act_refused and targets_clinician_record map to no_decision_authority; the grant checks, approver_mismatch, legal_review_mismatch, consent_ref_missing and the allowlist and condition checks map to no_grant_in_force. Each code maps to exactly one of the two, and missing_authority holds that code and no_practitioner_sign_off, nothing else.",
+      "required": ["missing_authority", "path_reason"],
+      "allOf": [
+        {
+          "if": {
+            "properties": { "path_reason": { "properties": { "code": { "enum": ["tier2_not_in_force", "act_type_unsupported", "mode_not_permitted", "emergency_management_refused", "reserved_act_refused", "targets_clinician_record"] } }, "required": ["code"] } },
+            "required": ["path_reason"]
+          },
+          "then": { "properties": { "missing_authority": { "contains": { "const": "no_decision_authority" }, "not": { "contains": { "const": "no_grant_in_force" } } } } }
+        },
+        {
+          "if": {
+            "properties": { "path_reason": { "properties": { "code": { "enum": ["no_current_grant", "grant_paused", "grant_expired", "grant_revoked", "grant_mismatch", "mode_mismatch", "approver_mismatch", "legal_review_mismatch", "consent_ref_missing", "allowlist_entry_unknown", "allowlist_entry_mismatch", "conditions_unverified"] } }, "required": ["code"] } },
+            "required": ["path_reason"]
+          },
+          "then": { "properties": { "missing_authority": { "contains": { "const": "no_grant_in_force" }, "not": { "contains": { "const": "no_decision_authority" } } } } }
+        }
+      ]
+    },
+    "inChartCause": {
+      "description": "Why a consult, or an act.write whose content is information, was quarantined in the chart: recorded on the patient's record, marked not accepted, and reviewed (owner ruling 90; design call AD-69 for information). It is the first grant check the write failed, or consent_ref_missing when it carries no consent reference (design call AD-62).",
+      "enum": ["no_current_grant", "grant_paused", "grant_expired", "grant_revoked", "grant_mismatch", "mode_mismatch", "mode_not_permitted", "approver_mismatch", "legal_review_mismatch", "consent_ref_missing"]
+    },
+    "heldCause": {
+      "description": "Why a write was held in quarantine outside the chart, no part of the chart until it is released (owner ruling 194): its AI has no openWallet ID (openwallet_id_missing); it does not identify, in the form this path reads, the AI it speaks for and the hands it passed through, because its on_behalf_of is missing or cannot be read as the AI alone or the AI and then its source system, or its AI has no model or no model version, or a value outside its form (ai_not_identified); the source system it names is one the writer's registration does not cover (source_system_not_covered); or the registration does not cover its AI's openWallet ID (openwallet_id_not_covered). A write held with openwallet_id_missing or ai_not_identified can never be released, because the chart can never identify its AI (design calls AD-60 and AD-65). These are the four hold causes of the clinical-acts foundation's AN-01 at f1cfe74, which lets a writing path hold for a source system the registration does not cover (its CD-70 and CD-71).",
+      "enum": ["openwallet_id_missing", "openwallet_id_not_covered", "source_system_not_covered", "ai_not_identified"]
+    },
+    "dismissalReason": {
+      "description": "Why a clinician dismissed a held write, from this path's closed list (define-clinical-acts-foundation AN-01; design call AD-65): duplicate_of_existing_record names the record it duplicates; not_for_this_patient restricts it from ordinary reading in this patient's context, reports a misdirected delivery and tells the writer; no_clinical_content is for content with no clinical content at all.",
+      "enum": ["duplicate_of_existing_record", "not_for_this_patient", "no_clinical_content"]
+    },
+    "quarantineCause": {
+      "description": "Why a write was quarantined: an inChartCause for a consult, or an act.write kept as information, quarantined in the chart, or a heldCause for a write held outside the chart.",
+      "enum": [
+        "no_current_grant",
+        "grant_paused",
+        "grant_expired",
+        "grant_revoked",
+        "grant_mismatch",
+        "mode_mismatch",
+        "mode_not_permitted",
+        "approver_mismatch",
+        "legal_review_mismatch",
+        "consent_ref_missing",
+        "openwallet_id_missing",
+        "openwallet_id_not_covered",
+        "source_system_not_covered",
+        "ai_not_identified"
+      ]
+    },
+    "quarantineCodes": {
+      "description": "The codes of a quarantined write. A consult or an act may carry any quarantine cause: an act carries an inChartCause only when its content is information, which the schema cannot see and AW-06 states, since an act whose content is not information and that fails an authority check is a recommendation (design call AD-69).",
+      "required": ["quarantine_cause"],
+      "properties": { "write_kind": { "enum": ["consult", "act"] } }
+    },
+    "messageIdConflict": {
+      "description": "Set when a message reused a message_id that the same integration identity used earlier for a message with a different digest (SHA-256 of its RFC 8785 canonical JSON without sent_at): the first message's digest and, where it produced a record, that record. The message was neither answered with the first receipt nor dropped: it went through the steps as a new message (design call AD-66).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_message_sha256"],
+      "properties": {
+        "first_message_sha256": { "$ref": "#/$defs/sha256" },
+        "first_record_ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "submissionRefConflict": {
+      "description": "Set on a record kept from a write that repeated an earlier write's record identifiers (consult_id and consult_version, or act_id and act_version) with a different content digest: the first record and its stored content digest. The write is kept as a new record, flagged, and never refused; the first record is unchanged (define-clinical-acts-foundation AN-10, its design call CD-64; design call AD-61).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_record_ref", "first_content_sha256"],
+      "properties": {
+        "first_record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "first_content_sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "writeReceipt": {
+      "description": "openChart's answer to every write and every authority notice it receives. accepted and duplicate carry record_ref. kept_as_information answers an act.write declared clinical_note or document whose content validates as the foundation's note content or document shape, kept as the foundation's information record, whose receipt code it is (define-clinical-acts-foundation AN-06 and AN-14). recorded_as_recommendation answers an act.write that failed an authority check: openChart recorded it in full as a recommendation that has no effect, record_ref is the recommendation's identifier, missing_authority carries the foundation's codes and path_reason this contract's code for the first check it failed (owner ruling 80; define-clinical-acts-foundation AN-09 and AN-10). quarantined answers a consult.write, or an act.write whose content is information, that failed the consent check or a grant check, which openChart kept as quarantined AI communication in the chart, never accepted, or a write held outside the chart by the AI check; quarantine_cause names why, and quarantined is this path's held_in_quarantine. duplicate answers an identical repeat with the first result: first_result, the first record_ref and its codes. submission_ref_conflict tells the writer that its write repeated an earlier write's identifiers with different content and was kept as a new record; message_id_conflict, that it reused a message_id with different content. refused carries a reason and no record_ref, and a refused write stores no clinical content. In 1.0 no receipt says that an act took effect: an act is never accepted, nor a duplicate of an accepted act, and no receipt carries a co-review due time (owner ruling 157); the Tier 2 MINOR version adds them.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "write_kind", "result", "received_at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "write.receipt" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "in_reply_to": { "$ref": "#/$defs/uuid" },
+        "write_kind": { "enum": ["consult", "act", "authority_notice"] },
+        "result": { "enum": ["accepted", "duplicate", "recorded_as_recommendation", "kept_as_information", "quarantined", "refused"] },
+        "first_result": {
+          "description": "For a duplicate only: the result the first submission received (define-clinical-acts-foundation AN-10).",
+          "enum": ["accepted", "recorded_as_recommendation", "kept_as_information", "quarantined"]
+        },
+        "submission_ref_conflict": { "$ref": "#/$defs/submissionRefConflict" },
+        "message_id_conflict": { "$ref": "#/$defs/messageIdConflict" },
+        "reason": { "$ref": "#/$defs/rejectReason" },
+        "missing_authority": { "$ref": "#/$defs/missingAuthorityList" },
+        "path_reason": { "$ref": "#/$defs/pathReason" },
+        "quarantine_cause": { "$ref": "#/$defs/quarantineCause" },
+        "consent_ref_missing": {
+          "description": "The act carried no consent reference. A recommendation carries this flag whatever its first failing check, because in 1.0 that check is always tier2_not_in_force; a consult or an information write is quarantined in the chart with quarantine_cause consent_ref_missing instead (design call AD-62).",
+          "const": true
+        },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "grant_checked": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["grant_id", "grant_version"],
+          "properties": {
+            "grant_id": { "$ref": "#/$defs/opaqueRef" },
+            "grant_version": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "received_at": { "$ref": "#/$defs/timestamp" },
+        "set_aside": {
+          "description": "Each field of the write that openChart set aside because its value was outside its form, by field name only, so that the source learns of it; the value given is never returned (design call AD-74).",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 40,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/setAsideField" }
+        }
+      },
+      "allOf": [
+        {
+          "description": "A refusal sets nothing aside, and a notice carries no declarations (design call AD-74).",
+          "if": { "anyOf": [{ "properties": { "result": { "const": "refused" } }, "required": ["result"] }, { "properties": { "write_kind": { "const": "authority_notice" } }, "required": ["write_kind"] }] },
+          "then": { "not": { "required": ["set_aside"] } }
+        },
+        {
+          "description": "consent_ref_missing is carried only by a recommendation, or a duplicate of one (design call AD-62).",
+          "if": { "required": ["consent_ref_missing"] },
+          "then": { "anyOf": [{ "properties": { "result": { "const": "recorded_as_recommendation" } } }, { "properties": { "first_result": { "const": "recorded_as_recommendation" } }, "required": ["first_result"] }] }
+        },
+        {
+          "description": "A recommendation whose path code is consent_ref_missing carries the flag too.",
+          "if": { "properties": { "path_reason": { "properties": { "code": { "const": "consent_ref_missing" } }, "required": ["code"] } }, "required": ["path_reason"] },
+          "then": { "required": ["consent_ref_missing"] }
+        },
+        {
+          "if": { "properties": { "write_kind": { "const": "authority_notice" } }, "required": ["write_kind"] },
+          "then": { "not": { "required": ["submission_ref_conflict"] } }
+        },
+        {
+          "if": { "properties": { "result": { "const": "refused" } }, "required": ["result"] },
+          "then": {
+            "required": ["reason"],
+            "not": { "anyOf": [{ "required": ["record_ref"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }, { "required": ["first_result"] }, { "required": ["submission_ref_conflict"] }] }
+          }
+        },
+        {
+          "if": { "properties": { "result": { "const": "accepted" } }, "required": ["result"] },
+          "then": {
+            "required": ["record_ref"],
+            "properties": { "write_kind": { "enum": ["consult", "authority_notice"] } },
+            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }, { "required": ["first_result"] }] }
+          }
+        },
+        {
+          "if": { "properties": { "result": { "const": "recorded_as_recommendation" } }, "required": ["result"] },
+          "then": {
+            "required": ["record_ref"],
+            "properties": { "write_kind": { "const": "act" } },
+            "allOf": [{ "$ref": "#/$defs/recommendationCodes" }],
+            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["quarantine_cause"] }, { "required": ["first_result"] }] }
+          }
+        },
+        {
+          "description": "kept_as_information, the foundation's receipt code for a record of information, answers an act.write declared clinical_note or document whose content validates as the foundation's note content (clinicalNoteContent) or document shape (documentContent): information that only records who wrote it, kept as the foundation's information record, marked not signed off (owner ruling 187; define-clinical-acts-foundation AN-06 and AN-14, its design calls CD-63 and CD-65; design call AD-68).",
+          "if": { "properties": { "result": { "const": "kept_as_information" } }, "required": ["result"] },
+          "then": {
+            "required": ["record_ref"],
+            "properties": { "write_kind": { "const": "act" } },
+            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }, { "required": ["first_result"] }] }
+          }
+        },
+        {
+          "if": { "properties": { "result": { "const": "quarantined" } }, "required": ["result"] },
+          "then": {
+            "required": ["record_ref", "quarantine_cause"],
+            "allOf": [{ "$ref": "#/$defs/quarantineCodes" }],
+            "not": { "anyOf": [{ "required": ["reason"] }, { "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["first_result"] }] }
+          }
+        },
+        {
+          "if": { "properties": { "result": { "const": "duplicate" } }, "required": ["result"] },
+          "then": {
+            "required": ["record_ref", "first_result"],
+            "not": { "required": ["reason"] },
+            "allOf": [
+              {
+                "if": { "properties": { "first_result": { "const": "accepted" } }, "required": ["first_result"] },
+                "then": { "properties": { "write_kind": { "const": "consult" } }, "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }] } }
+              },
+              {
+                "if": { "properties": { "first_result": { "const": "recorded_as_recommendation" } }, "required": ["first_result"] },
+                "then": { "properties": { "write_kind": { "const": "act" } }, "allOf": [{ "$ref": "#/$defs/recommendationCodes" }], "not": { "required": ["quarantine_cause"] } }
+              },
+              {
+                "if": { "properties": { "first_result": { "const": "kept_as_information" } }, "required": ["first_result"] },
+                "then": { "properties": { "write_kind": { "const": "act" } }, "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }] } }
+              },
+              {
+                "if": { "properties": { "first_result": { "const": "quarantined" } }, "required": ["first_result"] },
+                "then": { "allOf": [{ "$ref": "#/$defs/quarantineCodes" }], "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }] } }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "actStatus": {
+      "description": "openChart reports what happened to an accepted AI-authored act: co-review outcome, reversal, cancellation or hand-off on narrowing or pause, and overdue escalation.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "act_id", "act_version", "record_ref", "status", "at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "act.status" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "act_id": { "$ref": "#/$defs/opaqueRef" },
+        "act_version": { "type": "integer", "minimum": 1 },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "status": {
+          "enum": [
+            "co_review_confirmed",
+            "co_review_amended",
+            "co_review_voided",
+            "voided",
+            "countermanded",
+            "cancelled_on_narrowing",
+            "handed_to_clinician",
+            "co_review_overdue_escalated"
+          ]
+        },
+        "reviewer_ref": { "$ref": "#/$defs/opaqueRef" },
+        "reason_code": { "$ref": "#/$defs/codeToken" },
+        "at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "consultReviewed": {
+      "description": "openChart reports the outcome of a clinician review of a consult record, as a code only.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "consult_id", "consult_version", "record_ref", "outcome", "at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "consult.reviewed" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "consult_id": { "$ref": "#/$defs/opaqueRef" },
+        "consult_version": { "type": "integer", "minimum": 1 },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "outcome": { "enum": ["concur", "concur_with_note", "follow_up_required", "unsafe"] },
+        "at": { "$ref": "#/$defs/timestamp" }
+      }
+    },
+    "readbackRequest": {
+      "description": "The source system that wrote a record, or the relay acting for it, asks openChart what it stored. Only the writing source system's integration identity may ask.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "write_kind", "record_ref"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "record.readback_request" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" },
+        "write_kind": { "enum": ["consult", "act"] },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" }
+      }
+    },
+    "readbackResult": {
+      "description": "openChart's answer to a readback request: the stored record's identifiers, its stored content digest, when openChart received it, the grant version it was checked against and its current state, as codes and digests only. For a consult, stored_content_sha256 is recomputed from the stored turns exactly as exchange.content_sha256 is defined; for an act, it is the SHA-256 of the RFC 8785 canonical JSON serialization of the stored act_content. A recommendation (record_state recommendation, with the foundation's missing_authority codes and this contract's path_reason) and a consult or information write quarantined in the chart (record_state quarantined, with its inChartCause) are found but never accepted; neither reports a review status, and each carries grant_checked only where a grant was checked. A held write is found in one of four states, each with its heldCause: held while it is held; released, with the reference and state of the record it became; recorded_by_clinician; or dismissed, with the reason (design call AD-65). A record kept from a write that repeated an earlier write's identifiers with different content carries submission_ref_conflict, and one kept from a message that reused a message_id with different content carries message_id_conflict. An act.write kept as the foundation's information record, because it declared clinical_note or document and its content validates as that kind's shape, is found in state information, and a held act released as information reports released_record_state information. In 1.0 no readback says that an act took effect: an act is only ever a recommendation, information or a held write, and the states and review statuses of an accepted act are left to the Tier 2 MINOR version (owner ruling 157). A readback is not an interoperability read: it returns no record, only identifiers, digests and codes, to the writing source.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "write_kind", "record_ref", "result", "read_at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "record.readback" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "in_reply_to": { "$ref": "#/$defs/uuid" },
+        "write_kind": { "enum": ["consult", "act"] },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "result": { "enum": ["found", "not_found", "unauthorized"] },
+        "source_record_id": { "$ref": "#/$defs/opaqueRef" },
+        "source_record_version": { "type": "integer", "minimum": 1 },
+        "stored_content_sha256": { "$ref": "#/$defs/sha256" },
+        "grant_checked": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["grant_id", "grant_version"],
+          "properties": {
+            "grant_id": { "$ref": "#/$defs/opaqueRef" },
+            "grant_version": { "type": "integer", "minimum": 1 }
+          }
+        },
+        "received_at": { "$ref": "#/$defs/timestamp" },
+        "record_state": {
+          "enum": ["recorded", "superseded", "recommendation", "information", "quarantined", "held", "released", "recorded_by_clinician", "dismissed"]
+        },
+        "missing_authority": { "$ref": "#/$defs/missingAuthorityList" },
+        "path_reason": { "$ref": "#/$defs/pathReason" },
+        "quarantine_cause": { "$ref": "#/$defs/quarantineCause" },
+        "consent_ref_missing": {
+          "description": "The act carried no consent reference. A recommendation carries this flag whatever its first failing check, because in 1.0 that check is always tier2_not_in_force; a consult or an information write is quarantined in the chart with quarantine_cause consent_ref_missing instead (design call AD-62).",
+          "const": true
+        },
+        "released_record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "released_record_state": { "enum": ["recorded", "quarantined", "recommendation", "information"] },
+        "dismissal_reason": { "$ref": "#/$defs/dismissalReason" },
+        "submission_ref_conflict": { "$ref": "#/$defs/submissionRefConflict" },
+        "message_id_conflict": { "$ref": "#/$defs/messageIdConflict" },
+        "review_status": {
+          "enum": ["not_selected", "selected", "in_review", "reviewed"]
+        },
+        "read_at": { "$ref": "#/$defs/timestamp" }
+      },
+      "allOf": [
+        {
+          "description": "consent_ref_missing is carried only by a recommendation (design call AD-62).",
+          "if": { "required": ["consent_ref_missing"] },
+          "then": { "required": ["record_state"], "properties": { "record_state": { "const": "recommendation" } } }
+        },
+        {
+          "description": "A recommendation whose path code is consent_ref_missing carries the flag too.",
+          "if": { "properties": { "path_reason": { "properties": { "code": { "const": "consent_ref_missing" } }, "required": ["code"] } }, "required": ["path_reason"] },
+          "then": { "required": ["consent_ref_missing"] }
+        }
+      ],
+      "if": { "properties": { "result": { "const": "found" } }, "required": ["result"] },
+      "then": {
+        "required": ["source_record_id", "source_record_version", "stored_content_sha256", "received_at", "record_state"],
+        "allOf": [
+          {
+            "if": { "properties": { "record_state": { "const": "recommendation" } }, "required": ["record_state"] },
+            "then": {
+              "properties": { "write_kind": { "const": "act" } },
+              "allOf": [{ "$ref": "#/$defs/recommendationCodes" }],
+              "not": { "anyOf": [{ "required": ["quarantine_cause"] }, { "required": ["review_status"] }] }
+            }
+          },
+          {
+            "if": { "properties": { "record_state": { "const": "information" } }, "required": ["record_state"] },
+            "then": {
+              "properties": { "write_kind": { "const": "act" } },
+              "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }, { "required": ["review_status"] }] }
+            }
+          },
+          {
+            "if": { "properties": { "record_state": { "const": "quarantined" } }, "required": ["record_state"] },
+            "then": {
+              "required": ["quarantine_cause"],
+              "properties": { "write_kind": { "enum": ["consult", "act"] }, "quarantine_cause": { "$ref": "#/$defs/inChartCause" } },
+              "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["review_status"] }] }
+            }
+          },
+          {
+            "if": { "properties": { "record_state": { "enum": ["recorded", "superseded"] } }, "required": ["record_state"] },
+            "then": {
+              "required": ["grant_checked", "review_status"],
+              "properties": { "write_kind": { "const": "consult" } },
+              "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["quarantine_cause"] }] }
+            }
+          },
+          {
+            "if": { "properties": { "record_state": { "enum": ["held", "released", "recorded_by_clinician", "dismissed"] } }, "required": ["record_state"] },
+            "then": {
+              "required": ["quarantine_cause"],
+              "properties": { "quarantine_cause": { "$ref": "#/$defs/heldCause" } },
+              "not": { "anyOf": [{ "required": ["missing_authority"] }, { "required": ["path_reason"] }, { "required": ["review_status"] }, { "required": ["grant_checked"] }] }
+            }
+          },
+          {
+            "if": { "properties": { "record_state": { "const": "released" } }, "required": ["record_state"] },
+            "then": { "required": ["released_record_ref", "released_record_state"] },
+            "else": { "not": { "anyOf": [{ "required": ["released_record_ref"] }, { "required": ["released_record_state"] }] } }
+          },
+          {
+            "if": { "properties": { "record_state": { "const": "released" }, "write_kind": { "const": "act" } }, "required": ["record_state", "write_kind"] },
+            "then": { "properties": { "released_record_state": { "enum": ["recommendation", "information", "quarantined"] } } }
+          },
+          {
+            "if": { "properties": { "record_state": { "const": "released" }, "write_kind": { "const": "consult" } }, "required": ["record_state", "write_kind"] },
+            "then": { "properties": { "released_record_state": { "enum": ["recorded", "quarantined"] } } }
+          },
+          {
+            "description": "A write held because its AI cannot be identified is never released (design call AD-65).",
+            "if": { "properties": { "record_state": { "const": "released" } }, "required": ["record_state"] },
+            "then": { "properties": { "quarantine_cause": { "not": { "enum": ["openwallet_id_missing", "ai_not_identified"] } } } }
+          },
+          {
+            "if": { "properties": { "record_state": { "const": "dismissed" } }, "required": ["record_state"] },
+            "then": { "required": ["dismissal_reason"] },
+            "else": { "not": { "required": ["dismissal_reason"] } }
+          }
+        ]
+      },
+      "else": {
+        "not": {
+          "anyOf": [
+            { "required": ["source_record_id"] },
+            { "required": ["source_record_version"] },
+            { "required": ["stored_content_sha256"] },
+            { "required": ["received_at"] },
+            { "required": ["grant_checked"] },
+            { "required": ["record_state"] },
+            { "required": ["missing_authority"] },
+            { "required": ["path_reason"] },
+            { "required": ["quarantine_cause"] },
+            { "required": ["released_record_ref"] },
+            { "required": ["released_record_state"] },
+            { "required": ["dismissal_reason"] },
+            { "required": ["submission_ref_conflict"] },
+            { "required": ["message_id_conflict"] },
+            { "required": ["review_status"] }
+          ]
+        }
+      }
+    },
+    "heldEnded": {
+      "description": "openChart tells the writing source how a write it held in quarantine ended, once, when it ends (an ending is final): released into the chart, with the reference and state of the record it became (a consult is recorded or quarantined in the chart; an act a recommendation, or information, or quarantined in the chart when its content is information and it fails the consent check or a grant check); a write held with openwallet_id_missing or ai_not_identified is never released; recorded by a clinician in a record of their own; or dismissed, with the reason. It carries identifiers and codes only, is delivered durably and answered with message.ack (design call AD-65).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "practice_ref", "source_system", "write_kind", "record_ref", "source_record_id", "source_record_version", "quarantine_cause", "ending", "at"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "held.ended" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "practice_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_system": { "$ref": "#/$defs/sourceSystem" },
+        "write_kind": { "enum": ["consult", "act"] },
+        "record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "source_record_id": { "$ref": "#/$defs/opaqueRef" },
+        "source_record_version": { "type": "integer", "minimum": 1 },
+        "quarantine_cause": { "$ref": "#/$defs/heldCause" },
+        "ending": { "enum": ["released", "recorded_by_clinician", "dismissed"] },
+        "released_record_ref": { "$ref": "#/$defs/opaqueRef" },
+        "released_record_state": { "enum": ["recorded", "quarantined", "recommendation", "information"] },
+        "dismissal_reason": { "$ref": "#/$defs/dismissalReason" },
+        "at": { "$ref": "#/$defs/timestamp" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "ending": { "const": "released" } }, "required": ["ending"] },
+          "then": { "required": ["released_record_ref", "released_record_state"] },
+          "else": { "not": { "anyOf": [{ "required": ["released_record_ref"] }, { "required": ["released_record_state"] }] } }
+        },
+        {
+          "if": { "properties": { "ending": { "const": "released" }, "write_kind": { "const": "act" } }, "required": ["ending", "write_kind"] },
+          "then": { "properties": { "released_record_state": { "enum": ["recommendation", "information", "quarantined"] } } }
+        },
+        {
+          "if": { "properties": { "ending": { "const": "released" }, "write_kind": { "const": "consult" } }, "required": ["ending", "write_kind"] },
+          "then": { "properties": { "released_record_state": { "enum": ["recorded", "quarantined"] } } }
+        },
+        {
+          "description": "A write held because its AI cannot be identified is never released (design call AD-65).",
+          "if": { "properties": { "ending": { "const": "released" } }, "required": ["ending"] },
+          "then": { "properties": { "quarantine_cause": { "not": { "enum": ["openwallet_id_missing", "ai_not_identified"] } } } }
+        },
+        {
+          "if": { "properties": { "ending": { "const": "dismissed" } }, "required": ["ending"] },
+          "then": { "required": ["dismissal_reason"] },
+          "else": { "not": { "required": ["dismissal_reason"] } }
+        }
+      ]
+    },
+    "messageAck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contract", "contract_version", "message_type", "message_id", "sent_at", "in_reply_to", "result"],
+      "properties": {
+        "contract": { "$ref": "#/$defs/contract" },
+        "contract_version": { "$ref": "#/$defs/contractVersion" },
+        "message_type": { "const": "message.ack" },
+        "message_id": { "$ref": "#/$defs/uuid" },
+        "sent_at": { "$ref": "#/$defs/timestamp" },
+        "in_reply_to": { "$ref": "#/$defs/uuid" },
+        "result": { "const": "received" }
+      }
+    }
+  }
+}

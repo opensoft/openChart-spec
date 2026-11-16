@@ -1,0 +1,18 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "authority.notice",
+  "message_id": "5c2e3f4a-6b7c-4d8e-9fa0-1b2c3d4e5f60",
+  "sent_at": "2026-11-15T08:05:00Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "direction": "from_openchart",
+  "grant_id": "SYN-GRANT-0001",
+  "grant_version": 3,
+  "change": "no_medical_director",
+  "effective_at": "2026-11-15T08:05:00Z",
+  "configuration_version": "cfg-2026.11.14-1"
+}

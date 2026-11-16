@@ -1,0 +1,16 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "write.receipt",
+  "message_id": "4fad6e7c-3051-4293-aebf-5a6b7c8d9ea5",
+  "sent_at": "2026-11-14T09:02:01Z",
+  "in_reply_to": "0b6f2a3e-9c1d-4e5f-8a7b-1c2d3e4f5a61",
+  "write_kind": "authority_notice",
+  "result": "accepted",
+  "record_ref": "OC-AIC-00001",
+  "received_at": "2026-11-14T09:02:01Z",
+  "submission_ref_conflict": {
+    "first_record_ref": "OC-AIR-00001",
+    "first_content_sha256": "788e3ae021fef09d4894b50a50675acae00157d2feca1ca1749a882370aeddd1"
+  }
+}

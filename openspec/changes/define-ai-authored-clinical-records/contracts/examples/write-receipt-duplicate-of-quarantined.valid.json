@@ -1,0 +1,14 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "write.receipt",
+  "message_id": "7d8e9fa0-b1c2-4d34-a5f6-a7b8c9daebfc",
+  "sent_at": "2026-11-14T09:10:01Z",
+  "in_reply_to": "8e9fa0b1-c2d3-4e45-b6a7-b8c9daebfc0d",
+  "write_kind": "consult",
+  "result": "duplicate",
+  "first_result": "quarantined",
+  "record_ref": "OC-AIC-00002",
+  "quarantine_cause": "grant_expired",
+  "received_at": "2026-11-14T09:10:01Z"
+}

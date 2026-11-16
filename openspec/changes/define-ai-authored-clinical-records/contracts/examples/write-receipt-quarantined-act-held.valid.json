@@ -1,0 +1,13 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "write.receipt",
+  "message_id": "4a5b6c7d-8e9f-4a01-b2c3-d4e5f6a7b8c9",
+  "sent_at": "2026-11-14T10:00:01Z",
+  "in_reply_to": "1c7a3b4f-0d2e-4f60-9b8c-2d3e4f5a6b72",
+  "write_kind": "act",
+  "result": "quarantined",
+  "record_ref": "OC-AIH-00001",
+  "quarantine_cause": "openwallet_id_not_covered",
+  "received_at": "2026-11-14T10:00:01Z"
+}

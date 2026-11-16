@@ -1,0 +1,25 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "write.receipt",
+  "message_id": "5b6c7d8e-9fa0-4b12-83d4-e5f6a7b8c9da",
+  "sent_at": "2026-11-14T10:20:01Z",
+  "in_reply_to": "6c7d8e9f-a0b1-4c23-94e5-f6a7b8c9daeb",
+  "write_kind": "act",
+  "result": "recorded_as_recommendation",
+  "record_ref": "OC-AIR-00002",
+  "missing_authority": [
+    "no_decision_authority",
+    "no_practitioner_sign_off"
+  ],
+  "path_reason": {
+    "scheme": "openchart-ai-clinical-record-write.missing_authority",
+    "scheme_version": "1.0",
+    "code": "tier2_not_in_force"
+  },
+  "submission_ref_conflict": {
+    "first_record_ref": "OC-AIR-00001",
+    "first_content_sha256": "788e3ae021fef09d4894b50a50675acae00157d2feca1ca1749a882370aeddd1"
+  },
+  "received_at": "2026-11-14T10:20:01Z"
+}

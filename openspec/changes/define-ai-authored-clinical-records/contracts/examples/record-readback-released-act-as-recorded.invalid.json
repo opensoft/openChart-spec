@@ -1,0 +1,20 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "record.readback",
+  "message_id": "7a8b9c0d-1e2f-4a3b-825d-6e7f8091a2b3",
+  "sent_at": "2026-11-15T10:00:09Z",
+  "in_reply_to": "a0b1c2d3-e4f5-4067-98c9-daebfc0d1e2f",
+  "write_kind": "act",
+  "record_ref": "OC-AIH-00001",
+  "result": "found",
+  "source_record_id": "SYN-ACT-0001",
+  "source_record_version": 1,
+  "stored_content_sha256": "788e3ae021fef09d4894b50a50675acae00157d2feca1ca1749a882370aeddd1",
+  "received_at": "2026-11-14T10:00:01Z",
+  "record_state": "released",
+  "quarantine_cause": "openwallet_id_not_covered",
+  "read_at": "2026-11-15T10:00:09Z",
+  "released_record_ref": "OC-AIR-00009",
+  "released_record_state": "recorded"
+}

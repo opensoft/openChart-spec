@@ -1,0 +1,91 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "act.write",
+  "message_id": "2d8b4c5a-1e3f-4071-8c9d-3e4f5a6b7c83",
+  "sent_at": "2026-11-14T10:00:00Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "source_system": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system"
+  },
+  "added_by": {
+    "kind": "system",
+    "system": {
+      "issuer": "syn-ai-system.example",
+      "namespace": "syn_ai_system"
+    },
+    "operator_ref": "SYN-OPERATOR-0001"
+  },
+  "on_behalf_of": [
+    {
+      "kind": "ai",
+      "openwallet_id": "did:example:syn-ai-wallet-0001",
+      "model": "syn-model-assess",
+      "model_version": "2026.11.0"
+    }
+  ],
+  "source": {
+    "kind": "ai_consult",
+    "ref": "SYN-CONSULT-0003"
+  },
+  "context": "operational",
+  "patient": {
+    "issuer": "syn-openchart-site-a.example",
+    "namespace": "openchart",
+    "value": "OC-PAT-00001"
+  },
+  "source_patient_ref": {
+    "issuer": "syn-ai-system.example",
+    "namespace": "syn_ai_system",
+    "value": "SYN-AIPAT-0001"
+  },
+  "consent_ref": "SYN-CONSENT-0001",
+  "act_id": "SYN-ACT-0002",
+  "act_version": 1,
+  "act_class": "prescription",
+  "act_type": "syn.rx.discontinue",
+  "authority": {
+    "grant_id": "SYN-GRANT-0003",
+    "grant_version": 1,
+    "mode": "full_practice",
+    "configuration_version": "cfg-2027.03.01-1",
+    "approver_ref": "SYN-USER-MD-0001",
+    "legal_review_ref": "SYN-LEGAL-REVIEW-0003"
+  },
+  "models": [
+    {
+      "model_id": "syn-model-assess",
+      "model_version": "2026.11.0",
+      "role": "assessment"
+    }
+  ],
+  "occurred_at": "2026-11-14T09:59:00Z",
+  "consult_ref": {
+    "consult_id": "SYN-CONSULT-0002",
+    "consult_version": 1
+  },
+  "evidence_refs": [
+    {
+      "kind": "protocol",
+      "namespace": "syn_protocols",
+      "ref": "SYN-PROTOCOL-0007",
+      "version": "2"
+    }
+  ],
+  "declared_reserved": false,
+  "emergency_indicated": false,
+  "knowledge_basis": "cited_sources",
+  "act_content": {
+    "content_schema": {
+      "id": "syn.foundation.diagnosis",
+      "version": "0.0-placeholder",
+      "sha256": "9b6470bbe11d9dfa068ffc690e06cc3b4331d476fec0225366e2d4e4ece0ef85"
+    },
+    "content": {
+      "syn_note": "SYN placeholder: the clinical-acts foundation defines this body."
+    }
+  },
+  "action": "discontinue",
+  "target_record_ref": "OC-ACT-00042"
+}

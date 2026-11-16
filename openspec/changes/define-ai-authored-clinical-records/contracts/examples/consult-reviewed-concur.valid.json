@@ -1,0 +1,13 @@
+{
+  "contract": "openchart-ai-clinical-record-write",
+  "contract_version": "1.0",
+  "message_type": "consult.reviewed",
+  "message_id": "7cd09baf-6384-45c6-a1e2-8d9eafb0c1d8",
+  "sent_at": "2026-11-15T12:00:00Z",
+  "practice_ref": "SYN-PRACTICE-0001",
+  "consult_id": "SYN-CONSULT-0001",
+  "consult_version": 1,
+  "record_ref": "OC-AIC-00001",
+  "outcome": "concur",
+  "at": "2026-11-15T11:59:00Z"
+}
