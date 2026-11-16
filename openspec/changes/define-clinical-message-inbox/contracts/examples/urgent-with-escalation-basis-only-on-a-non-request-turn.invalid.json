@@ -1,0 +1,55 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000011",
+  "message_type": "conversation.result",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-medxfactory-a",
+  "payload": {
+    "acked_message_id": "9a1b2c3d-0000-4000-8000-000000000010",
+    "handoff_id": "3f0c2a0e-1111-4c4c-8a8a-000000000001",
+    "conversation_ref": {
+      "issuer": "synthetic-medxfactory-a",
+      "namespace": "medxfactory",
+      "value": "SYN-CONV-0002"
+    },
+    "urgency": "urgent",
+    "consent_ref": "SYN-CONSENT-MX-0002",
+    "snapshot_ref": "SYN-SNAP-0003",
+    "as_of": "2026-11-15T10:00:00Z",
+    "turns": [
+      {
+        "turn_id": "SYN-TURN-0001",
+        "position": 1,
+        "author_type": "patient",
+        "source": "medxfactory",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": true,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 1."
+        },
+        "request_ref": {
+          "issuer": "synthetic-healthlinc-a",
+          "namespace": "healthlinc",
+          "value": "SYN-MSG-0001"
+        },
+        "shared_basis": "patient_confirmed"
+      },
+      {
+        "turn_id": "SYN-TURN-0002",
+        "position": 2,
+        "author_type": "ai",
+        "source": "medxfactory",
+        "authored_at": "2026-11-15T10:00:00Z",
+        "request_turn": false,
+        "content": {
+          "media_type": "text/plain",
+          "text": "Synthetic turn 2."
+        },
+        "shared_basis": "urgent_escalation"
+      }
+    ],
+    "patient_told_at": "2026-11-15T10:00:00Z"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000028",
+  "message_type": "reply.delivery_failed",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-healthlinc-a",
+  "payload": {
+    "reply_message_id": "9a1b2c3d-0000-4000-8000-000000000027",
+    "reply_id": "3f0c2a0e-1111-4c4c-8a8a-000000000002",
+    "handoff_id": "3f0c2a0e-1111-4c4c-8a8a-000000000001",
+    "reply_path_ref": "SYN-RP-0001",
+    "failure_reason": "placement_failed",
+    "failed_at": "2026-11-15T10:00:00Z",
+    "urgency": "urgent"
+  }
+}

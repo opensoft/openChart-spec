@@ -1,0 +1,24 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000020",
+  "message_type": "reply.deliver",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-openchart-site-a",
+  "payload": {
+    "reply_id": "3f0c2a0e-1111-4c4c-8a8a-000000000002",
+    "handoff_id": "3f0c2a0e-1111-4c4c-8a8a-000000000001",
+    "reply_path_ref": "SYN-RP-0001",
+    "urgency": "urgent",
+    "author_type": "clinician",
+    "clinician_ref": "Dr Synthetic",
+    "content": {
+      "media_type": "text/plain",
+      "text": "Synthetic reply."
+    },
+    "channel_restrictions": [
+      "no_text_messages"
+    ],
+    "delivery_scope": "conversation_only"
+  }
+}

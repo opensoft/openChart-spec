@@ -1,0 +1,1362 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openchart:contract:openchart-conversation-retrieval:1.0",
+  "title": "openchart-conversation-retrieval 1.0",
+  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token, and an ai turn may carry its mode, disclosure code, model reference, advice-statement reference, emergency-guidance codes and the AI's identity. A result may name the earlier conversation it began from, by an opaque reference that openChart never retrieves on its own and never uses to resolve a patient. A retrieve names the request it serves in request_ref. The result carries the patient's sharing-consent reference and always at least one request turn, which carries that request_ref and holds the request itself, never a placeholder. For a priority or urgent item the request turns are always shared on the urgent_escalation basis with the patient told; a holder may withhold other turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed, except the values a turn's authored_at, source and ai_identity hold. Those three are judged per turn, so a defect in them never fails the result, even beyond their outer bound. A message a holder sends is at most 16777216 bytes (16 MiB) of UTF-8 JSON as received, a limit openChart checks beside the schema and refuses with schema_invalid. Identifiers and times are checked by pattern, never by format, so every validator applies the same rules. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/capabilitiesRequest"
+    },
+    {
+      "$ref": "#/$defs/capabilitiesResult"
+    },
+    {
+      "$ref": "#/$defs/conversationRetrieve"
+    },
+    {
+      "$ref": "#/$defs/conversationResult"
+    },
+    {
+      "$ref": "#/$defs/replyDeliver"
+    },
+    {
+      "$ref": "#/$defs/replyDeliveryFailed"
+    },
+    {
+      "$ref": "#/$defs/splitRequest"
+    },
+    {
+      "$ref": "#/$defs/messageAck"
+    }
+  ],
+  "$defs": {
+    "uuid": {
+      "description": "A UUID in its hyphenated hexadecimal form, checked by pattern only, so that no rule depends on whether a validator asserts format. The AI write contract's uuid pattern, character for character.",
+      "type": "string",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "timestamp": {
+      "description": "An RFC 3339 date-time with a time zone, checked by pattern only, with month, day, hour, minute and second ranges and one to nine fractional-second digits: the clinical-acts foundation's timestamp pattern, character for character, so that a turn's authored_at can be an addition's occurred_at. A day that the month does not have, such as 30 February, passes the pattern. openChart refuses such a time as schema_invalid by a check beside the schema, except a turn's authored_at, which it judges per turn.",
+      "type": "string",
+      "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
+    },
+    "contractVersion": {
+      "description": "MAJOR.MINOR. Implementations are compatible exactly when they share the MAJOR version. A sender uses the highest 1.x MINOR that both sides have declared. A receiver refuses any other MAJOR with unsupported_major_version. A breaking change needs a new MAJOR and a new digest.",
+      "type": "string",
+      "pattern": "^1\\.[0-9]+$"
+    },
+    "issuer": {
+      "description": "A deployment's configured, stable issuer identifier, unique across deployments and never derived from a host path. References are compared as (issuer, namespace, value) triples, never by value alone.",
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 255
+    },
+    "opaqueRef": {
+      "description": "Opaque reference. Carries no name, date of birth, contact detail, amount or clinical content.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9:_./-]{1,128}$"
+    },
+    "personRef": {
+      "description": "Opaque reference to a clinician or a staff member, minted by the system that knows the person. Never derived from a name or a login.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9:_-]{1,128}$"
+    },
+    "holderToken": {
+      "description": "A system that holds patient conversations and implements this contract.",
+      "enum": [
+        "healthlinc",
+        "medxfactory"
+      ]
+    },
+    "sourceToken": {
+      "description": "Registry of turn sources: the system that produced or relayed the turn. healthlinc: the patient app, including its coach and its red-flag checklist. medxfactory: medXfactory, including its medical AI. openpractice_agent: an openPractice agent's administrative answer. A token is added only in a MINOR version. A turn whose source is not one of these is a speaker openChart cannot read.",
+      "enum": [
+        "healthlinc",
+        "medxfactory",
+        "openpractice_agent"
+      ]
+    },
+    "conversationRef": {
+      "description": "Reference to a conversation in the system that holds it: (holder issuer, holder token, value). The same shape as conversation_ref in openpractice-clinical-handoff/1.0.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer",
+        "namespace",
+        "value"
+      ],
+      "properties": {
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "namespace": {
+          "$ref": "#/$defs/holderToken"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "requestRef": {
+      "description": "The holder's reference for the patient's request, as the handoff carried it (healthlinc_message_ref in openpractice-clinical-handoff/1.0).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer",
+        "namespace",
+        "value"
+      ],
+      "properties": {
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "namespace": {
+          "$ref": "#/$defs/holderToken"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "originConversationRef": {
+      "description": "Reference to an earlier conversation, in the shape of conversationRef, whose value is an opaque token. It carries no name, date of birth, contact detail or other PHI, and it never resolves, links or files a patient.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer",
+        "namespace",
+        "value"
+      ],
+      "properties": {
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "namespace": {
+          "$ref": "#/$defs/holderToken"
+        },
+        "value": {
+          "$ref": "#/$defs/opaqueRef"
+        }
+      }
+    },
+    "ehrPatientRef": {
+      "description": "The openChart patient reference the holder keeps for the account behind the conversation, if any: (openChart issuer, openchart, value). openChart only compares it with the link it already holds; it never links or files on it alone.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer",
+        "namespace",
+        "value"
+      ],
+      "properties": {
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "namespace": {
+          "const": "openchart"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        }
+      }
+    },
+    "errorCode": {
+      "description": "The contract's one set of coded reasons. Never free text.",
+      "enum": [
+        "schema_invalid",
+        "unsupported_major_version",
+        "unauthorized",
+        "idempotency_conflict",
+        "capability_not_supported",
+        "conversation_not_found",
+        "reference_not_found",
+        "result_mismatch",
+        "consent_not_granted",
+        "reply_path_invalid",
+        "temporarily_unavailable",
+        "recipient_link_revoked",
+        "account_closed",
+        "conversation_unavailable",
+        "placement_failed",
+        "no_permitted_notification_channel",
+        "service_suspended"
+      ]
+    },
+    "failureReason": {
+      "description": "Why a reply the holder had accepted could not be delivered. A subset of errorCode.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/errorCode"
+        },
+        {
+          "enum": [
+            "recipient_link_revoked",
+            "account_closed",
+            "conversation_unavailable",
+            "placement_failed",
+            "no_permitted_notification_channel",
+            "service_suspended"
+          ]
+        }
+      ]
+    },
+    "capability": {
+      "description": "Optional capabilities a holder may declare. Conversation retrieval is required of every holder and is not listed.",
+      "enum": [
+        "reply_delivery",
+        "delivery_failure_callback",
+        "split"
+      ]
+    },
+    "authorType": {
+      "description": "Who wrote the turn. unknown: the holder cannot attribute it, and openChart never treats it as clinician-authored.",
+      "enum": [
+        "patient",
+        "representative",
+        "ai",
+        "clinician",
+        "staff",
+        "system",
+        "unknown"
+      ]
+    },
+    "textContent": {
+      "description": "Plain text only in 1.0. No attachments.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "media_type",
+        "text"
+      ],
+      "properties": {
+        "media_type": {
+          "const": "text/plain"
+        },
+        "text": {
+          "type": "string",
+          "maxLength": 20000
+        }
+      }
+    },
+    "answerTypeRef": {
+      "description": "The practice-approved, read-only answer type and version an openPractice agent used (AH-05 exception 1). Same shape as answerTypeRef in openpractice-agent-operations/1.0.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "answer_type_id",
+        "version"
+      ],
+      "properties": {
+        "answer_type_id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "version": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "restrictionCode": {
+      "description": "A confidential-communication restriction code from the patient's applied instructions.",
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,63}$"
+    },
+    "urgency": {
+      "description": "The item's applied urgency. Ordered routine < priority < urgent.",
+      "enum": [
+        "routine",
+        "priority",
+        "urgent"
+      ]
+    },
+    "aiMode": {
+      "description": "The mode the practice's medical director set for the AI that wrote the turn (ruling 59). Same values as the mode in openchart-ai-clinical-record-write/1.0.",
+      "enum": [
+        "advice_only",
+        "limited_practice",
+        "full_practice"
+      ]
+    },
+    "emergencyGuidanceCode": {
+      "description": "A neutral code for a kind of emergency guidance an ai turn gave. It asserts no medical specifics. A value is added only in a MINOR version.",
+      "enum": [
+        "call_emergency_services",
+        "go_to_emergency_department",
+        "contact_crisis_line",
+        "contact_poison_control",
+        "seek_urgent_care"
+      ]
+    },
+    "boundedScalar": {
+      "description": "A string of up to 1024 characters, a number, a boolean or null: part of openChart's outer bound for reading a turn's authored_at, source and ai_identity. 1024 is the bound the AI write path, define-ai-authored-clinical-records, gives the AI's identification and the times a write declares (its design calls AD-60 and AD-70), far above every valid value here. The schema does not apply it to a turn: openChart keeps a value within it as given, and reads a value beyond it as one it could not read, keeping only its SHA-256 and its length (the clinical-acts foundation's AN-12).",
+      "anyOf": [
+        {
+          "type": "string",
+          "maxLength": 1024
+        },
+        {
+          "type": [
+            "number",
+            "boolean",
+            "null"
+          ]
+        }
+      ]
+    },
+    "boundedValue": {
+      "description": "openChart's outer bound for a turn's authored_at and source: a boundedScalar, or a list of up to 16 of them, or an object of up to 16 of them whose names have up to 1024 characters. The schema does not apply it to a turn, which accepts any value there. A value beyond it is one openChart could not read: the time is defaulted or the speaker is not identified, and only the value's SHA-256 and its length are kept, the SHA-256 of its RFC 8785 canonical JSON and that JSON's length in characters (the clinical-acts foundation's AN-12).",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/boundedScalar"
+        },
+        {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/boundedScalar"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 16,
+          "propertyNames": {
+            "maxLength": 1024
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/boundedScalar"
+          }
+        }
+      ]
+    },
+    "aiIdentity": {
+      "description": "The identity of the AI that wrote an ai turn, as owner ruling 80 identifies an AI: its openWallet ID (openwallet_id), plus the model (model) and model version (model_version) that produced the turn. It names the AI as the author of the turn, never a patient or a person, and nothing needs the wallet to be reachable to read the chart (owner ruling 183). This definition is openChart's outer bound for it, any object of up to 16 bounded values; the turn accepts any object, so that no defect in it makes a result fail, and an ai_identity beyond this bound is one openChart could not read: the turn is an unidentified AI turn, and only the value's SHA-256 and its length are kept. openChart judges it when it identifies the turn: openwallet_id as the clinical-acts foundation's walletId, model as the foundation gives an AI party's model, ^[A-Za-z0-9._:/@+-]{1,128}$, and model_version as the foundation's versionLabel, with no other property and no value that is not a string. A turn whose openwallet_id is missing, whose identity is otherwise defective, or whose openwallet_id the holder's registration does not cover is an unidentified AI turn: openChart holds its text in quarantine outside the chart, and the rest of the result is unaffected. It is refused on any turn that is not an ai turn.",
+      "type": "object",
+      "maxProperties": 16,
+      "propertyNames": {
+        "maxLength": 1024
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/boundedValue"
+      }
+    },
+    "turn": {
+      "description": "One turn of the conversation, keyed by turn_id, with its author type and source. Three of its fields are judged per turn, never by failing the result: authored_at, source and ai_identity. The schema accepts any value for each, and any object for ai_identity, and openChart judges it: a value beyond its outer bound (boundedValue, aiIdentity) is one openChart could not read, of which only the SHA-256 and the length are kept; a time that is missing, later than the retrieval time plus five minutes, or unreadable takes the retrieval time, marked defaulted; a source openChart cannot read makes an ai turn an unidentified AI turn, and records the system any other turn came through as a party not identified, the turn kept; a defective ai_identity makes the turn an unidentified AI turn. For a conversation HealthLinc holds, an unidentified AI turn is held outside the chart, shown to the clinician handling the item (MI-12). The agent fields, agent_answer_type and approved_by, appear only on an ai turn and never on a turn whose source is healthlinc or medxfactory, and an openpractice_agent turn carries exactly one of them; so an ai turn that carries one, with a source openChart cannot read, is an unidentified AI turn, not a failed result. Every other rule of the turn is checked here, and a result that breaks one fails.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "turn_id",
+        "position",
+        "author_type",
+        "request_turn",
+        "content"
+      ],
+      "properties": {
+        "turn_id": {
+          "description": "The holder's stable reference for the turn.",
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "request_turn": {
+          "description": "True for a turn of the escalated request: what the patient or representative asked the doctor. Such a turn is authored by the patient or a representative, carries request_ref, and has text with at least one non-whitespace character. It holds the request itself as written, never a placeholder, summary or redaction marker.",
+          "type": "boolean"
+        },
+        "request_ref": {
+          "description": "On a request turn, and only there: the request_ref of the conversation.retrieve this result answers. openChart refuses a result with result_mismatch when no request turn carries a matching request_ref.",
+          "$ref": "#/$defs/requestRef"
+        },
+        "author_type": {
+          "$ref": "#/$defs/authorType"
+        },
+        "source": {
+          "description": "The turn's source token (sourceToken): the system that produced or relayed the turn, never its author. Judged per turn: a source that is missing, or is not one of the tokens, is a speaker openChart cannot read, the system the turn came through. An ai turn is then an unidentified AI turn, whatever its ai_identity or agent fields; any other turn is kept, and that system is recorded as a hand the turn passed through, a party not identified whose described_as is fixed neutral text, never the value given and never the patient. The value given is kept as given with openChart's record of the retrieval, never used or displayed in place of the source, readable on request, marked as a value openChart could not read, by anyone who can read the record, and never put in an alert, a notification, a log line, a diagnostic or an acknowledgement (MI-12). Any value is accepted; one beyond the outer bound (boundedValue) is a speaker openChart cannot read, of which only the SHA-256 and the length are kept."
+        },
+        "authored_at": {
+          "description": "When the turn was written (timestamp). Judged per turn: a missing time, one later than the retrieval time plus five minutes, or one openChart cannot read, including one that names no real calendar day, takes the retrieval time, marked defaulted. A declared time openChart can read is kept beside it. Any other declared value is kept as given with openChart's record of the retrieval, never used or displayed in place of the time, readable on request, marked as a value openChart could not read, by anyone who can read the record, and never put in an alert, a notification, a log line, a diagnostic or an acknowledgement (MI-12). Any value is accepted; one beyond the outer bound (boundedValue) is a time openChart cannot read, of which only the SHA-256 and the length are kept. No turn is held for its time."
+        },
+        "in_reply_to": {
+          "description": "The turn_id this turn answers, if any.",
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "shared_basis": {
+          "description": "Why the holder shares this turn: within the patient's sharing consent, confirmed by the patient, or as a turn that triggered an escalation. For a priority or urgent item, every request turn carries urgent_escalation.",
+          "enum": [
+            "consent_scope",
+            "patient_confirmed",
+            "urgent_escalation"
+          ]
+        },
+        "agent_answer_type": {
+          "$ref": "#/$defs/answerTypeRef"
+        },
+        "approved_by": {
+          "description": "The staff member who approved an openPractice agent's drafted answer before it was sent. Only on an ai turn, and never on a turn whose source is healthlinc or medxfactory.",
+          "$ref": "#/$defs/personRef"
+        },
+        "reply_id": {
+          "description": "For a clinician turn: the reply_id of the reply.deliver that carried it.",
+          "$ref": "#/$defs/uuid"
+        },
+        "ai_mode": {
+          "description": "Optional, ai turns only: the mode in force when the AI wrote the turn.",
+          "$ref": "#/$defs/aiMode"
+        },
+        "disclosure_code": {
+          "description": "Optional, ai turns only: the code of the AI disclosure the patient was shown with the turn, from the holder's catalogue of disclosure texts. Lowercase words joined by underscores, with an optional version suffix such as _v2. It is the same for every patient shown that text, and carries no name, date of birth or other PHI.",
+          "type": "string",
+          "maxLength": 64,
+          "pattern": "^[a-z]+(_[a-z]+)*(_v[0-9]{1,3})?$"
+        },
+        "model_ref": {
+          "description": "Optional, ai turns only: the model identifier and version that wrote the turn, as one reference.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._:/@+-]{1,128}$"
+        },
+        "advice_statement_ref": {
+          "description": "Optional, ai turns only: the holder's reference to the version of the advice statement shown with the turn, for example a not-medical-advice statement.",
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "emergency_guidance": {
+          "description": "Optional, ai turns only: the kinds of emergency guidance the turn gave, as codes. It never replaces the turn's text, which must be non-empty. A code is added only in a MINOR version.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/emergencyGuidanceCode"
+          }
+        },
+        "ai_identity": {
+          "description": "Optional, ai turns only: the AI's openWallet ID, model and model version (owner ruling 80, part B). Without it, or with an identity that openChart cannot identify or that the holder's registration does not cover, openChart never keeps the turn's text in the chart: it holds the text in quarantine outside the chart, shown to the clinician handling the item. Any object is accepted; one beyond aiIdentity's outer bound is an identity openChart cannot read, of which only the SHA-256 and the length are kept.",
+          "type": "object"
+        },
+        "content": {
+          "$ref": "#/$defs/textContent"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "request_turn": {
+                "const": true
+              }
+            },
+            "required": [
+              "request_turn"
+            ]
+          },
+          "then": {
+            "required": [
+              "request_ref"
+            ],
+            "properties": {
+              "author_type": {
+                "enum": [
+                  "patient",
+                  "representative"
+                ]
+              },
+              "content": {
+                "properties": {
+                  "text": {
+                    "minLength": 1,
+                    "pattern": "\\S"
+                  }
+                }
+              }
+            }
+          },
+          "else": {
+            "not": {
+              "required": [
+                "request_ref"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "not": {
+              "properties": {
+                "author_type": {
+                  "const": "ai"
+                }
+              },
+              "required": [
+                "author_type"
+              ]
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "ai_mode"
+                  ]
+                },
+                {
+                  "required": [
+                    "disclosure_code"
+                  ]
+                },
+                {
+                  "required": [
+                    "model_ref"
+                  ]
+                },
+                {
+                  "required": [
+                    "advice_statement_ref"
+                  ]
+                },
+                {
+                  "required": [
+                    "emergency_guidance"
+                  ]
+                },
+                {
+                  "required": [
+                    "ai_identity"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "required": [
+              "emergency_guidance"
+            ]
+          },
+          "then": {
+            "properties": {
+              "content": {
+                "properties": {
+                  "text": {
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "const": "openpractice_agent"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "oneOf": [
+              {
+                "required": [
+                  "agent_answer_type"
+                ],
+                "not": {
+                  "required": [
+                    "approved_by"
+                  ]
+                }
+              },
+              {
+                "required": [
+                  "approved_by"
+                ],
+                "not": {
+                  "required": [
+                    "agent_answer_type"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "$ref": "#/$defs/holderToken"
+              }
+            },
+            "required": [
+              "source"
+            ]
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "agent_answer_type"
+                  ]
+                },
+                {
+                  "required": [
+                    "approved_by"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "required": [
+                  "agent_answer_type"
+                ]
+              },
+              {
+                "required": [
+                  "approved_by"
+                ]
+              }
+            ]
+          },
+          "then": {
+            "properties": {
+              "author_type": {
+                "const": "ai"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "author_type": {
+                "const": "clinician"
+              }
+            },
+            "required": [
+              "author_type"
+            ]
+          },
+          "then": {
+            "required": [
+              "reply_id"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "reply_id"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "capabilitiesRequest": {
+      "description": "openChart asks a holder which contract versions and optional capabilities it supports.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_id",
+        "message_type",
+        "issued_at",
+        "issuer",
+        "payload"
+      ],
+      "properties": {
+        "contract": {
+          "const": "openchart-conversation-retrieval"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "description": "Random UUID. It is the idempotency key: every retry reuses it. It never carries PHI.",
+          "$ref": "#/$defs/uuid"
+        },
+        "message_type": {
+          "const": "capabilities.request"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "supported_versions"
+          ],
+          "properties": {
+            "supported_versions": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/contractVersion"
+              },
+              "description": "The 1.x versions openChart declares."
+            }
+          }
+        }
+      }
+    },
+    "capabilitiesResult": {
+      "description": "A holder declares its versions and its optional capabilities: in answer to capabilities.request, or unprompted whenever they change. The latest declaration by declared_at governs. openChart never sends a message for a capability the holder has not declared.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_id",
+        "message_type",
+        "issued_at",
+        "issuer",
+        "payload"
+      ],
+      "properties": {
+        "contract": {
+          "const": "openchart-conversation-retrieval"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "description": "Random UUID. It is the idempotency key: every retry reuses it. It never carries PHI.",
+          "$ref": "#/$defs/uuid"
+        },
+        "message_type": {
+          "const": "capabilities.result"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "source",
+            "supported_versions",
+            "capabilities",
+            "declared_at"
+          ],
+          "properties": {
+            "acked_message_id": {
+              "description": "The capabilities.request answered, when there is one.",
+              "$ref": "#/$defs/uuid"
+            },
+            "source": {
+              "$ref": "#/$defs/holderToken"
+            },
+            "supported_versions": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/contractVersion"
+              }
+            },
+            "capabilities": {
+              "description": "May be empty: a holder that declares nothing supports retrieval only.",
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/capability"
+              }
+            },
+            "declared_at": {
+              "$ref": "#/$defs/timestamp"
+            }
+          }
+        }
+      }
+    },
+    "conversationRetrieve": {
+      "description": "openChart asks the holder for a conversation by reference, for a routed clinical item. Every holder supports it.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_id",
+        "message_type",
+        "issued_at",
+        "issuer",
+        "payload"
+      ],
+      "properties": {
+        "contract": {
+          "const": "openchart-conversation-retrieval"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "description": "Random UUID. It is the idempotency key: every retry reuses it. It never carries PHI.",
+          "$ref": "#/$defs/uuid"
+        },
+        "message_type": {
+          "const": "conversation.retrieve"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "handoff_id",
+            "conversation_ref",
+            "request_ref",
+            "urgency",
+            "purpose"
+          ],
+          "properties": {
+            "handoff_id": {
+              "description": "The routing id of the item the retrieval serves.",
+              "$ref": "#/$defs/uuid"
+            },
+            "conversation_ref": {
+              "$ref": "#/$defs/conversationRef"
+            },
+            "request_ref": {
+              "description": "The offer's request reference (healthlinc_message_ref in openpractice-clinical-handoff/1.0), passed through unchanged. Every request turn of the result carries it, and at least one must match it.",
+              "$ref": "#/$defs/requestRef"
+            },
+            "urgency": {
+              "description": "The item's urgency when openChart asks. For priority or urgent, the holder must share the request turns on the urgent_escalation basis and tell the patient.",
+              "$ref": "#/$defs/urgency"
+            },
+            "purpose": {
+              "const": "clinical_handoff"
+            }
+          }
+        }
+      }
+    },
+    "conversationResult": {
+      "description": "The holder returns the conversation's shareable turns, each with its turn_id, author type and source, under the patient's sharing consent. The result always carries at least one request turn: what the patient or representative asked, as written, never a placeholder. Every request turn carries request_ref, and a result in which no request turn's request_ref matches the retrieve's is refused with result_mismatch. For a priority or urgent item, the request turns are always shared on the urgent_escalation basis and the patient is told, whatever else the patient's consent withholds. A holder may withhold other turns that consent does not allow, and then reports how many it withheld. A result that does not answer its retrieve is refused with result_mismatch.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_id",
+        "message_type",
+        "issued_at",
+        "issuer",
+        "payload"
+      ],
+      "properties": {
+        "contract": {
+          "const": "openchart-conversation-retrieval"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "description": "Random UUID. It is the idempotency key: every retry reuses it. It never carries PHI.",
+          "$ref": "#/$defs/uuid"
+        },
+        "message_type": {
+          "const": "conversation.result"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "acked_message_id",
+            "handoff_id",
+            "conversation_ref",
+            "urgency",
+            "consent_ref",
+            "snapshot_ref",
+            "as_of",
+            "turns"
+          ],
+          "properties": {
+            "acked_message_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "handoff_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "conversation_ref": {
+              "$ref": "#/$defs/conversationRef"
+            },
+            "urgency": {
+              "description": "The urgency the holder applied: the urgency of the conversation.retrieve it answers.",
+              "$ref": "#/$defs/urgency"
+            },
+            "consent_ref": {
+              "description": "The holder's reference to the patient's sharing consent it applied.",
+              "$ref": "#/$defs/opaqueRef"
+            },
+            "snapshot_ref": {
+              "description": "Identifies the version of the conversation returned, so openChart can record which exchange the clinician saw.",
+              "$ref": "#/$defs/opaqueRef"
+            },
+            "as_of": {
+              "$ref": "#/$defs/timestamp"
+            },
+            "turns": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/turn"
+              },
+              "contains": {
+                "properties": {
+                  "request_turn": {
+                    "const": true
+                  }
+                },
+                "required": [
+                  "request_turn"
+                ]
+              }
+            },
+            "turns_withheld": {
+              "description": "Optional. How many turns the patient's sharing consent kept back. A count only.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "patient_told_at": {
+              "description": "When the patient was told that turns were shared for an escalation. Required when the urgency is priority or urgent, and whenever any turn has shared_basis urgent_escalation.",
+              "$ref": "#/$defs/timestamp"
+            },
+            "ehr_patient": {
+              "$ref": "#/$defs/ehrPatientRef"
+            },
+            "origin_conversation_ref": {
+              "description": "Optional. The earlier conversation this one began from, at the same holder or another, with an opaque value. openChart never retrieves it on its own, and never uses it to resolve, link or file a patient; reading it is a separate retrieval from the holder it names, under that holder's consent rules.",
+              "$ref": "#/$defs/originConversationRef"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "turns": {
+                    "contains": {
+                      "properties": {
+                        "shared_basis": {
+                          "const": "urgent_escalation"
+                        }
+                      },
+                      "required": [
+                        "shared_basis"
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "turns"
+                ]
+              },
+              "then": {
+                "required": [
+                  "patient_told_at"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "urgency": {
+                    "enum": [
+                      "priority",
+                      "urgent"
+                    ]
+                  }
+                },
+                "required": [
+                  "urgency"
+                ]
+              },
+              "then": {
+                "required": [
+                  "patient_told_at"
+                ],
+                "properties": {
+                  "turns": {
+                    "items": {
+                      "if": {
+                        "properties": {
+                          "request_turn": {
+                            "const": true
+                          }
+                        },
+                        "required": [
+                          "request_turn"
+                        ]
+                      },
+                      "then": {
+                        "required": [
+                          "shared_basis"
+                        ],
+                        "properties": {
+                          "shared_basis": {
+                            "const": "urgent_escalation"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "replyDeliver": {
+      "description": "openChart sends a clinician's reply for delivery to the patient. Only to a holder that declared reply_delivery. The holder answers with message.ack: received means accepted for delivery.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_id",
+        "message_type",
+        "issued_at",
+        "issuer",
+        "payload"
+      ],
+      "properties": {
+        "contract": {
+          "const": "openchart-conversation-retrieval"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "description": "Random UUID. It is the idempotency key: every retry reuses it. It never carries PHI.",
+          "$ref": "#/$defs/uuid"
+        },
+        "message_type": {
+          "const": "reply.deliver"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reply_id",
+            "handoff_id",
+            "reply_path_ref",
+            "urgency",
+            "author_type",
+            "clinician_ref",
+            "content",
+            "channel_restrictions",
+            "delivery_scope"
+          ],
+          "properties": {
+            "reply_id": {
+              "description": "openChart's id for the reply, reused on every retry.",
+              "$ref": "#/$defs/uuid"
+            },
+            "handoff_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "reply_path_ref": {
+              "description": "The handoff's reply_path_ref, passed through unchanged.",
+              "$ref": "#/$defs/opaqueRef"
+            },
+            "urgency": {
+              "enum": [
+                "routine",
+                "priority",
+                "urgent"
+              ]
+            },
+            "author_type": {
+              "const": "clinician"
+            },
+            "clinician_ref": {
+              "$ref": "#/$defs/personRef"
+            },
+            "content": {
+              "$ref": "#/$defs/textContent"
+            },
+            "channel_restrictions": {
+              "description": "Restriction codes that apply to the reply and to any notification for it. May be empty.",
+              "type": "array",
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/restrictionCode"
+              }
+            },
+            "delivery_scope": {
+              "description": "conversation_only: deliver inside the conversation that carried the request, and use no other channel.",
+              "enum": [
+                "standard",
+                "conversation_only"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "replyDeliveryFailed": {
+      "description": "The holder reports that a reply it had accepted could not be delivered. Only from a holder that declared delivery_failure_callback. openChart answers with message.ack.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_id",
+        "message_type",
+        "issued_at",
+        "issuer",
+        "payload"
+      ],
+      "properties": {
+        "contract": {
+          "const": "openchart-conversation-retrieval"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "description": "Random UUID. It is the idempotency key: every retry reuses it. It never carries PHI.",
+          "$ref": "#/$defs/uuid"
+        },
+        "message_type": {
+          "const": "reply.delivery_failed"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reply_message_id",
+            "reply_id",
+            "handoff_id",
+            "reply_path_ref",
+            "failure_reason",
+            "failed_at"
+          ],
+          "properties": {
+            "reply_message_id": {
+              "description": "The message_id of the reply.deliver message.",
+              "$ref": "#/$defs/uuid"
+            },
+            "reply_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "handoff_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "reply_path_ref": {
+              "$ref": "#/$defs/opaqueRef"
+            },
+            "failure_reason": {
+              "$ref": "#/$defs/failureReason"
+            },
+            "failed_at": {
+              "$ref": "#/$defs/timestamp"
+            }
+          }
+        }
+      }
+    },
+    "splitRequest": {
+      "description": "openChart asks the holder to split a mixed item and resubmit only its administrative part to openPractice as a new inquiry. Only to a holder that declared split. The holder answers with message.ack: received means it has taken on the split.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_id",
+        "message_type",
+        "issued_at",
+        "issuer",
+        "payload"
+      ],
+      "properties": {
+        "contract": {
+          "const": "openchart-conversation-retrieval"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "description": "Random UUID. It is the idempotency key: every retry reuses it. It never carries PHI.",
+          "$ref": "#/$defs/uuid"
+        },
+        "message_type": {
+          "const": "split.request"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "handoff_id",
+            "request_ref"
+          ],
+          "properties": {
+            "handoff_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "request_ref": {
+              "$ref": "#/$defs/requestRef"
+            }
+          }
+        }
+      }
+    },
+    "messageAck": {
+      "description": "Acknowledges reply.deliver, reply.delivery_failed, split.request and an unprompted capabilities.result, and carries the coded refusal of any message, conversation.retrieve included. A refusal changes nothing.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_id",
+        "message_type",
+        "issued_at",
+        "issuer",
+        "payload"
+      ],
+      "properties": {
+        "contract": {
+          "const": "openchart-conversation-retrieval"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "description": "Random UUID. It is the idempotency key: every retry reuses it. It never carries PHI.",
+          "$ref": "#/$defs/uuid"
+        },
+        "message_type": {
+          "const": "message.ack"
+        },
+        "issued_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "issuer": {
+          "$ref": "#/$defs/issuer"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "acked_message_id",
+            "result"
+          ],
+          "properties": {
+            "acked_message_id": {
+              "$ref": "#/$defs/uuid"
+            },
+            "result": {
+              "enum": [
+                "received",
+                "rejected"
+              ]
+            },
+            "error_code": {
+              "$ref": "#/$defs/errorCode"
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "result": {
+                    "const": "rejected"
+                  }
+                },
+                "required": [
+                  "result"
+                ]
+              },
+              "then": {
+                "required": [
+                  "error_code"
+                ]
+              },
+              "else": {
+                "not": {
+                  "required": [
+                    "error_code"
+                  ]
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

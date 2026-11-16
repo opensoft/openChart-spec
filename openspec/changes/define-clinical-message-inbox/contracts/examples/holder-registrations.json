@@ -1,0 +1,16 @@
+{
+  "_note": "A synthetic stand-in for each holder's registration with the practice (the clinical-acts foundation's AN-03): the AI openWallet IDs it may deliver turns for, keyed by the result's issuer. openChart reads the real registration; the self-test reads this.",
+  "synthetic-healthlinc-a": {
+    "holder": "healthlinc",
+    "openwallet_ids": [
+      "SYN-WALLET-AI-COACH-0001",
+      "SYN-WALLET-OP-AGENT-0001"
+    ]
+  },
+  "synthetic-medxfactory-a": {
+    "holder": "medxfactory",
+    "openwallet_ids": [
+      "SYN-WALLET-MEDICAL-AI-0001"
+    ]
+  }
+}

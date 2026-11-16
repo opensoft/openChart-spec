@@ -1,0 +1,23 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000005",
+  "message_type": "conversation.retrieve",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-openchart-site-a",
+  "payload": {
+    "handoff_id": "3f0c2a0e-1111-4c4c-8a8a-000000000001",
+    "conversation_ref": {
+      "issuer": "synthetic-healthlinc-a",
+      "namespace": "healthlinc",
+      "value": "SYN-CONV-0001"
+    },
+    "request_ref": {
+      "issuer": "synthetic-openchart-site-a",
+      "namespace": "openchart",
+      "value": "SYN-MSG-0001"
+    },
+    "urgency": "routine",
+    "purpose": "clinical_handoff"
+  }
+}

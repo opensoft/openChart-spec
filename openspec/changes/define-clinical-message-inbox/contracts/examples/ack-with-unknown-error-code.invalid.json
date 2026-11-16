@@ -1,0 +1,13 @@
+{
+  "contract": "openchart-conversation-retrieval",
+  "contract_version": "1.0",
+  "message_id": "9a1b2c3d-0000-4000-8000-000000000037",
+  "message_type": "message.ack",
+  "issued_at": "2026-11-15T10:00:00Z",
+  "issuer": "synthetic-medxfactory-a",
+  "payload": {
+    "acked_message_id": "9a1b2c3d-0000-4000-8000-000000000036",
+    "result": "rejected",
+    "error_code": "patient_not_found_synthetic"
+  }
+}
