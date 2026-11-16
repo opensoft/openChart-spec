@@ -91,7 +91,7 @@ TIME = re.compile(r"([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9
 CLOCK_SKEW = datetime.timedelta(minutes=5)
 PER_TURN = ("authored_at", "source", "ai_identity")
 # The clinical-acts foundation's forms for an AI party (openchart-clinical-act-content 1.0,
-# SHA-256 9fef87204574038450f88374b71e1f878b1b218993a0b2813b69d01707cc9dd8: $defs walletId and
+# SHA-256 9ae73b150e00ae581012286e3016a5fac6fa044ce5cbf0ce7ba9c36d9204a64d: $defs walletId and
 # versionLabel, and party.model for an AI party), which the AI write path's contract also uses.
 WALLET_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}")
 MODEL = re.compile(r"[A-Za-z0-9._:/@+-]{1,128}")

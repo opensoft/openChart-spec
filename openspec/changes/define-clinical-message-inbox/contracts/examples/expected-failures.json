@@ -21,11 +21,11 @@
   },
   "agent-turn-authored-as-clinician.invalid.json": {
     "expect_in_error": "'ai' was expected",
-    "reason": "an openPractice agent's turn is an ai turn (MD-24)"
+    "reason": "the agent fields appear only on an ai turn, so an openPractice agent's turn is an ai turn (MI-03, MD-24)"
   },
   "agent-turn-authored-as-patient.invalid.json": {
     "expect_in_error": "'ai' was expected",
-    "reason": "an openPractice agent's turn is an ai turn (MD-24)"
+    "reason": "the agent fields appear only on an ai turn, so an openPractice agent's turn is an ai turn (MI-03, MD-24)"
   },
   "agent-turn-with-both-answer-type-and-approver.invalid.json": {
     "expect_in_error": "[1, 'not']",
@@ -191,8 +191,8 @@
     "reason": "a UUID is in its hyphenated form, checked by pattern (MD-22)"
   },
   "healthlinc-turn-with-an-answer-type.invalid.json": {
-    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 3, 'else', 'not']",
-    "reason": "only an openPractice agent's turn carries an answer type (MD-24)"
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 4, 'then', 'not']",
+    "reason": "a turn whose source is healthlinc or medxfactory carries no answer type (MD-24)"
   },
   "issued-at-not-a-date-time.invalid.json": {
     "expect_in_error": "'yesterday' does not match '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$'",
@@ -260,11 +260,12 @@
     "reason": "every object is closed (MD-32)"
   },
   "patient-turn-with-an-approver.invalid.json": {
-    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 3, 'else', 'not']",
-    "reason": "only an openPractice agent's turn carries an approver (MD-24)"
+    "expect_in_error": "'ai' was expected",
+    "reason": "a turn whose source is healthlinc or medxfactory carries no approver, and the agent fields appear only on an ai turn (MI-03, MD-24); the approver breaks two rules at once: a healthlinc turn carries no agent field, and this patient's turn is not ai",
+    "error_count": 2
   },
   "patient-turn-with-reply-id.invalid.json": {
-    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 4, 'else', 'not']",
+    "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 6, 'else', 'not']",
     "reason": "only a clinician turn carries a reply_id (MD-24)"
   },
   "placeholder-request-turn-without-request-ref.invalid.json": {
@@ -308,6 +309,10 @@
   "reply-without-channel-restrictions.invalid.json": {
     "expect_in_error": "'channel_restrictions' is a required property",
     "reason": "a reply carries its restriction codes, even when there are none (MI-22)"
+  },
+  "representative-turn-with-an-unreadable-source-and-an-approver.invalid.json": {
+    "expect_in_error": "'ai' was expected",
+    "reason": "the agent fields appear only on an ai turn, whatever the turn's source (MI-03, MD-24)"
   },
   "request-ref-as-a-bare-string.invalid.json": {
     "expect_in_error": "'SYN-MSG-0001' is not of type 'object'",
@@ -386,6 +391,10 @@
   "split-request-ref-in-openchart-namespace.invalid.json": {
     "expect_in_error": "'openchart' is not one of ['healthlinc', 'medxfactory']",
     "reason": "a request reference is the holder's (MI-16)"
+  },
+  "staff-turn-without-source-with-an-answer-type.invalid.json": {
+    "expect_in_error": "'ai' was expected",
+    "reason": "the agent fields appear only on an ai turn, whatever the turn's source (MI-03, MD-24)"
   },
   "turn-missing-author-type.invalid.json": {
     "expect_in_error": "'author_type' is a required property",

@@ -347,7 +347,7 @@
       }
     },
     "turn": {
-      "description": "One turn of the conversation, keyed by turn_id, with its author type and source. Three of its fields are judged per turn, never by failing the result: authored_at, source and ai_identity. The schema accepts any bounded value for each, and openChart judges it: a time that is missing, later than the retrieval time plus five minutes, or unreadable takes the retrieval time, marked defaulted; a source openChart cannot read makes an ai turn an unidentified AI turn, and records the speaker of any other turn as not identified, the turn kept; a defective ai_identity makes the turn an unidentified AI turn. For a conversation HealthLinc holds, an unidentified AI turn is held outside the chart, shown to the clinician handling the item (MI-12). Every other rule of the turn is checked here, and a result that breaks one fails.",
+      "description": "One turn of the conversation, keyed by turn_id, with its author type and source. Three of its fields are judged per turn, never by failing the result: authored_at, source and ai_identity. The schema accepts any bounded value for each, and openChart judges it: a time that is missing, later than the retrieval time plus five minutes, or unreadable takes the retrieval time, marked defaulted; a source openChart cannot read makes an ai turn an unidentified AI turn, and records the system any other turn came through as a party not identified, the turn kept; a defective ai_identity makes the turn an unidentified AI turn. For a conversation HealthLinc holds, an unidentified AI turn is held outside the chart, shown to the clinician handling the item (MI-12). The agent fields, agent_answer_type and approved_by, appear only on an ai turn and never on a turn whose source is healthlinc or medxfactory, and an openpractice_agent turn carries exactly one of them; so an ai turn that carries one, with a source openChart cannot read, is an unidentified AI turn, not a failed result. Every other rule of the turn is checked here, and a result that breaks one fails.",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -378,7 +378,7 @@
           "$ref": "#/$defs/authorType"
         },
         "source": {
-          "description": "The turn's source token (sourceToken). Judged per turn: a source that is missing, or is not one of the tokens, is a speaker openChart cannot read. An ai turn is then an unidentified AI turn, whatever its ai_identity; any other turn is kept, with its speaker recorded as not identified.",
+          "description": "The turn's source token (sourceToken): the system that produced or relayed the turn, never its author. Judged per turn: a source that is missing, or is not one of the tokens, is a speaker openChart cannot read, the system the turn came through. An ai turn is then an unidentified AI turn, whatever its ai_identity or agent fields; any other turn is kept, and that system is recorded as a hand the turn passed through, a party not identified whose described_as is fixed neutral text, never the value given and never the patient. The value given is kept as given with openChart's record of the retrieval, never used or displayed in place of the source, readable on request, marked as a value openChart could not read, by anyone who can read the record, and never put in an alert, a notification, a log line, a diagnostic or an acknowledgement (MI-12).",
           "anyOf": [
             {
               "$ref": "#/$defs/sourceToken"
@@ -389,7 +389,7 @@
           ]
         },
         "authored_at": {
-          "description": "When the turn was written (timestamp). Judged per turn: a missing time, one later than the retrieval time plus five minutes, or one openChart cannot read, including one that names no real calendar day, takes the retrieval time, marked defaulted. A declared time openChart can read is kept beside it; any other declared value is kept only with openChart's record of the retrieval and never shown. No turn is held for its time.",
+          "description": "When the turn was written (timestamp). Judged per turn: a missing time, one later than the retrieval time plus five minutes, or one openChart cannot read, including one that names no real calendar day, takes the retrieval time, marked defaulted. A declared time openChart can read is kept beside it. Any other declared value is kept as given with openChart's record of the retrieval, never used or displayed in place of the time, readable on request, marked as a value openChart could not read, by anyone who can read the record, and never put in an alert, a notification, a log line, a diagnostic or an acknowledgement (MI-12). No turn is held for its time.",
           "anyOf": [
             {
               "$ref": "#/$defs/timestamp"
@@ -415,7 +415,7 @@
           "$ref": "#/$defs/answerTypeRef"
         },
         "approved_by": {
-          "description": "The staff member who approved an openPractice agent's drafted answer before it was sent.",
+          "description": "The staff member who approved an openPractice agent's drafted answer before it was sent. Only on an ai turn, and never on a turn whose source is healthlinc or medxfactory.",
           "$ref": "#/$defs/personRef"
         },
         "reply_id": {
@@ -579,11 +579,6 @@
             ]
           },
           "then": {
-            "properties": {
-              "author_type": {
-                "const": "ai"
-              }
-            },
             "oneOf": [
               {
                 "required": [
@@ -606,8 +601,20 @@
                 }
               }
             ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "source": {
+                "$ref": "#/$defs/holderToken"
+              }
+            },
+            "required": [
+              "source"
+            ]
           },
-          "else": {
+          "then": {
             "not": {
               "anyOf": [
                 {
@@ -621,6 +628,29 @@
                   ]
                 }
               ]
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "required": [
+                  "agent_answer_type"
+                ]
+              },
+              {
+                "required": [
+                  "approved_by"
+                ]
+              }
+            ]
+          },
+          "then": {
+            "properties": {
+              "author_type": {
+                "const": "ai"
+              }
             }
           }
         },
