@@ -23,12 +23,20 @@ Checks:
      examples/expected-outcomes.json stating what openChart does with it,
      whose codes are codes of this schema, and every entry has a fixture;
   6. beside the schema, for every valid fixture: exchange.content_sha256
-     recomputes from exchange.turns (RFC 8785); a write that names its AI
-     names its parties in AW-02's order, and one whose on_behalf_of names no
-     AI names only the source system, under a relay (a write that names no
-     AI is held by the AI check, AW-06); and every timestamp names a real
-     calendar day, which openChart refuses as malformed otherwise (AW-01);
-  7. every examples/*.calendar-invalid.json validates and fails only the
+     recomputes from exchange.turns (RFC 8785); and every timestamp names a
+     real calendar day, which openChart refuses as malformed otherwise
+     (AW-01), except a time a write declares for its information
+     (started_at, ended_at, occurred_at), which openChart replaces with the
+     time of receipt instead (AW-15, AD-70);
+  7. the part of AW-06's AI check that a write's own content decides
+     (AD-60): every valid write that it holds, because its on_behalf_of
+     cannot be read as the AI alone (from the source system's own
+     identity) or the AI and then the source system (from a relay), or
+     because its AI is not in the form of $defs/aiParty, has the expected
+     outcome quarantined with that cause (ai_not_identified or
+     openwallet_id_missing), and no other write has. Coverage by a
+     registration is openChart's to judge, not the message's;
+  8. every examples/*.calendar-invalid.json validates and fails only the
      calendar check.
 The digests use canonical JSON with sorted keys and no whitespace, which
 equals RFC 8785 for the strings, integers and booleans the fixtures use.
@@ -47,6 +55,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 SCHEMA = HERE / "openchart-ai-clinical-record-write-1.0.schema.json"
 EXAMPLES = HERE / "examples"
 MANIFESTS = {"expected-failures.json", "expected-outcomes.json"}
+WRITES = ("consult.write", "act.write")
+DECLARED_TIMES = ("started_at", "ended_at", "occurred_at")
+HELD_BY_CONTENT = ("ai_not_identified", "openwallet_id_missing")
 TIME = re.compile(r"^([0-9]{4})-([0-9]{2})-([0-9]{2})T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$")
 
 
@@ -82,24 +93,42 @@ def calendar_errors(obj, path="$"):
     return found
 
 
+def refused_times(doc):
+    """Timestamps naming no real calendar day that openChart refuses as malformed: every one but a time
+    a write declares for its information, which openChart replaces with the time of receipt (AW-15, AD-70)."""
+    if doc.get("message_type") in WRITES:
+        doc = {k: v for k, v in doc.items() if k not in DECLARED_TIMES}
+    return calendar_errors(doc)
+
+
 def beside_schema(doc):
-    """What the schema cannot check (AW-01, AW-02)."""
-    problems = calendar_errors(doc)
-    kind = doc.get("message_type")
-    if kind == "consult.write":
+    """What the schema cannot check (AW-01)."""
+    problems = refused_times(doc)
+    if doc.get("message_type") == "consult.write":
         if hashlib.sha256(jcs(doc["exchange"]["turns"])).hexdigest() != doc["exchange"]["content_sha256"]:
             problems.append("exchange.content_sha256 does not recompute from exchange.turns")
-    if kind in ("consult.write", "act.write") and doc.get("on_behalf_of"):
-        src, writer, chain = doc["source_system"], doc["added_by"], doc["on_behalf_of"]
-        if chain[0].get("kind") != "ai":
-            if writer.get("system") == src or len(chain) != 1 or chain[0].get("system") != src:
-                problems.append("AW-02: an on_behalf_of that names no AI names only the source system, under a relay")
-        elif writer.get("system") == src:
-            if len(chain) != 1:
-                problems.append("AW-02: the source system writes, so on_behalf_of names the AI only")
-        elif len(chain) != 2 or chain[1].get("system") != src:
-            problems.append("AW-02: a relay writes, so on_behalf_of names the AI and then the source system")
     return problems
+
+
+def ai_check(schema, doc):
+    """The part of AW-06's AI check that a write's own content decides (AW-02, AD-60), in its order:
+    ai_not_identified for an on_behalf_of this path cannot read, then openwallet_id_missing, then
+    ai_not_identified for an AI not in the form of $defs/aiParty; None when the content passes."""
+    def form(name, value):
+        return Draft202012Validator({"$defs": schema["$defs"], "$ref": "#/$defs/" + name}).is_valid(value)
+    chain, src = doc.get("on_behalf_of"), doc["source_system"]
+    relay = doc["added_by"].get("system") != src
+    if not chain or chain[0].get("kind") != "ai":
+        return "ai_not_identified"
+    if relay and (len(chain) != 2 or not form("systemParty", chain[1]) or chain[1].get("system") != src):
+        return "ai_not_identified"
+    if not relay and len(chain) != 1:
+        return "ai_not_identified"
+    if "openwallet_id" not in chain[0]:
+        return "openwallet_id_missing"
+    if not form("aiParty", chain[0]):
+        return "ai_not_identified"
+    return None
 
 
 def branch_errors(schema, validator, doc):
@@ -141,7 +170,7 @@ def main():
             counts["calendar-invalid"] += 1
             if errs:
                 failures.append(f"{path.name}: must pass the schema; got {describe(errs[0])}")
-            elif not calendar_errors(doc):
+            elif not refused_times(doc):
                 failures.append(f"{path.name}: must fail the calendar check")
         elif path.name.endswith(".valid.json"):
             counts["valid"] += 1
@@ -159,6 +188,12 @@ def main():
                     for key in ("code", "under_tier2"):
                         if key in entry and entry[key] not in codes:
                             failures.append(f"{path.name}: expected outcome {key} {entry[key]!r} is not a code of this schema")
+                    held = None if errs else ai_check(schema, doc)
+                    if entry.get("receipt") != "refused":
+                        if held and (entry.get("receipt") != "quarantined" or entry.get("code") != held):
+                            failures.append(f"{path.name}: the AI check holds it with {held}, but its expected outcome says otherwise (AW-06)")
+                        if not held and entry.get("code") in HELD_BY_CONTENT:
+                            failures.append(f"{path.name}: names its AI in the form the AI check reads, so it is not held with {entry['code']} (AW-06)")
         elif path.name.endswith(".invalid.json"):
             counts["invalid"] += 1
             entry = expected.get(path.name)

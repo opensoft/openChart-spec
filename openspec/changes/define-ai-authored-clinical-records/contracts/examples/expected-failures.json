@@ -71,10 +71,6 @@
     "expect_in_error": "'added_by' is a required property",
     "reason": "every write names its writer (ruling 80, clause 6; AW-02)"
   },
-  "consult-write-missing-ended-at.invalid.json": {
-    "expect_in_error": "'ended_at' is a required property",
-    "reason": "when the information arose is provenance, and a consult with none is malformed (ruling 80, clause 4; AN-12)"
-  },
   "consult-write-missing-exchange.invalid.json": {
     "expect_in_error": "'exchange' is a required property",
     "reason": "a consult with no exchange has no content object (ruling 188; AN-12)"
@@ -83,17 +79,17 @@
     "expect_in_error": "[0, 'properties', 'exchange', 'properties', 'turns', 'contains']",
     "reason": "a consult contains at least one AI turn (AC-02)"
   },
-  "consult-write-on-behalf-of-names-human.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'on_behalf_of', 'anyOf']",
-    "reason": "on_behalf_of admits no human in 1.0 (AW-02)"
+  "consult-write-on-behalf-of-party-not-object.invalid.json": {
+    "expect_in_error": "on_behalf_of/0 'did:example:syn-ai-wallet-0001' is not of type 'object'",
+    "reason": "every party of on_behalf_of is an object, bounded as partyAsGiven states; a party that is not one is an envelope that cannot be read (AW-02; AD-60)"
   },
-  "consult-write-on-behalf-of-starts-with-system.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'on_behalf_of', 'anyOf']",
-    "reason": "on_behalf_of names the AI first, then the source system (AW-02)"
-  },
-  "consult-write-on-behalf-of-three-parties.invalid.json": {
+  "consult-write-on-behalf-of-seventeen-parties.invalid.json": {
     "expect_in_error": "[0, 'properties', 'on_behalf_of', 'maxItems']",
-    "reason": "on_behalf_of holds at most the AI and the source system (AW-02)"
+    "reason": "on_behalf_of names at most 16 parties, eight times the two this path reads; a longer list is an envelope that cannot be read (AW-02; AD-60)"
+  },
+  "consult-write-openwallet-id-beyond-bound.invalid.json": {
+    "expect_in_error": "[0, 'properties', 'on_behalf_of', 'items', 'additionalProperties', 'maxLength']",
+    "reason": "a value beyond 1024 characters is not an identifier written wrong but something else in its place, and only such a value is an envelope that cannot be read (AW-02; AD-60)"
   },
   "consult-write-patient-not-openchart-namespace.invalid.json": {
     "expect_in_error": "patient/namespace 'openchart' was expected",

@@ -118,6 +118,95 @@
     "code": "tier2_not_in_force",
     "note": "no source: openChart supplies ai_consult with consult_ref's consult_id as its reference, marked as defaulted (AD-63)"
   },
+  "consult-write-on-behalf-of-starts-with-system.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "the source system is named before the AI, so on_behalf_of cannot be read as this path reads it: held outside the chart, never refused, and never reordered, because ruling 80, clause 7 makes the order meaningful (ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-on-behalf-of-names-human.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "the 1.0 contract reads no human in on_behalf_of: held outside the chart, never refused; the human party is kept as it arrived and stays out of every alert (ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-on-behalf-of-three-parties.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "three parties where this path reads at most the AI and the source system: held outside the chart, never refused (ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-on-behalf-of-empty.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "an empty on_behalf_of names no AI: held outside the chart, never refused (ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-on-behalf-of-two-ais.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "two AIs: openChart never guesses which produced the content, so it is held outside the chart, never refused (ruling 80, clause 7; ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-on-behalf-of-names-healthlinc.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "a relay's second party names a system that is never a write-path system, so it is not the write's source system: held outside the chart, never refused (AD-30; ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-relay-omits-source-system.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "a relay names the AI but not the source system it passed through: held outside the chart, never refused (ruling 80, clause 7; ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-ai-model-outside-form.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "the model is present but outside its pattern (a space): held outside the chart, never refused, never releasable, and the value is never shown, logged or returned as given (ruling 194; AW-07; AD-60, PROPOSED)"
+  },
+  "consult-write-ai-model-version-outside-form.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "the model version is present but outside its pattern (a slash): held outside the chart, never refused, never releasable, and the value is never shown, logged or returned as given (ruling 194; AW-07; AD-60, PROPOSED)"
+  },
+  "consult-write-ai-party-unknown-property.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "the AI party carries a property this path does not read: held outside the chart, never refused; the property is kept as it arrived and stays out of every alert (ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-openwallet-id-300-characters.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "300 characters, within the 1024-character bound but beyond openWallet's 200, so no openWallet ID: held outside the chart, never refused (ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-ai-party-kind-uppercase.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "kind AI is not kind ai, and openChart never guesses: held outside the chart, never refused (ruling 194; AD-60, PROPOSED)"
+  },
+  "act-write-ai-model-outside-form.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "an act whose AI's model is outside its pattern: held outside the chart, never refused, and no recommendation is recorded while it is held (ruling 194; AD-60, PROPOSED)"
+  },
+  "consult-write-corrected-resend.valid.json": {
+    "receipt": "accepted",
+    "note": "resends the consult_id, version and exchange of consult-write-ai-model-outside-form with the AI's model in its form: not a duplicate of that held write, because its on_behalf_of differs; checked as a new write, accepted, and linked to the held write, which is flagged as corrected so that a clinician can dismiss it as duplicate_of_existing_record, naming this record (AW-05, AC-11; AD-71, PROPOSED)"
+  },
+  "consult-write-missing-ended-at.valid.json": {
+    "receipt": "accepted",
+    "note": "no ended_at: openChart takes received_at as when the consult ended, marks it as defaulted, and checks the grant at receipt; never refused (AW-15; AD-70, PROPOSED)"
+  },
+  "consult-write-missing-started-at.valid.json": {
+    "receipt": "accepted",
+    "note": "no started_at: the record shows the start as not stated; never refused (AW-15; AD-70, PROPOSED)"
+  },
+  "consult-write-ended-at-without-zone.valid.json": {
+    "receipt": "accepted",
+    "note": "ended_at is not a timestamp of this contract (no zone): openChart takes received_at, marks it as defaulted, keeps the value given with its record of the write, and checks the grant at receipt (AW-15; AD-70, PROPOSED)"
+  },
+  "act-write-note-without-occurred-at.valid.json": {
+    "receipt": "kept_as_information",
+    "note": "an AI's note with no occurred_at: kept as information with received_at as when it arose, marked as defaulted, after the consent and grant checks at receipt, and selected for clinician review (AW-06, AW-15; AD-69, AD-70, PROPOSED)"
+  },
+  "act-write-note-occurred-after-receipt.valid.json": {
+    "receipt": "kept_as_information",
+    "note": "dated a day after its receipt, beyond the 5-minute clock skew: kept as information with received_at as when it arose, marked as defaulted, the declared value kept with the record of the write, and selected for clinician review (AW-15; AD-69, AD-70, PROPOSED)"
+  },
   "act-write-discontinue-with-target.valid.json": {
     "receipt": "recorded_as_recommendation",
     "code": "tier2_not_in_force",
