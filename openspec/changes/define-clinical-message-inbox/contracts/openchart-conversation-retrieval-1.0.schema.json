@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:openchart:contract:openchart-conversation-retrieval:1.0",
   "title": "openchart-conversation-retrieval 1.0",
-  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token, and an ai turn may carry its mode, disclosure code, model reference, advice-statement reference, emergency-guidance codes and the AI's identity. A result may name the earlier conversation it began from, by an opaque reference that openChart never retrieves on its own and never uses to resolve a patient. A retrieve names the request it serves in request_ref. The result carries the patient's sharing-consent reference and always at least one request turn, which carries that request_ref and holds the request itself, never a placeholder. For a priority or urgent item the request turns are always shared on the urgent_escalation basis with the patient told; a holder may withhold other turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed. Identifiers and times are checked by pattern, never by format, so every validator applies the same rules. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
+  "description": "Canonical message schema for the one neutral conversation-retrieval contract that openChart owns (opensoft/openChart-spec change define-clinical-message-inbox, ruling 69). Each system that holds patient conversations implements it: HealthLinc for the conversations it holds (coach conversations, direct messages to the doctor and administrative threads) and medXfactory for medical-AI conversations. Retrieval by reference is required of every holder. Reply delivery, the delivery-failure callback and split are optional capabilities that a holder declares in capabilities.result; openChart never sends a message for a capability the holder has not declared. Each returned turn carries its turn_id, author type and source token, and an ai turn may carry its mode, disclosure code, model reference, advice-statement reference, emergency-guidance codes and the AI's identity. A result may name the earlier conversation it began from, by an opaque reference that openChart never retrieves on its own and never uses to resolve a patient. A retrieve names the request it serves in request_ref. The result carries the patient's sharing-consent reference and always at least one request turn, which carries that request_ref and holds the request itself, never a placeholder. For a priority or urgent item the request turns are always shared on the urgent_escalation basis with the patient told; a holder may withhold other turns that consent does not allow. Conversation content travels only between a holder and openChart, never through openPractice. References carry no PHI. Every object is closed. A turn's authored_at, source and ai_identity are judged per turn, so a defect in them never fails the result. Identifiers and times are checked by pattern, never by format, so every validator applies the same rules. message_id is the idempotency key and carries no PHI. Implementations are compatible exactly when they share the MAJOR version; a receiver refuses any other MAJOR with unsupported_major_version.",
   "oneOf": [
     {
       "$ref": "#/$defs/capabilitiesRequest"
@@ -36,7 +36,7 @@
       "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
     },
     "timestamp": {
-      "description": "An RFC 3339 date-time with a time zone, checked by pattern only, with month, day, hour, minute and second ranges and one to nine fractional-second digits: the clinical-acts foundation's timestamp pattern, character for character, so that a turn's authored_at can be an addition's occurred_at. A day that the month does not have, such as 30 February, passes the pattern; openChart refuses it as schema_invalid by a check beside the schema.",
+      "description": "An RFC 3339 date-time with a time zone, checked by pattern only, with month, day, hour, minute and second ranges and one to nine fractional-second digits: the clinical-acts foundation's timestamp pattern, character for character, so that a turn's authored_at can be an addition's occurred_at. A day that the month does not have, such as 30 February, passes the pattern. openChart refuses such a time as schema_invalid by a check beside the schema, except a turn's authored_at, which it judges per turn.",
       "type": "string",
       "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$"
     },
@@ -69,7 +69,7 @@
       ]
     },
     "sourceToken": {
-      "description": "Registry of turn sources: the system that produced or relayed the turn. healthlinc: the patient app, including its coach and its red-flag checklist. medxfactory: medXfactory, including its medical AI. openpractice_agent: an openPractice agent's administrative answer. A token is added only in a MINOR version.",
+      "description": "Registry of turn sources: the system that produced or relayed the turn. healthlinc: the patient app, including its coach and its red-flag checklist. medxfactory: medXfactory, including its medical AI. openpractice_agent: an openPractice agent's administrative answer. A token is added only in a MINOR version. A turn whose source is not one of these is a speaker openChart cannot read.",
       "enum": [
         "healthlinc",
         "medxfactory",
@@ -294,35 +294,66 @@
         "seek_urgent_care"
       ]
     },
-    "aiIdentity": {
-      "description": "The identity of the AI that wrote an ai turn, as owner ruling 80 identifies an AI: its openWallet ID, plus the model and model version that produced the turn. It names the AI as the author of the turn, never a patient or a person, and nothing needs the wallet to be reachable to read the chart (owner ruling 183). The schema checks only that each value given is a string within its length bound, so that an incomplete or badly formed identity never makes a result fail. openChart judges the identity when it identifies the turn, in the forms the clinical-acts foundation gives an AI party (openwallet_id as its walletId, model of 1 to 128 characters, model_version as its versionLabel). A turn whose identity is missing, incomplete, badly formed or not covered by the holder's registration is an unidentified AI turn: openChart holds its text in quarantine outside the chart, and the rest of the result is unaffected. The object stays closed, and is refused on any turn that is not an ai turn.",
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "openwallet_id": {
+    "boundedScalar": {
+      "description": "A string of up to 1024 characters, a number, a boolean or null. 1024 is the one bound that the AI write path, define-ai-authored-clinical-records, gives every value it judges beside its schema (its design call AD-60): far above every valid value here, so that a value merely written wrong is judged per turn, and only a value that is something else in its place fails the result.",
+      "anyOf": [
+        {
           "type": "string",
-          "maxLength": 200
+          "maxLength": 1024
         },
-        "model": {
-          "type": "string",
-          "maxLength": 128
-        },
-        "model_version": {
-          "type": "string",
-          "maxLength": 64
+        {
+          "type": [
+            "number",
+            "boolean",
+            "null"
+          ]
         }
+      ]
+    },
+    "boundedValue": {
+      "description": "Any value within bounds: a boundedScalar, or a list of up to 16 of them, or an object of up to 16 of them whose names have up to 1024 characters. The schema accepts it so that a defect confined to one turn is judged in that turn, never by failing the result.",
+      "anyOf": [
+        {
+          "$ref": "#/$defs/boundedScalar"
+        },
+        {
+          "type": "array",
+          "maxItems": 16,
+          "items": {
+            "$ref": "#/$defs/boundedScalar"
+          }
+        },
+        {
+          "type": "object",
+          "maxProperties": 16,
+          "propertyNames": {
+            "maxLength": 1024
+          },
+          "additionalProperties": {
+            "$ref": "#/$defs/boundedScalar"
+          }
+        }
+      ]
+    },
+    "aiIdentity": {
+      "description": "The identity of the AI that wrote an ai turn, as owner ruling 80 identifies an AI: its openWallet ID (openwallet_id), plus the model (model) and model version (model_version) that produced the turn. It names the AI as the author of the turn, never a patient or a person, and nothing needs the wallet to be reachable to read the chart (owner ruling 183). The schema accepts any object of up to 16 bounded values, so that no defect in it makes a result fail. openChart judges it when it identifies the turn: openwallet_id as the clinical-acts foundation's walletId, model as the foundation gives an AI party's model, ^[A-Za-z0-9._:/@+-]{1,128}$, and model_version as the foundation's versionLabel, with no other property and no value that is not a string. A turn whose openwallet_id is missing, whose identity is otherwise defective, or whose openwallet_id the holder's registration does not cover is an unidentified AI turn: openChart holds its text in quarantine outside the chart, and the rest of the result is unaffected. It is refused on any turn that is not an ai turn.",
+      "type": "object",
+      "maxProperties": 16,
+      "propertyNames": {
+        "maxLength": 1024
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/boundedValue"
       }
     },
     "turn": {
-      "description": "One turn of the conversation, keyed by turn_id, with its author type and source.",
+      "description": "One turn of the conversation, keyed by turn_id, with its author type and source. Three of its fields are judged per turn, never by failing the result: authored_at, source and ai_identity. The schema accepts any bounded value for each, and openChart judges it: a missing or future time takes the retrieval time, marked defaulted; a time or a source openChart cannot read means openChart never keeps the turn's text in the chart; a defective ai_identity makes the turn an unidentified AI turn. For a conversation HealthLinc holds, such a turn is held outside the chart, shown to the clinician handling the item (MI-12). Every other rule of the turn is checked here, and a result that breaks one fails.",
       "type": "object",
       "additionalProperties": false,
       "required": [
         "turn_id",
         "position",
         "author_type",
-        "source",
-        "authored_at",
         "request_turn",
         "content"
       ],
@@ -347,17 +378,33 @@
           "$ref": "#/$defs/authorType"
         },
         "source": {
-          "$ref": "#/$defs/sourceToken"
+          "description": "The turn's source token (sourceToken). Judged per turn: a source that is missing, or is not one of the tokens, is a speaker openChart cannot read, and openChart never keeps the turn's text in the chart.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sourceToken"
+            },
+            {
+              "$ref": "#/$defs/boundedValue"
+            }
+          ]
         },
         "authored_at": {
-          "$ref": "#/$defs/timestamp"
+          "description": "When the turn was written (timestamp). Judged per turn: a missing time, or one later than the retrieval time plus five minutes, takes the retrieval time, marked defaulted, with any declared value kept beside it; a time openChart cannot read, including one that names no real calendar day, means openChart never keeps the turn's text in the chart.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/timestamp"
+            },
+            {
+              "$ref": "#/$defs/boundedValue"
+            }
+          ]
         },
         "in_reply_to": {
           "description": "The turn_id this turn answers, if any.",
           "$ref": "#/$defs/opaqueRef"
         },
         "shared_basis": {
-          "description": "Why the holder shares this turn: within the patient's sharing consent, confirmed by the patient, or as a turn that triggered an escalation. For a priority or urgent item, at least one request turn carries urgent_escalation.",
+          "description": "Why the holder shares this turn: within the patient's sharing consent, confirmed by the patient, or as a turn that triggered an escalation. For a priority or urgent item, every request turn carries urgent_escalation.",
           "enum": [
             "consent_scope",
             "patient_confirmed",
@@ -404,7 +451,7 @@
           }
         },
         "ai_identity": {
-          "description": "Optional, ai turns only: the AI's openWallet ID, model and model version (owner ruling 80, part B). Without it, or with an identity that is incomplete, badly formed or not covered by the holder's registration, openChart never keeps the turn's text in the chart: it holds the text in quarantine outside the chart, shown to the clinician handling the item.",
+          "description": "Optional, ai turns only: the AI's openWallet ID, model and model version (owner ruling 80, part B). Without it, or with an identity that openChart cannot identify or that the holder's registration does not cover, openChart never keeps the turn's text in the chart: it holds the text in quarantine outside the chart, shown to the clinician handling the item.",
           "$ref": "#/$defs/aiIdentity"
         },
         "content": {
@@ -959,19 +1006,27 @@
                 ],
                 "properties": {
                   "turns": {
-                    "contains": {
-                      "properties": {
-                        "request_turn": {
-                          "const": true
+                    "items": {
+                      "if": {
+                        "properties": {
+                          "request_turn": {
+                            "const": true
+                          }
                         },
-                        "shared_basis": {
-                          "const": "urgent_escalation"
-                        }
+                        "required": [
+                          "request_turn"
+                        ]
                       },
-                      "required": [
-                        "request_turn",
-                        "shared_basis"
-                      ]
+                      "then": {
+                        "required": [
+                          "shared_basis"
+                        ],
+                        "properties": {
+                          "shared_basis": {
+                            "const": "urgent_escalation"
+                          }
+                        }
+                      }
                     }
                   }
                 }
