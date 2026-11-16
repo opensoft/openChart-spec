@@ -395,9 +395,9 @@
     "expect_in_error": "does not match '^[A-Za-z0-9_-]{42}",
     "reason": "a challenge reference is 32 random bytes in unpadded base64url and carries no meaning (CD-53)"
   },
-  "sign-off-custody-basis-not-declared.invalid.json": {
-    "expect_in_error": "'declared' was expected",
-    "reason": "no record yet shows a key's custody beyond what its wallet declares (CD-76)"
+  "sign-off-custody-basis-unknown.invalid.json": {
+    "expect_in_error": "is not one of",
+    "reason": "a custody basis is the holder's word (declared) or attestation evidence (attested), and nothing else (CA-04, CD-76)"
   },
   "sign-off-custody-not-the-one-sealed.integrity-invalid.json": {
     "expect_in_error": "custody",
