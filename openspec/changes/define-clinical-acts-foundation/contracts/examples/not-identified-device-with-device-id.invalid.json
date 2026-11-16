@@ -1,0 +1,88 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "recommendation",
+  "recommendation_id": "SYN-REC-0015",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "entry_class": "information",
+  "not_authorized_decision": true,
+  "missing_authority": [
+    "decision_maker_not_confirmed",
+    "no_practitioner_sign_off"
+  ],
+  "decision_maker": {
+    "kind": "system",
+    "identity_basis": {
+      "basis": "verified_by_chart"
+    },
+    "system_id": "SYN-SYS-INTEG-02",
+    "operator_ref": "SYN-OPERATOR-01"
+  },
+  "proposed": {
+    "action": "sign",
+    "act_class": "order",
+    "act_type": "referral_order",
+    "content": {
+      "order_category": "referral",
+      "text": "SYN synthetic referral from an outside letter",
+      "priority": "routine"
+    }
+  },
+  "provenance": {
+    "received_at": "2026-11-15T16:00:00Z",
+    "source": {
+      "kind": "external_record",
+      "ref": "SYN-EXT-DOC-0077"
+    },
+    "added_by": {
+      "kind": "system",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "system_id": "SYN-SYS-INTEG-02",
+      "operator_ref": "SYN-OPERATOR-01"
+    },
+    "on_behalf_of": [
+      {
+        "identity_basis": {
+          "basis": "not_identified"
+        },
+        "described_as": "SYN as the record gave it",
+        "kind": "device",
+        "device_id": "SYN-UDI-9"
+      },
+      {
+        "kind": "system",
+        "identity_basis": {
+          "basis": "asserted_by",
+          "asserted_by_system_id": "SYN-SYS-INTEG-02"
+        },
+        "external_ref": {
+          "issuer": "SYN-OTHER-ORG-01",
+          "namespace": "system",
+          "value": "SYN-EXT-EHR-01"
+        }
+      }
+    ]
+  },
+  "receipt": {
+    "code": "recorded_as_recommendation",
+    "sent_at": "2026-11-15T16:00:00Z"
+  },
+  "review": {
+    "state": "pending",
+    "routed_to_ref": "SYN-USER-CLIN-0001",
+    "due_at": "2026-11-16T10:00:00Z"
+  },
+  "claimed_decision_maker": {
+    "kind": "human",
+    "identity_basis": {
+      "basis": "not_identified"
+    },
+    "described_as": "SYN signing clinician named on an outside letter"
+  }
+}

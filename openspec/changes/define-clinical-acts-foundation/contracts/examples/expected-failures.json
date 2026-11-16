@@ -1,0 +1,570 @@
+{
+  "act-released-from-quarantine.invalid.json": {
+    "expect_in_error": "does not allow {'held_item_ref'",
+    "reason": "an act version is written by a human in the chart and is never released from a quarantine (CA-10, AN-01)"
+  },
+  "act-without-provenance.invalid.json": {
+    "expect_in_error": "'provenance' is a required property",
+    "reason": "every addition records its provenance (AN-04)"
+  },
+  "act-written-by-a-system.invalid.json": {
+    "expect_in_error": "added_by/kind",
+    "reason": "an act version is written by a human in the chart; a system's decision content is a recommendation (CA-10, CD-52)"
+  },
+  "adopted-draft-author-not-signer.integrity-invalid.json": {
+    "expect_in_error": "author",
+    "reason": "the act's author is not the account that signed it off"
+  },
+  "ai-party-not-identified.invalid.json": {
+    "expect_in_error": "not_identified",
+    "reason": "an AI in the chart is always identified by its openWallet ID; an uncovered AI's addition is held in quarantine, not added (AN-02, CD-61)"
+  },
+  "ai-party-without-openwallet.invalid.json": {
+    "expect_in_error": "'openwallet_id' is a required property",
+    "reason": "an AI is identified by its openWallet ID (AN-02)"
+  },
+  "ai-recommendation-without-no-practitioner-sign-off.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "a recommendation whose decision maker is not a human carries no_practitioner_sign_off (AN-09, ruling 151)"
+  },
+  "amended-first-version.invalid.json": {
+    "expect_in_error": "act_version",
+    "reason": "only a later version can carry the status amended"
+  },
+  "amendment-without-supersedes.invalid.json": {
+    "expect_in_error": "'supersedes' is a required property",
+    "reason": "a later version must reference the version it supersedes"
+  },
+  "author-signature-with-another-action.invalid.json": {
+    "expect_in_error": "signatures/0/sign_off/action",
+    "reason": "an author signature is a sign-off of the act itself (CA-04)"
+  },
+  "author-type-ai.invalid.json": {
+    "expect_in_error": "author_type",
+    "reason": "an act's author type is clinician; act content from an AI is entered as a recommendation record instead (CA-02, AN-09)"
+  },
+  "challenge-reused-across-records.integrity-invalid.json": {
+    "expect_in_error": "challenge",
+    "reason": "a challenge that already served a sign-off of another act in the store"
+  },
+  "challenge-reused.integrity-invalid.json": {
+    "expect_in_error": "challenge",
+    "reason": "one challenge served two sign-offs"
+  },
+  "cosignature-copies-differ.integrity-invalid.json": {
+    "expect_in_error": "differs from",
+    "reason": "the co-signed event carries a sign-off other than the co-signer's signature"
+  },
+  "cosigned-without-cosigner-signature.invalid.json": {
+    "expect_in_error": "signatures",
+    "reason": "a co-signed requirement carries the co-signer's signature (CA-07)"
+  },
+  "cosigner-signature-with-sign-action.invalid.json": {
+    "expect_in_error": "signatures/1/sign_off/action",
+    "reason": "a co-signer's signature is a co-signature (CA-07)"
+  },
+  "declared-time-earlier-than-receipt-kept.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_as_declared",
+    "reason": "only a declared time later than the time the path received the item is kept as declared, so an inverted interval's earlier end is not (CD-73)"
+  },
+  "declared-time-kept-without-default.invalid.json": {
+    "expect_in_error": "'occurred_at_defaulted' is a required property",
+    "reason": "the time as declared is kept only beside a defaulted time (AN-04, CD-73)"
+  },
+  "defaulted-time-before-receipt-without-retrieval.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_defaulted",
+    "reason": "where the path did not retrieve the item, a defaulted time is received_at, not any earlier time (CD-73)"
+  },
+  "defaulted-time-later-than-receipt.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_defaulted",
+    "reason": "where the path did not retrieve the item, a defaulted time is received_at (CD-73)"
+  },
+  "defaulted-time-not-the-retrieval-time.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_defaulted",
+    "reason": "where the path retrieved the item, a defaulted time is retrieved_at (CD-73)"
+  },
+  "derived-from-unknown-kind.invalid.json": {
+    "expect_in_error": "source_kind",
+    "reason": "derivation sources are intake statements and clinical communications only"
+  },
+  "described-as-on-identified-party.invalid.json": {
+    "expect_in_error": "does not allow 'SYN a description'",
+    "reason": "only a party that is not identified is described instead of identified (CD-66)"
+  },
+  "device-id-kind-without-id.invalid.json": {
+    "expect_in_error": "does not allow 'udi'",
+    "reason": "a device ID kind is given only with a device ID (AN-13)"
+  },
+  "device-party-without-serial.invalid.json": {
+    "expect_in_error": "'serial' is a required property",
+    "reason": "a device is identified by make, model and serial, or a resolvable device ID (AN-02, AN-13)"
+  },
+  "diagnosis-uncoded.invalid.json": {
+    "expect_in_error": "'code' is a required property",
+    "reason": "a diagnosis of record must be coded"
+  },
+  "discontinuation-by-another-account.integrity-invalid.json": {
+    "expect_in_error": "statement_sha256",
+    "reason": "the event names an account other than the signer in the statement"
+  },
+  "discontinuation-moved-to-another-act.integrity-invalid.json": {
+    "expect_in_error": "statement_sha256",
+    "reason": "a sign-off copied onto another act and patient no longer recomputes"
+  },
+  "discontinuation-signed-off-as-another-action.invalid.json": {
+    "expect_in_error": "discontinue",
+    "reason": "a sign-off names the action it was made for, so it cannot stand for another action (CA-04, CD-53)"
+  },
+  "draft-with-signature.invalid.json": {
+    "expect_in_error": "does not allow [{'signature_role'",
+    "reason": "a draft carries no signature (AN-14)"
+  },
+  "encounter-diagnosis-without-encounter.invalid.json": {
+    "expect_in_error": "'encounter_ref' is a required property",
+    "reason": "an encounter diagnosis must reference its encounter"
+  },
+  "encounter-final-without-end.invalid.json": {
+    "expect_in_error": "'end' is a required property",
+    "reason": "a signed encounter has an end time"
+  },
+  "encounter-manifest-omits-information.integrity-invalid.json": {
+    "expect_in_error": "manifest",
+    "reason": "the manifest leaves out an information record the signing view showed"
+  },
+  "encounter-sign-off-without-manifest.invalid.json": {
+    "expect_in_error": "'manifest_sha256' is a required property",
+    "reason": "an encounter's sign-off binds the manifest of its attached records (EN-04, CD-53)"
+  },
+  "entered-in-error-without-event.invalid.json": {
+    "expect_in_error": "lifecycle",
+    "reason": "an entered-in-error act must carry the attributed entered_in_error event with a reason code"
+  },
+  "entered-in-error-without-sign-off.invalid.json": {
+    "expect_in_error": "'sign_off' is a required property",
+    "reason": "an entered-in-error mark is a decision and carries the practitioner's sign-off (CA-06)"
+  },
+  "external-human-with-role.invalid.json": {
+    "expect_in_error": "does not allow 'clinician'",
+    "reason": "a person outside this chart holds no openChart clinical role (CD-57)"
+  },
+  "failed-adoption-unknown-reason.invalid.json": {
+    "expect_in_error": "reasons",
+    "reason": "a failed adoption gives its reasons from the closed list (AN-11)"
+  },
+  "final-without-signature.invalid.json": {
+    "expect_in_error": "'signatures' is a required property",
+    "reason": "a signed status needs the author's signature"
+  },
+  "held-draft-cancelled.invalid.json": {
+    "expect_in_error": "is not one of ['draft', 'in_progress']",
+    "reason": "a held draft is not cancelled while it is held; it returns to its author only when the recommendation is declined (AN-14)"
+  },
+  "held-draft-signed-without-adoption.integrity-invalid.json": {
+    "expect_in_error": "hold",
+    "reason": "a draft signed while held, without adoption or a release by decline"
+  },
+  "held-event-without-recommendation.invalid.json": {
+    "expect_in_error": "'recommendation_ref' is a required property",
+    "reason": "a hold names the recommendation the draft is held for (AN-14)"
+  },
+  "held-item-released-twice.integrity-invalid.json": {
+    "expect_in_error": "held_item_ref",
+    "reason": "a held item ends once; a second addition released from the same held item"
+  },
+  "hold-released-without-reason.invalid.json": {
+    "expect_in_error": "'reason_code' is a required property",
+    "reason": "a hold is released only by adoption or by decline, and says which (AN-14)"
+  },
+  "information-document-plain-text-attachment.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "a document's attachments are PDFs or pictures that are only displayed; its text goes in its text (owner ruling 204; AN-06, CD-65)"
+  },
+  "information-document-structured-attachment.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "a document's attachment is only displayed; a structured clinical format needs a shape from its own path (AN-06, CD-65)"
+  },
+  "information-document-with-order-field.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "the document shape has no structured field, so order content cannot be kept as a document (AN-06, CD-65)"
+  },
+  "information-with-order-content-from-ai-relay.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "an AI's order content cannot be kept as information to avoid the not-an-authorized-decision marking (AN-06, CD-65)"
+  },
+  "information-with-order-content.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "an information record holds note content only; order content is decision content and becomes a recommendation (AN-06, CD-65)"
+  },
+  "information-without-marker.invalid.json": {
+    "expect_in_error": "'not_signed_off' is a required property",
+    "reason": "a note kept as information is marked not signed off wherever it is shown (AN-14, CD-63)"
+  },
+  "information-without-receipt.invalid.json": {
+    "expect_in_error": "'receipt' is a required property",
+    "reason": "the writer of a note kept as information is told at once (AN-14)"
+  },
+  "not-identified-device-with-device-id.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-UDI-9'",
+    "reason": "a party that is not identified carries no device ID, which would identify it (AN-13, CD-66)"
+  },
+  "not-identified-device-with-make-model-serial.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-SN-9'",
+    "reason": "a party that is not identified does not carry a device's full make, model and serial, which identify it (AN-13, CD-66)"
+  },
+  "not-identified-party-with-account.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-USER-CLIN-0001'",
+    "reason": "a party that is not identified carries no chart account, which would claim an identity the chart does not hold (CD-66)"
+  },
+  "not-identified-party-without-description.invalid.json": {
+    "expect_in_error": "'described_as' is a required property",
+    "reason": "a party that is not identified carries what is known of it (CD-66; ruling 80, clause 7)"
+  },
+  "not-identified-system-with-registration.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-SYS-INTEG-02'",
+    "reason": "a party that is not identified carries no system registration, which would identify it (AN-03, CD-66)"
+  },
+  "note-draft-closed-without-information-ref.invalid.json": {
+    "expect_in_error": "'information_ref' is a required property",
+    "reason": "a note draft closed because its content was kept as information names that record (AN-14)"
+  },
+  "note-request-status.invalid.json": {
+    "expect_in_error": "status",
+    "reason": "a clinical note has no release lifecycle"
+  },
+  "note-signature-with-manifest.invalid.json": {
+    "expect_in_error": "does not allow '0000000000000000",
+    "reason": "only an encounter's signature binds a manifest (CA-04, EN-04)"
+  },
+  "occurred-later-than-receipt-not-defaulted.integrity-invalid.json": {
+    "expect_in_error": "five minutes",
+    "reason": "a time later than the path's receipt by more than five minutes is defaulted (AN-04)"
+  },
+  "order-unknown-category.invalid.json": {
+    "expect_in_error": "order_category",
+    "reason": "order category outside the closed list"
+  },
+  "party-ai-model-with-space.invalid.json": {
+    "expect_in_error": "does not match '^[A-Za-z0-9._:/@+-]",
+    "reason": "an AI named in a stored record has its model in the form the write path and the inbox use (AN-02, CD-70)"
+  },
+  "party-field-of-another-kind.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-MODEL'",
+    "reason": "a party carries only its own kind's identifying fields (AN-02)"
+  },
+  "patient-external-namespace.invalid.json": {
+    "expect_in_error": "namespace",
+    "reason": "the patient is always the openChart triple; an external identifier never replaces it"
+  },
+  "patient-self-with-representative.invalid.json": {
+    "expect_in_error": "does not allow 'SYN-REP-0001'",
+    "reason": "a patient acting for themselves names no representative (AN-02)"
+  },
+  "prescription-completed.invalid.json": {
+    "expect_in_error": "status",
+    "reason": "in this version a prescription is never completed; it ends only by a signed discontinuation (RX-01, CD-58)"
+  },
+  "prescription-missing-classification.invalid.json": {
+    "expect_in_error": "'controlled_substance_classification' is a required property",
+    "reason": "a prescription must carry its controlled-substance classification"
+  },
+  "prescription-transmission-state.invalid.json": {
+    "expect_in_error": "transmission_status",
+    "reason": "transmission and dispense states are reserved for a later governed change"
+  },
+  "provenance-set-aside-carries-the-value.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed",
+    "reason": "a field set aside is recorded by its SHA-256 and length, never its value (AN-12, CD-56)"
+  },
+  "received-at-impossible-day.integrity-invalid.json": {
+    "expect_in_error": "calendar",
+    "reason": "30 February passes the pattern but is not a real calendar time"
+  },
+  "recommendation-action-without-target.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "a proposed action on an existing act names that act, resolved or as the writing path gave it (AN-09)"
+  },
+  "recommendation-adopted-without-act.invalid.json": {
+    "expect_in_error": "'adopted_act' is a required property",
+    "reason": "adoption creates a decision of the clinician's own, and the recommendation names it (AN-11)"
+  },
+  "recommendation-claim-without-claimant.invalid.json": {
+    "expect_in_error": "'claimed_decision_maker' is a required property",
+    "reason": "a decision a system carried for an unconfirmed decision maker names who was claimed (AN-08)"
+  },
+  "recommendation-claimant-without-code.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "a claimed decision maker is named only where the decision maker was not confirmed (AN-08)"
+  },
+  "recommendation-content-schema-on-cosign.invalid.json": {
+    "expect_in_error": "proposed/action",
+    "reason": "content declared under another schema is kept only for an action that carries content (AN-09, CD-51)"
+  },
+  "recommendation-decision-maker-not-identified.invalid.json": {
+    "expect_in_error": "decision_maker/identity_basis/basis",
+    "reason": "a recommendation's decision maker is never a party that is not identified; the carrying writer is (AN-08, CD-66)"
+  },
+  "recommendation-holding-document-content.invalid.json": {
+    "expect_in_error": "proposed/content",
+    "reason": "content that fits the document shape is information, never a not-an-authorized-decision recommendation (AN-06, CD-65)"
+  },
+  "recommendation-holding-note-content.invalid.json": {
+    "expect_in_error": "proposed/content",
+    "reason": "note content is information, never a not-an-authorized-decision recommendation (CD-63)"
+  },
+  "recommendation-marked-authorized.invalid.json": {
+    "expect_in_error": "not_authorized_decision",
+    "reason": "a recommendation is always marked not an authorized decision (AN-09)"
+  },
+  "recommendation-note-declared-without-no-decision-authority.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "content declared a note that is not note content is entered with no_decision_authority (AN-06, CD-65)"
+  },
+  "recommendation-order-declined-as-never-a-decision.invalid.json": {
+    "expect_in_error": "not_a_decision_kept_for_reference",
+    "reason": "an order is decision content, so declining it as never a decision is refused (AN-11, CD-65)"
+  },
+  "recommendation-path-reason-without-scheme.invalid.json": {
+    "expect_in_error": "'scheme' is a required property",
+    "reason": "a writing path's own reason names the scheme that defines it (AN-09, CD-51)"
+  },
+  "recommendation-pending-with-reason.invalid.json": {
+    "expect_in_error": "does not allow 'syn_reason_while_pending'",
+    "reason": "a decline reason belongs to a declined recommendation only (AN-11)"
+  },
+  "recommendation-sign-with-target.invalid.json": {
+    "expect_in_error": "does not allow {'act_id'",
+    "reason": "a sign-off of new content names no existing act (AN-09)"
+  },
+  "recommendation-signed.invalid.json": {
+    "expect_in_error": "'signatures' was unexpected",
+    "reason": "a recommendation cannot be signed (AN-09)"
+  },
+  "recommendation-summary-declared-without-no-decision-authority.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "content declared as a kind of record of information that it does not validate as is entered with no_decision_authority (AN-06, CD-65)"
+  },
+  "recommendation-unknown-missing-authority.invalid.json": {
+    "expect_in_error": "missing_authority",
+    "reason": "missing_authority uses the closed code list (AN-09, CD-45)"
+  },
+  "recommendation-with-act-status.invalid.json": {
+    "expect_in_error": "'status' was unexpected",
+    "reason": "a recommendation has no act status (AN-09)"
+  },
+  "recommendation-without-missing-authority.invalid.json": {
+    "expect_in_error": "'missing_authority' is a required property",
+    "reason": "a recommendation says which authority was missing (AN-09)"
+  },
+  "record-kind-missing.invalid.json": {
+    "expect_in_error": "'record_kind' is a required property",
+    "reason": "every record says which record kind it is"
+  },
+  "released-defaulted-time-not-first-arrival.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_defaulted",
+    "reason": "a released item's defaulted time is its first arrival, not its release (CD-73)"
+  },
+  "released-item-back-dated.integrity-invalid.json": {
+    "expect_in_error": "release",
+    "reason": "a released item dated by its first arrival instead of its release into the chart"
+  },
+  "released-while-cosignature-pending.invalid.json": {
+    "expect_in_error": "status",
+    "reason": "an order held for a before-effect co-signature is not in force until it is co-signed (CA-07, OR-02)"
+  },
+  "released-without-first-arrival.invalid.json": {
+    "expect_in_error": "'first_received_at' is a required property",
+    "reason": "a released item keeps when it first arrived beside the time of its release (AN-01, CD-61)"
+  },
+  "retrieved-later-than-received.integrity-invalid.json": {
+    "expect_in_error": "retrieved_at",
+    "reason": "an item is retrieved no later than the chart receives it (CD-73)"
+  },
+  "sign-off-after-reliance-bound.integrity-invalid.json": {
+    "expect_in_error": "rely_until",
+    "reason": "a verification past its reliance bound supports no sign-off (CD-75)"
+  },
+  "sign-off-after-the-licence-expired.integrity-invalid.json": {
+    "expect_in_error": "expir",
+    "reason": "a verification is relied on only until the licence itself expires (owner ruling 213; CD-81)"
+  },
+  "sign-off-attestation-by-reference-only.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed ('opensig_attestation_ref'",
+    "reason": "the attestation is kept itself, not by reference (CD-76)"
+  },
+  "sign-off-attestation-for-another-challenge.integrity-invalid.json": {
+    "expect_in_error": "attestation challenge_ref",
+    "reason": "the attestation was made for another challenge than the statement's (CD-75)"
+  },
+  "sign-off-attestation-for-another-key.integrity-invalid.json": {
+    "expect_in_error": "key_fingerprint",
+    "reason": "the attestation seals a key other than the one the sign-off names (CD-75)"
+  },
+  "sign-off-attestation-not-verified.invalid.json": {
+    "expect_in_error": "'verified' was expected",
+    "reason": "a sign-off is accepted only on an attestation with result verified (CA-04, CD-75)"
+  },
+  "sign-off-attestation-over-another-digest.integrity-invalid.json": {
+    "expect_in_error": "challenge_digest",
+    "reason": "the attestation is over a digest other than the statement's (CD-75)"
+  },
+  "sign-off-attestation-with-unresolved-values.invalid.json": {
+    "expect_in_error": "[] was expected",
+    "reason": "a sign-off carries only a verified attestation, which resolved every value (CD-76)"
+  },
+  "sign-off-attestation-without-unresolved.invalid.json": {
+    "expect_in_error": "'unresolved' is a required property",
+    "reason": "openSig's draft has unresolved in every attestation, empty for a verified one (CD-76)"
+  },
+  "sign-off-backup-flags-not-the-ones-sealed.integrity-invalid.json": {
+    "expect_in_error": "backup",
+    "reason": "the backup flags the sign-off records are those the authenticator signed and the attestation sealed (CD-83)"
+  },
+  "sign-off-backup-state-without-eligibility.invalid.json": {
+    "expect_in_error": "True was expected",
+    "reason": "a credential is backed up only where it is eligible for backup (the passkey profile; CD-83)"
+  },
+  "sign-off-challenge-not-opaque.invalid.json": {
+    "expect_in_error": "does not match '^[A-Za-z0-9_-]{42}",
+    "reason": "a challenge reference is 32 random bytes in unpadded base64url and carries no meaning (CD-53)"
+  },
+  "sign-off-check-without-practice-date.invalid.json": {
+    "expect_in_error": "'practice_date' is a required property",
+    "reason": "the check records its date in the practice's own time zone, the day a licence's expiry is compared with (CD-81)"
+  },
+  "sign-off-custody-basis-not-the-one-sealed.integrity-invalid.json": {
+    "expect_in_error": "custody basis",
+    "reason": "the custody basis the sign-off records is the one the attestation sealed (CD-76)"
+  },
+  "sign-off-custody-basis-unknown.invalid.json": {
+    "expect_in_error": "is not one of",
+    "reason": "a custody basis is the holder's word (declared) or attestation evidence (attested), and nothing else (CA-04, CD-76)"
+  },
+  "sign-off-custody-not-the-one-sealed.integrity-invalid.json": {
+    "expect_in_error": "custody",
+    "reason": "the custody the sign-off records is the custody the attestation sealed (CD-48)"
+  },
+  "sign-off-custody-outside-the-registry.invalid.json": {
+    "expect_in_error": "is not one of",
+    "reason": "a key's custody is a model of openWallet's ratified custody registry; a model drafted but not ratified is not one (CA-04, CD-48)"
+  },
+  "sign-off-jurisdiction-not-iso.invalid.json": {
+    "expect_in_error": "does not match '^[A-Z]{2}",
+    "reason": "a jurisdiction is an ISO 3166-1 alpha-2 or ISO 3166-2 code (CD-76)"
+  },
+  "sign-off-key-fingerprint-uppercase.invalid.json": {
+    "expect_in_error": "does not match '^sha256:[0-9a-f]{64}$'",
+    "reason": "a key fingerprint is sha256: and lowercase hex, openWallet's one spelling (CD-76)"
+  },
+  "sign-off-licence-not-the-one-the-grant-names.integrity-invalid.json": {
+    "expect_in_error": "covers",
+    "reason": "a licence the grant does not name covers nothing (CD-78)"
+  },
+  "sign-off-more-than-twelve-months-after-the-check.integrity-invalid.json": {
+    "expect_in_error": "12 months",
+    "reason": "a verification is relied on at most 12 months (owner ruling 213); openChart counts them from the check (CD-81)"
+  },
+  "sign-off-old-revocation-list-not-flagged.integrity-invalid.json": {
+    "expect_in_error": "stale",
+    "reason": "a reliance on a list over 72 hours old is flagged (owner ruling 212; CD-81)"
+  },
+  "sign-off-on-the-licence-last-day-after-it-may-have-ended.integrity-invalid.json": {
+    "expect_in_error": "earliest moment",
+    "reason": "the verification does not say where the authority's day ends, so reliance ends at the earliest moment the expiry day ends anywhere (owner ruling 213; CD-81)"
+  },
+  "sign-off-practice-date-not-the-day-checked.integrity-invalid.json": {
+    "expect_in_error": "practice_date",
+    "reason": "the practice date is the date of checked_at at the practice's recorded UTC offset (CD-81)"
+  },
+  "sign-off-practice-offset-out-of-range.invalid.json": {
+    "expect_in_error": "does not match",
+    "reason": "a UTC offset is between -12:00 and +14:00 (CD-81)"
+  },
+  "sign-off-proof-without-user-verification.integrity-invalid.json": {
+    "expect_in_error": "user present and verified",
+    "reason": "every sign-off needs user verification (CD-85)"
+  },
+  "sign-off-revocation-list-age-misstated.integrity-invalid.json": {
+    "expect_in_error": "age_seconds",
+    "reason": "the recorded age of the revocation list is not its age at reliance (CD-81)"
+  },
+  "sign-off-sealed-flags-missing.integrity-invalid.json": {
+    "expect_in_error": "authenticator flags",
+    "reason": "a sign-off needs the authenticator flags sealed, to show user verification and the backup flags (CD-83, CD-85)"
+  },
+  "sign-off-sealed-flags-without-user-verified.invalid.json": {
+    "expect_in_error": "'user_verified' is a required property",
+    "reason": "openSig's draft fixes the four flag names, and a sealed flag set carries all four (CD-83, CD-85)"
+  },
+  "sign-off-synced-passkey-without-enrolled-device.invalid.json": {
+    "expect_in_error": "'enrolled_device_ref' is a required property",
+    "reason": "a passkey that syncs counts only on a device the practitioner has enrolled (owner ruling 209; AU-07, CD-83)"
+  },
+  "sign-off-two-person-verifier-key.invalid.json": {
+    "expect_in_error": "'release' was expected",
+    "reason": "in version 1 every held verifier key ships with a release of openChart (CD-82)"
+  },
+  "sign-off-verifier-key-not-held-for-the-authority.integrity-invalid.json": {
+    "expect_in_error": "held for",
+    "reason": "a verifier key held for one licensing authority is never relied on for another (CD-75)"
+  },
+  "sign-off-without-key-ref.invalid.json": {
+    "expect_in_error": "'key_ref' is a required property",
+    "reason": "the sign-off names the key that made the proof (CA-04, CD-76)"
+  },
+  "sign-off-without-statement.invalid.json": {
+    "expect_in_error": "'statement_sha256' is a required property",
+    "reason": "the openSig attestation is made over the sign-off statement, whose digest is recorded (CA-04, CD-53)"
+  },
+  "signature-without-sign-off.invalid.json": {
+    "expect_in_error": "'sign_off' is a required property",
+    "reason": "a signature carries the practitioner's openWallet and openSig sign-off evidence (CA-04, ruling 151)"
+  },
+  "signed-act-held-for-recommendation.invalid.json": {
+    "expect_in_error": "does not allow {'recommendation_id'",
+    "reason": "only a draft is held for a recommendation (AN-14)"
+  },
+  "signed-order-cancelled-without-sign-off.invalid.json": {
+    "expect_in_error": "lifecycle",
+    "reason": "cancelling a signed order is a decision and carries the practitioner's sign-off (OR-02)"
+  },
+  "signed-without-signed-event.invalid.json": {
+    "expect_in_error": "lifecycle",
+    "reason": "every signature is recorded as a signed lifecycle event (CA-03)"
+  },
+  "source-defaulted-false.invalid.json": {
+    "expect_in_error": "True was expected",
+    "reason": "defaulted is present only when the writing path supplied the source (AN-04, CD-73)"
+  },
+  "source-without-reference-not-defaulted.invalid.json": {
+    "expect_in_error": "'ref' is a required property",
+    "reason": "a source the writer named carries its reference; only a defaulted source may omit it (AN-04, CD-73)"
+  },
+  "submission-ref-conflict-not-told.invalid.json": {
+    "expect_in_error": "'submission_ref_conflict' is a required property",
+    "reason": "a writer whose submission_ref named earlier, different content is told so at once (AN-10, CD-64)"
+  },
+  "submission-ref-conflict-without-submission-ref.invalid.json": {
+    "expect_in_error": "'submission_ref' is a required property",
+    "reason": "a submission_ref conflict is flagged only on a submission that carries the reference (AN-10, CD-64)"
+  },
+  "timestamp-not-date-time.invalid.json": {
+    "expect_in_error": "received_at",
+    "reason": "every time is an RFC 3339 date-time with a time zone"
+  },
+  "timestamp-out-of-range.invalid.json": {
+    "expect_in_error": "received_at",
+    "reason": "an hour, minute or second out of range is not a time"
+  },
+  "unknown-property.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed",
+    "reason": "every object is closed"
+  },
+  "writer-identity-asserted.invalid.json": {
+    "expect_in_error": "verified_by_chart",
+    "reason": "a writer's identity is always verified by the chart (AN-02, CD-42)"
+  },
+  "writer-named-by-external-ref.invalid.json": {
+    "expect_in_error": "asserted_by",
+    "reason": "a party named by another system's identifier is vouched for by that system and is never the writer (AN-04, CD-57)"
+  }
+}
