@@ -182,6 +182,7 @@
         "check": {
           "result": "passed",
           "checked_at": "2026-11-15T10:30:00Z",
+          "practice_utc_offset": "+00:00",
           "practice_date": "2026-11-15"
         }
       }

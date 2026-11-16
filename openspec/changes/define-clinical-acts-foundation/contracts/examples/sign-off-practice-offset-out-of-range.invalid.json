@@ -2,10 +2,10 @@
   "contract": "openchart-clinical-act-content",
   "contract_version": "1.0",
   "record_kind": "act_version",
-  "act_id": "SYN-ACT-DX-0007",
+  "act_id": "SYN-ACT-NOTE-0001",
   "act_version": 1,
-  "act_class": "diagnosis_of_record",
-  "act_type": "problem_list_condition",
+  "act_class": "clinical_note",
+  "act_type": "progress_note",
   "patient": {
     "issuer": "SYN-OPENCHART-ISSUER-01",
     "namespace": "openchart",
@@ -44,21 +44,16 @@
     {
       "event": "signed",
       "by_ref": "SYN-USER-CLIN-0001",
-      "at": "2026-11-16T03:30:00Z"
+      "at": "2026-11-15T10:30:00Z"
     }
   ],
   "content": {
-    "diagnosis_role": "problem_list",
-    "code": {
-      "system": "urn:example:synthetic:code-system:dx",
-      "code": "SYN-DX-0001",
-      "version": "2026.1",
-      "display": "Synthetic diagnosis one",
-      "code_set_ref": "SYN-CODESET-DX:2026.1"
+    "encounter_ref": {
+      "act_id": "SYN-ACT-ENC-0001"
     },
-    "verification_status": "confirmed",
-    "clinical_status": "active",
-    "onset_date": "2026-01-10"
+    "note_kind": "progress",
+    "text": "SYN synthetic progress note text. No real patient.",
+    "text_format": "text/plain"
   },
   "signatures": [
     {
@@ -70,8 +65,8 @@
         "code": "synthetic-attestation-documentation",
         "version": "1"
       },
-      "signed_at": "2026-11-16T03:30:00Z",
-      "content_sha256": "aa43fb3110ed5fc7cda97a979508ca00451d80eb7b3359915272572f8fd4bef2",
+      "signed_at": "2026-11-15T10:30:00Z",
+      "content_sha256": "a0402951e0c99e98e95b506649f5bc6ba7d55156f2c7a6f44f8e4bd80e28a7c9",
       "sign_off": {
         "action": "sign",
         "openwallet_id": "wal-practitioner-SYN-0001",
@@ -87,7 +82,7 @@
           "jurisdiction": "ZZ",
           "licence_id": "SYN-LIC-0001",
           "licence_class": "SYN physician (synthetic)",
-          "licence_expires_on": "2026-11-15",
+          "licence_expires_on": "2028-03-31",
           "covers": {
             "grant_ref": "SYN-GRANT-0001:v3",
             "authority": "SYN-LICENSING-AUTHORITY-01",
@@ -97,7 +92,7 @@
           "revocation_list": {
             "verifier_ref": "SYN-VERIFIER-01",
             "sequence": 7,
-            "issued_at": "2026-11-15T21:30:00Z",
+            "issued_at": "2026-11-15T04:30:00Z",
             "age_seconds": 21600,
             "stale": false
           },
@@ -110,19 +105,19 @@
             ]
           }
         },
-        "challenge_ref": "2upXs2TESzh8zhOgc9Qo56QdGaswQHW9FMA5Slkf1U4",
-        "statement_sha256": "0674fd1a12bcbf627af3a0f158609518e2de194c3747c6493ee591e5826d44fd",
+        "challenge_ref": "1-MjPTrw6ybpzxUUKeuUtvKeysFu8yvP128vHfLJjNE",
+        "statement_sha256": "396c3f74518bb4b82607aa85c388673185f8ea0f3ab578eb0e9fd4e82e47cb97",
         "opensig_attestation": {
-          "attestation_id": "SYN-OPENSIG-ATT-0001-0330-sign",
+          "attestation_id": "SYN-OPENSIG-ATT-0001-1030-sign",
           "profile": "opensig.wallet-bound-attestation.v1",
           "relying_party_ref": "SYN-OPENCHART-DEPLOYMENT-01",
-          "challenge_ref": "2upXs2TESzh8zhOgc9Qo56QdGaswQHW9FMA5Slkf1U4",
-          "challenge_digest": "sha256:0674fd1a12bcbf627af3a0f158609518e2de194c3747c6493ee591e5826d44fd",
+          "challenge_ref": "1-MjPTrw6ybpzxUUKeuUtvKeysFu8yvP128vHfLJjNE",
+          "challenge_digest": "sha256:396c3f74518bb4b82607aa85c388673185f8ea0f3ab578eb0e9fd4e82e47cb97",
           "proof": {
             "profile": "syn-proof-profile",
             "wallet_ref": "wal-practitioner-SYN-0001",
             "key_ref": "did:key:zSYN0001#signoff-1",
-            "challenge_digest": "sha256:0674fd1a12bcbf627af3a0f158609518e2de194c3747c6493ee591e5826d44fd",
+            "challenge_digest": "sha256:396c3f74518bb4b82607aa85c388673185f8ea0f3ab578eb0e9fd4e82e47cb97",
             "signature": {
               "alg": "Ed25519",
               "value": "SYN-PLACEHOLDER-NOT-A-SIGNATURE"
@@ -156,7 +151,7 @@
             "profile": "syn-proof-profile",
             "openwallet_release": "SYN-OPENWALLET-RELEASE"
           },
-          "attested_at": "2026-11-16T03:30:00Z",
+          "attested_at": "2026-11-15T10:30:00Z",
           "attester": {
             "attester_ref": "SYN-ATTESTER-01",
             "attestation_key_ref": "SYN-ATTESTATION-KEY-01"
@@ -173,7 +168,8 @@
         "backup_state": false,
         "check": {
           "result": "passed",
-          "checked_at": "2026-11-16T03:30:00Z",
+          "checked_at": "2026-11-15T10:30:00Z",
+          "practice_utc_offset": "+15:00",
           "practice_date": "2026-11-15"
         }
       }

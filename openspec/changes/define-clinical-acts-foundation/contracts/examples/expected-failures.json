@@ -235,6 +235,10 @@
     "expect_in_error": "does not allow '0000000000000000",
     "reason": "only an encounter's signature binds a manifest (CA-04, EN-04)"
   },
+  "occurred-later-than-receipt-not-defaulted.integrity-invalid.json": {
+    "expect_in_error": "five minutes",
+    "reason": "a time later than the path's receipt by more than five minutes is defaulted (AN-04)"
+  },
   "order-unknown-category.invalid.json": {
     "expect_in_error": "order_category",
     "reason": "order category outside the closed list"
@@ -266,6 +270,10 @@
   "prescription-transmission-state.invalid.json": {
     "expect_in_error": "transmission_status",
     "reason": "transmission and dispense states are reserved for a later governed change"
+  },
+  "provenance-set-aside-carries-the-value.invalid.json": {
+    "expect_in_error": "Additional properties are not allowed",
+    "reason": "a field set aside is recorded by its SHA-256 and length, never its value (AN-12, CD-56)"
   },
   "received-at-impossible-day.integrity-invalid.json": {
     "expect_in_error": "calendar",
@@ -459,9 +467,17 @@
     "expect_in_error": "stale",
     "reason": "a reliance on a list over 72 hours old is flagged (owner ruling 212; CD-81)"
   },
+  "sign-off-on-the-licence-last-day-after-it-may-have-ended.integrity-invalid.json": {
+    "expect_in_error": "earliest moment",
+    "reason": "the verification does not say where the authority's day ends, so reliance ends at the earliest moment the expiry day ends anywhere (owner ruling 213; CD-81)"
+  },
   "sign-off-practice-date-not-the-day-checked.integrity-invalid.json": {
     "expect_in_error": "practice_date",
-    "reason": "the practice date is the date of checked_at in some time zone, within a day of its UTC date (CD-81)"
+    "reason": "the practice date is the date of checked_at at the practice's recorded UTC offset (CD-81)"
+  },
+  "sign-off-practice-offset-out-of-range.invalid.json": {
+    "expect_in_error": "does not match",
+    "reason": "a UTC offset is between -12:00 and +14:00 (CD-81)"
   },
   "sign-off-proof-without-user-verification.integrity-invalid.json": {
     "expect_in_error": "user present and verified",

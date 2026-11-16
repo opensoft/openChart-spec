@@ -39,6 +39,8 @@ Checks:
        first_received_at <= released_at <= received_at, and a held item
        ends once: no two records of the store carry the same
        held_item_ref;
+     - a time not defaulted is not later than the path's receipt by more
+       than five minutes; no field is set aside twice;
      - a retrieved_at is never later than received_at, and a defaulted
        time is the time the path received the item: retrieved_at where it is
        recorded, otherwise a released item's first_received_at, otherwise
@@ -60,8 +62,10 @@ Checks:
        age is over 72 hours (owner ruling 212); the verifier key is held for
        the licensing authority the verification names, and the sign-off is
        not on a later day than the licence's own expiry where one is stated
-       (design calls CD-75 and CD-81), the day counted by the check's
-       practice_date, which is within one day of checked_at's date in UTC;
+       (design calls CD-75 and CD-81): not on a later practice_date, which is
+       the date of checked_at at practice_utc_offset, and not at or after
+       10:00 UTC on the expiry date, the earliest moment that day ends
+       anywhere;
        the attestation seals the authenticator flags, user_present and
        user_verified true and backup_eligible and backup_state equal to the
        sign-off's, a missing flag counting as a mismatch; and the sealed
@@ -210,11 +214,18 @@ def verify(record, records=()):
     retrieved, received = prov_.get("retrieved_at"), prov_.get("received_at")
     if retrieved and real_time(retrieved) and received and real_time(received) and parse(retrieved) > parse(received):
         problems.append("provenance/retrieved_at: an item is retrieved no later than the chart receives it")
+    release_ = prov_.get("released_from_quarantine")
+    first = release_.get("first_received_at") if isinstance(release_, dict) else None
+    expected = retrieved or first or received
+    if not prov_.get("occurred_at_defaulted"):
+        occurred = prov_.get("occurred_at")
+        if occurred and real_time(occurred) and expected and real_time(expected) and parse(occurred) > parse(expected) + datetime.timedelta(minutes=5):
+            problems.append("provenance/occurred_at: a time later than the path's receipt by more than five minutes is defaulted, never kept as occurred_at (AN-04)")
+    fields_set_aside = [s.get("field") for s in prov_.get("set_aside") or [] if isinstance(s, dict)]
+    if len(fields_set_aside) != len(set(fields_set_aside)):
+        problems.append("provenance/set_aside: a field is set aside twice")
     if prov_.get("occurred_at_defaulted"):
         occurred = prov_.get("occurred_at")
-        release_ = prov_.get("released_from_quarantine")
-        first = release_.get("first_received_at") if isinstance(release_, dict) else None
-        expected = retrieved or first or received
         if not (occurred and real_time(occurred) and expected and real_time(expected) and parse(occurred) == parse(expected)):
             problems.append("provenance/occurred_at_defaulted: a defaulted time is the time the path received the item: retrieved_at where recorded, otherwise a released item's first arrival, otherwise received_at")
         declared = prov_.get("occurred_at_as_declared")
@@ -283,20 +294,27 @@ def verify(record, records=()):
                 problems.append(f"{where}: the backup flags the sign-off records are not those the attestation sealed")
         if lv["authority"] not in lv["verifier_key"]["held_for"]:
             problems.append(f"{where}: the verifier key is not held for the licensing authority the verification names")
-        day = None
-        if real_time(so["check"]["checked_at"]):
-            day = parse(so["check"]["checked_at"]).date()
-            pdate = so["check"].get("practice_date")
-            if pdate and DATE.match(pdate) and real_date(pdate):
-                local = datetime.date.fromisoformat(pdate)
-                if abs((local - day).days) > 1:
-                    problems.append(f"{where}: check/practice_date is more than a day from the date of checked_at, so it is not that time's date in any time zone")
-                day = local
+        day = checked = None
+        chk = so["check"]
+        if real_time(chk["checked_at"]):
+            checked = parse(chk["checked_at"])
+            day = checked.date()
+            off = re.fullmatch(r"([+-])([0-9]{2}):([0-9]{2})", chk.get("practice_utc_offset") or "")
+            if off:
+                minutes = (int(off.group(2)) * 60 + int(off.group(3))) * (1 if off.group(1) == "+" else -1)
+                if not -12 * 60 <= minutes <= 14 * 60:
+                    problems.append(f"{where}: check/practice_utc_offset is outside UTC-12:00 to UTC+14:00")
+                day = (checked + datetime.timedelta(minutes=minutes)).date()
+                if chk.get("practice_date") != day.isoformat():
+                    problems.append(f"{where}: check/practice_date is not the date of checked_at at practice_utc_offset")
         exp = lv.get("licence_expires_on")
         if exp and day and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", exp):
             try:
-                if day > datetime.date.fromisoformat(exp):
+                expiry = datetime.date.fromisoformat(exp)
+                if day > expiry:
                     problems.append(f"{where}: the sign-off relies on the verification after the licence's own expiry")
+                elif checked >= datetime.datetime.combine(expiry, datetime.time(10, 0), tzinfo=datetime.timezone.utc):
+                    problems.append(f"{where}: the sign-off relies on the verification after the earliest moment the licence's expiry day can end anywhere, 10:00 UTC on that day")
             except ValueError:
                 problems.append(f"{where}: licence_expires_on is not a real calendar date")
         if lv["revocation_list"]["stale"] != (lv["revocation_list"]["age_seconds"] > 72 * 3600):
