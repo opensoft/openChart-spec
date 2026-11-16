@@ -1,0 +1,24 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "allergy.cross_reference.result",
+  "message_id": "a0000000-0000-4000-8000-000000000008",
+  "sent_at": "2026-11-15T10:00:01Z",
+  "in_reply_to": "a0000000-0000-4000-8000-000000000007",
+  "source": {
+    "source_ref": "SYN-KSOURCE-0001",
+    "source_version": "2026.11-syn",
+    "effective_date": "2026-11-01"
+  },
+  "matches": [
+    {
+      "allergen_ref": "SYN-ALG-0001",
+      "item_ref": "SYN-ITEM-RX-0001",
+      "match_type": "same_ingredient",
+      "source_severity": "SYN-LEVEL-4",
+      "openchart_severity": "severe",
+      "alert_text": "SYN synthetic rule: documented allergy to the same synthetic ingredient."
+    }
+  ],
+  "not_checked": []
+}

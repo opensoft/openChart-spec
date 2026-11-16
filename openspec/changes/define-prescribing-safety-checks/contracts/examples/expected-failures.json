@@ -1,0 +1,58 @@
+{
+  "capability-missing-interaction-lookup.invalid.json": {
+    "expect_in_error": "operations",
+    "reason": "an adapter must support every check operation"
+  },
+  "capability-without-severity-mapping.invalid.json": {
+    "expect_in_error": "'severity_mapping' is a required property",
+    "reason": "a capability declaration must map every source severity"
+  },
+  "coding-carries-patient-words.invalid.json": {
+    "expect_in_error": "does not match",
+    "reason": "the reviewer's probe: a code may not contain whitespace, so free text cannot travel as a coding"
+  },
+  "coding-system-not-uri.invalid.json": {
+    "expect_in_error": "does not match",
+    "reason": "a code system must be a URI"
+  },
+  "error-unknown-code.invalid.json": {
+    "expect_in_error": "error_code",
+    "reason": "error codes are closed; an error is never 'no alerts'"
+  },
+  "free-text-without-agreement.invalid.json": {
+    "expect_in_error": "'free_text_agreement_ref' is a required property",
+    "reason": "free text is sent only with the agreement recorded in the source's verification"
+  },
+  "interaction-single-item.invalid.json": {
+    "expect_in_error": "item_refs",
+    "reason": "an interaction finding names at least two items"
+  },
+  "major-2.invalid.json": {
+    "expect_in_error": "contract_version",
+    "reason": "only MAJOR 1 is defined"
+  },
+  "not-checked-unknown-reason.invalid.json": {
+    "expect_in_error": "reason",
+    "reason": "a not-checked item carries a closed reason"
+  },
+  "request-with-label.invalid.json": {
+    "expect_in_error": "'label' was unexpected",
+    "reason": "requests carry codes only; labels appear only in results"
+  },
+  "request-with-patient.invalid.json": {
+    "expect_in_error": "'patient' was unexpected",
+    "reason": "no message may carry a patient field"
+  },
+  "result-without-effective-date.invalid.json": {
+    "expect_in_error": "'effective_date' is a required property",
+    "reason": "every result names the source version and effective date"
+  },
+  "result-without-kinds-checked.invalid.json": {
+    "expect_in_error": "'kinds_checked' is a required property",
+    "reason": "a result must say which check kinds actually ran"
+  },
+  "unknown-openchart-severity.invalid.json": {
+    "expect_in_error": "openchart_severity",
+    "reason": "severity outside openChart's closed scale"
+  }
+}

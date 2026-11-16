@@ -1,0 +1,16 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "source.identity",
+  "message_id": "a0000000-0000-4000-8000-000000000002",
+  "sent_at": "2026-11-15T10:00:01Z",
+  "in_reply_to": "a0000000-0000-4000-8000-000000000001",
+  "source": {
+    "source_ref": "SYN-KSOURCE-0001",
+    "source_version": "2026.11-syn",
+    "effective_date": "2026-11-01"
+  },
+  "source_label": "Synthetic Knowledge Source (test only)",
+  "adapter_ref": "SYN-ADAPTER-0001",
+  "adapter_version": "0.1.0"
+}

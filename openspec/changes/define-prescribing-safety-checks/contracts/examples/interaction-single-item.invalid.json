@@ -1,0 +1,43 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "interaction.lookup.result",
+  "message_id": "a0000000-0000-4000-8000-00000000000a",
+  "sent_at": "2026-11-15T10:00:01Z",
+  "in_reply_to": "a0000000-0000-4000-8000-000000000009",
+  "source": {
+    "source_ref": "SYN-KSOURCE-0001",
+    "source_version": "2026.11-syn",
+    "effective_date": "2026-11-01"
+  },
+  "kinds_checked": [
+    "drug_drug",
+    "duplicate_therapy"
+  ],
+  "findings": [
+    {
+      "kind": "drug_drug",
+      "item_refs": [
+        "SYN-ITEM-RX-0001"
+      ],
+      "source_severity": "SYN-LEVEL-3",
+      "openchart_severity": "high",
+      "alert_text": "SYN synthetic rule: synthexamol with fictorine."
+    },
+    {
+      "kind": "duplicate_therapy",
+      "item_refs": [
+        "SYN-ITEM-RX-0001",
+        "SYN-ITEM-MED-0002"
+      ],
+      "source_severity": "SYN-LEVEL-2",
+      "openchart_severity": "moderate"
+    }
+  ],
+  "not_checked": [
+    {
+      "ref": "SYN-ITEM-SUP-0003",
+      "reason": "kind_not_supported"
+    }
+  ]
+}

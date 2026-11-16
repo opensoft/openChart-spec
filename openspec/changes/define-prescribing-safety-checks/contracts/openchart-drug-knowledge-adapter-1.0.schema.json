@@ -1,0 +1,1166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openchart:contract:openchart-drug-knowledge-adapter:1.0",
+  "title": "openchart-drug-knowledge-adapter 1.0",
+  "description": "Canonical message schema for the adapter through which an openChart deployment connects a drug knowledge source that its practice has licensed or verified. Owned by opensoft/openChart-spec change define-prescribing-safety-checks. openChart bundles no drug knowledge. openChart sends requests; the adapter answers each with a result or an error. Requests carry codes and opaque item references only. A code holds no whitespace, a code system is a URI, and openChart sends a coding only in a system the source declares. Free text, such as a patient-typed medication or allergen name, may be sent only on an item marked free_text, and only in a request that names the free_text_agreement_ref recorded in the source's verification; without that agreement, uncoded entries stay in openChart as 'could not be checked'. Every object is closed and no message has a patient field, so no patient identifier, name, date of birth or contact detail can cross. Labels appear only in results, where the source supplies them. openChart maps every source severity through the severity mapping in the adapter's capability declaration; an unmapped severity is treated as critical. An error, a timeout or an invalid result makes the source unavailable for that check and is never read as 'no alerts'. A receiver accepts any 1.x message at a MINOR version it declares and refuses any other MAJOR. All examples are synthetic.",
+  "type": "object",
+  "required": [
+    "message_type"
+  ],
+  "properties": {
+    "message_type": {
+      "enum": [
+        "source.identify.request",
+        "source.identity",
+        "capability.request",
+        "capability.declaration",
+        "medication.normalize.request",
+        "medication.normalize.result",
+        "allergy.cross_reference.request",
+        "allergy.cross_reference.result",
+        "interaction.lookup.request",
+        "interaction.lookup.result",
+        "adapter.error"
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "source.identify.request"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/sourceIdentifyRequest"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "source.identity"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/sourceIdentity"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "capability.request"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/capabilityRequest"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "capability.declaration"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/capabilityDeclaration"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "medication.normalize.request"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/normalizeRequest"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "medication.normalize.result"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/normalizeResult"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "allergy.cross_reference.request"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/allergyCrossReferenceRequest"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "allergy.cross_reference.result"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/allergyCrossReferenceResult"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "interaction.lookup.request"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/interactionLookupRequest"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "interaction.lookup.result"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/interactionLookupResult"
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "message_type": {
+            "const": "adapter.error"
+          }
+        },
+        "required": [
+          "message_type"
+        ]
+      },
+      "then": {
+        "$ref": "#/$defs/adapterError"
+      }
+    }
+  ],
+  "$defs": {
+    "contract": {
+      "const": "openchart-drug-knowledge-adapter"
+    },
+    "contractVersion": {
+      "description": "MAJOR.MINOR. Only MAJOR 1 is defined by this schema.",
+      "type": "string",
+      "pattern": "^1\\.(0|[1-9][0-9]*)$"
+    },
+    "uuid": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "opaqueRef": {
+      "description": "Opaque reference. Carries no name, date of birth, contact detail or clinical narrative.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9:_./-]{1,128}$"
+    },
+    "versionLabel": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._:+-]{1,64}$"
+    },
+    "codeToken": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.:-]{0,63}$"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "code": {
+      "description": "A coding: a code system URI, a code token without whitespace, and an optional version token. openChart sends a coding only in a system the source's capability declaration lists (KA-06); free text never travels here.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "system",
+        "code"
+      ],
+      "properties": {
+        "system": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 255,
+          "pattern": "^[A-Za-z][A-Za-z0-9+.-]*:[^\\s]+$"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[^\\s]{1,64}$"
+        },
+        "version": {
+          "$ref": "#/$defs/versionLabel"
+        }
+      }
+    },
+    "openchartSeverity": {
+      "description": "openChart's closed severity scale. critical is the most severe class.",
+      "enum": [
+        "critical",
+        "high",
+        "moderate",
+        "low",
+        "info"
+      ]
+    },
+    "checkKind": {
+      "enum": [
+        "allergy_ingredient",
+        "allergy_class",
+        "drug_drug",
+        "duplicate_therapy",
+        "drug_supplement"
+      ]
+    },
+    "operation": {
+      "enum": [
+        "source.identify",
+        "capability.declare",
+        "medication.normalize",
+        "allergy.cross_reference",
+        "interaction.lookup"
+      ]
+    },
+    "requestEnvelope": {
+      "type": "object",
+      "required": [
+        "contract",
+        "contract_version",
+        "message_type",
+        "message_id",
+        "sent_at",
+        "deployment_ref"
+      ],
+      "properties": {
+        "contract": {
+          "$ref": "#/$defs/contract"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "deployment_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        }
+      }
+    },
+    "resultEnvelope": {
+      "type": "object",
+      "required": [
+        "contract",
+        "contract_version",
+        "message_type",
+        "message_id",
+        "sent_at",
+        "in_reply_to",
+        "source"
+      ],
+      "properties": {
+        "contract": {
+          "$ref": "#/$defs/contract"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "in_reply_to": {
+          "$ref": "#/$defs/uuid"
+        },
+        "source": {
+          "$ref": "#/$defs/sourceStamp"
+        }
+      }
+    },
+    "sourceStamp": {
+      "description": "The source identity and version that produced a result. Every result carries it so the check record can name the source exactly.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_ref",
+        "source_version",
+        "effective_date"
+      ],
+      "properties": {
+        "source_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "source_version": {
+          "$ref": "#/$defs/versionLabel"
+        },
+        "effective_date": {
+          "$ref": "#/$defs/date"
+        }
+      }
+    },
+    "medicationItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_ref"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "coding"
+          ]
+        },
+        {
+          "required": [
+            "free_text"
+          ]
+        }
+      ],
+      "properties": {
+        "item_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "coding": {
+          "$ref": "#/$defs/code"
+        },
+        "free_text": {
+          "description": "Sent only with the request's free_text_agreement_ref (KA-06).",
+          "$ref": "#/$defs/label"
+        },
+        "item_kind": {
+          "enum": [
+            "drug",
+            "supplement",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "normalizedItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_ref",
+        "item_kind",
+        "ingredients"
+      ],
+      "properties": {
+        "item_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "item_kind": {
+          "enum": [
+            "drug",
+            "supplement"
+          ]
+        },
+        "ingredients": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "label"
+            ],
+            "properties": {
+              "code": {
+                "$ref": "#/$defs/code"
+              },
+              "label": {
+                "$ref": "#/$defs/label"
+              }
+            }
+          }
+        },
+        "classes": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "label"
+            ],
+            "properties": {
+              "code": {
+                "$ref": "#/$defs/code"
+              },
+              "label": {
+                "$ref": "#/$defs/label"
+              }
+            }
+          }
+        }
+      }
+    },
+    "graded": {
+      "type": "object",
+      "required": [
+        "source_severity",
+        "openchart_severity"
+      ],
+      "properties": {
+        "source_severity": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "openchart_severity": {
+          "$ref": "#/$defs/openchartSeverity"
+        },
+        "alert_text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "finding_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        }
+      }
+    },
+    "notChecked": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref",
+        "reason"
+      ],
+      "properties": {
+        "ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "reason": {
+          "enum": [
+            "not_recognized",
+            "ambiguous",
+            "uncoded_not_resolvable",
+            "kind_not_supported",
+            "outside_source_scope"
+          ]
+        }
+      }
+    },
+    "sourceIdentifyRequest": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/requestEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "deployment_ref": true,
+        "message_type": {
+          "const": "source.identify.request"
+        }
+      }
+    },
+    "sourceIdentity": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/resultEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_label",
+        "adapter_ref",
+        "adapter_version"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "in_reply_to": true,
+        "source": true,
+        "message_type": {
+          "const": "source.identity"
+        },
+        "source_label": {
+          "$ref": "#/$defs/label"
+        },
+        "adapter_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "adapter_version": {
+          "$ref": "#/$defs/versionLabel"
+        }
+      }
+    },
+    "capabilityRequest": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/requestEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "deployment_ref": true,
+        "message_type": {
+          "const": "capability.request"
+        }
+      }
+    },
+    "capabilityDeclaration": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/resultEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operations",
+        "check_kinds",
+        "medication_code_systems",
+        "allergen_code_systems",
+        "severity_mapping",
+        "max_items_per_request"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "in_reply_to": true,
+        "source": true,
+        "message_type": {
+          "const": "capability.declaration"
+        },
+        "operations": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/operation"
+          },
+          "allOf": [
+            {
+              "contains": {
+                "const": "medication.normalize"
+              }
+            },
+            {
+              "contains": {
+                "const": "allergy.cross_reference"
+              }
+            },
+            {
+              "contains": {
+                "const": "interaction.lookup"
+              }
+            }
+          ],
+          "minItems": 3
+        },
+        "check_kinds": {
+          "description": "The check kinds the source supports. drug_supplement is checked only when declared here.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/checkKind"
+          }
+        },
+        "medication_code_systems": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          }
+        },
+        "allergen_code_systems": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255
+          }
+        },
+        "severity_mapping": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "source_severity",
+              "openchart_severity"
+            ],
+            "properties": {
+              "source_severity": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 64
+              },
+              "openchart_severity": {
+                "$ref": "#/$defs/openchartSeverity"
+              }
+            }
+          }
+        },
+        "max_items_per_request": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      }
+    },
+    "normalizeRequest": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/requestEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "deployment_ref": true,
+        "message_type": {
+          "const": "medication.normalize.request"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/medicationItem"
+          }
+        },
+        "free_text_agreement_ref": {
+          "$ref": "#/$defs/freeTextGate"
+        }
+      },
+      "if": {
+        "properties": {
+          "items": {
+            "contains": {
+              "required": [
+                "free_text"
+              ]
+            }
+          }
+        },
+        "required": [
+          "items"
+        ]
+      },
+      "then": {
+        "required": [
+          "free_text_agreement_ref"
+        ]
+      }
+    },
+    "normalizeResult": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/resultEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "normalized",
+        "not_checked"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "in_reply_to": true,
+        "source": true,
+        "message_type": {
+          "const": "medication.normalize.result"
+        },
+        "normalized": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/normalizedItem"
+          }
+        },
+        "not_checked": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/notChecked"
+          }
+        }
+      }
+    },
+    "allergyCrossReferenceRequest": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/requestEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allergens",
+        "medications"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "deployment_ref": true,
+        "message_type": {
+          "const": "allergy.cross_reference.request"
+        },
+        "allergens": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 500,
+          "items": {
+            "$ref": "#/$defs/allergenItem"
+          }
+        },
+        "medications": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/normalizedRef"
+          }
+        },
+        "free_text_agreement_ref": {
+          "$ref": "#/$defs/freeTextGate"
+        }
+      },
+      "if": {
+        "properties": {
+          "allergens": {
+            "contains": {
+              "required": [
+                "free_text"
+              ]
+            }
+          }
+        },
+        "required": [
+          "allergens"
+        ]
+      },
+      "then": {
+        "required": [
+          "free_text_agreement_ref"
+        ]
+      }
+    },
+    "allergyCrossReferenceResult": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/resultEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "matches",
+        "not_checked"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "in_reply_to": true,
+        "source": true,
+        "message_type": {
+          "const": "allergy.cross_reference.result"
+        },
+        "matches": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/graded"
+              }
+            ],
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "allergen_ref",
+              "item_ref",
+              "match_type"
+            ],
+            "properties": {
+              "source_severity": true,
+              "openchart_severity": true,
+              "alert_text": true,
+              "finding_ref": true,
+              "allergen_ref": {
+                "$ref": "#/$defs/opaqueRef"
+              },
+              "item_ref": {
+                "$ref": "#/$defs/opaqueRef"
+              },
+              "match_type": {
+                "enum": [
+                  "same_ingredient",
+                  "class_cross_sensitivity"
+                ]
+              }
+            }
+          }
+        },
+        "not_checked": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/notChecked"
+          }
+        }
+      }
+    },
+    "interactionLookupRequest": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/requestEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "items",
+        "check_kinds"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "deployment_ref": true,
+        "message_type": {
+          "const": "interaction.lookup.request"
+        },
+        "items": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/normalizedRef"
+          }
+        },
+        "check_kinds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "drug_drug",
+              "duplicate_therapy",
+              "drug_supplement"
+            ]
+          }
+        }
+      }
+    },
+    "interactionLookupResult": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/resultEnvelope"
+        }
+      ],
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "findings",
+        "not_checked",
+        "kinds_checked"
+      ],
+      "properties": {
+        "contract": true,
+        "contract_version": true,
+        "message_id": true,
+        "sent_at": true,
+        "in_reply_to": true,
+        "source": true,
+        "message_type": {
+          "const": "interaction.lookup.result"
+        },
+        "kinds_checked": {
+          "description": "The check kinds the source actually ran for this request. A requested kind missing here was not checked.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "drug_drug",
+              "duplicate_therapy",
+              "drug_supplement"
+            ]
+          }
+        },
+        "findings": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "allOf": [
+              {
+                "$ref": "#/$defs/graded"
+              }
+            ],
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "kind",
+              "item_refs"
+            ],
+            "properties": {
+              "source_severity": true,
+              "openchart_severity": true,
+              "alert_text": true,
+              "finding_ref": true,
+              "kind": {
+                "enum": [
+                  "drug_drug",
+                  "duplicate_therapy",
+                  "drug_supplement"
+                ]
+              },
+              "item_refs": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 20,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/opaqueRef"
+                }
+              }
+            }
+          }
+        },
+        "not_checked": {
+          "type": "array",
+          "maxItems": 1000,
+          "items": {
+            "$ref": "#/$defs/notChecked"
+          }
+        }
+      }
+    },
+    "adapterError": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "contract",
+        "contract_version",
+        "message_type",
+        "message_id",
+        "sent_at",
+        "in_reply_to",
+        "error_code",
+        "retryable"
+      ],
+      "properties": {
+        "contract": {
+          "$ref": "#/$defs/contract"
+        },
+        "contract_version": {
+          "$ref": "#/$defs/contractVersion"
+        },
+        "message_type": {
+          "const": "adapter.error"
+        },
+        "message_id": {
+          "$ref": "#/$defs/uuid"
+        },
+        "sent_at": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "in_reply_to": {
+          "$ref": "#/$defs/uuid"
+        },
+        "error_code": {
+          "enum": [
+            "source_unavailable",
+            "timeout",
+            "unsupported_operation",
+            "invalid_request",
+            "unsupported_major_version",
+            "too_many_items",
+            "internal_error"
+          ]
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "allergenItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allergen_ref",
+        "category"
+      ],
+      "anyOf": [
+        {
+          "required": [
+            "coding"
+          ]
+        },
+        {
+          "required": [
+            "free_text"
+          ]
+        }
+      ],
+      "properties": {
+        "allergen_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "coding": {
+          "$ref": "#/$defs/code"
+        },
+        "free_text": {
+          "description": "Sent only with the request's free_text_agreement_ref (KA-06).",
+          "$ref": "#/$defs/label"
+        },
+        "category": {
+          "enum": [
+            "medication",
+            "food",
+            "environment",
+            "biologic",
+            "unknown"
+          ]
+        }
+      }
+    },
+    "normalizedRef": {
+      "description": "A normalized item as openChart sends it back to the source: codes only, no labels.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item_ref",
+        "item_kind",
+        "ingredient_codes"
+      ],
+      "properties": {
+        "item_ref": {
+          "$ref": "#/$defs/opaqueRef"
+        },
+        "item_kind": {
+          "enum": [
+            "drug",
+            "supplement"
+          ]
+        },
+        "ingredient_codes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/code"
+          }
+        },
+        "class_codes": {
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/code"
+          }
+        }
+      }
+    },
+    "freeTextGate": {
+      "description": "A request that carries any free_text must name the agreement recorded in the source's verification.",
+      "$ref": "#/$defs/opaqueRef"
+    }
+  }
+}

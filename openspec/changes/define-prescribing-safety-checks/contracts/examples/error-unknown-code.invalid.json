@@ -1,0 +1,10 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "adapter.error",
+  "message_id": "a0000000-0000-4000-8000-00000000000b",
+  "sent_at": "2026-11-15T10:00:02Z",
+  "in_reply_to": "a0000000-0000-4000-8000-000000000009",
+  "error_code": "no_alerts",
+  "retryable": true
+}

@@ -1,0 +1,15 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "medication.normalize.request",
+  "message_id": "a0000000-0000-4000-8000-00000000000c",
+  "sent_at": "2026-11-15T10:00:00Z",
+  "deployment_ref": "SYN-DEPLOYMENT-0001",
+  "items": [
+    {
+      "item_ref": "SYN-ITEM-PR-0004",
+      "free_text": "SYN patient-reported free text 'the little white pill'",
+      "item_kind": "unknown"
+    }
+  ]
+}

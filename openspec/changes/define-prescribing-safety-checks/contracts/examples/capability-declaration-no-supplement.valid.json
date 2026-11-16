@@ -1,0 +1,51 @@
+{
+  "contract": "openchart-drug-knowledge-adapter",
+  "contract_version": "1.0",
+  "message_type": "capability.declaration",
+  "message_id": "a0000000-0000-4000-8000-000000000004",
+  "sent_at": "2026-11-15T10:00:01Z",
+  "in_reply_to": "a0000000-0000-4000-8000-000000000003",
+  "source": {
+    "source_ref": "SYN-KSOURCE-0001",
+    "source_version": "2026.11-syn",
+    "effective_date": "2026-11-01"
+  },
+  "operations": [
+    "source.identify",
+    "capability.declare",
+    "medication.normalize",
+    "allergy.cross_reference",
+    "interaction.lookup"
+  ],
+  "check_kinds": [
+    "allergy_ingredient",
+    "allergy_class",
+    "drug_drug",
+    "duplicate_therapy"
+  ],
+  "medication_code_systems": [
+    "urn:example:synthetic:medication"
+  ],
+  "allergen_code_systems": [
+    "urn:example:synthetic:substance"
+  ],
+  "severity_mapping": [
+    {
+      "source_severity": "SYN-LEVEL-4",
+      "openchart_severity": "critical"
+    },
+    {
+      "source_severity": "SYN-LEVEL-3",
+      "openchart_severity": "high"
+    },
+    {
+      "source_severity": "SYN-LEVEL-2",
+      "openchart_severity": "moderate"
+    },
+    {
+      "source_severity": "SYN-LEVEL-1",
+      "openchart_severity": "low"
+    }
+  ],
+  "max_items_per_request": 100
+}
