@@ -107,7 +107,7 @@
   "consult-write-openwallet-id-bad-shape.valid.json": {
     "receipt": "quarantined",
     "code": "ai_not_identified",
-    "note": "a value outside openWallet's identifier shape is no openWallet ID: held outside the chart, never refused, and the value is never shown or logged as given (ruling 194; AD-60)"
+    "note": "a value outside openWallet's identifier shape is no openWallet ID: held outside the chart, never refused, and the value is kept as a value openChart could not read, out of every alert and log line (ruling 194; AW-07; AD-60, AD-74)"
   },
   "consult-write-missing-source.valid.json": {
     "receipt": "accepted",
@@ -156,12 +156,12 @@
   "consult-write-ai-model-outside-form.valid.json": {
     "receipt": "quarantined",
     "code": "ai_not_identified",
-    "note": "the model is present but outside its pattern (a space): held outside the chart, never refused, never releasable, and the value is never shown, logged or returned as given (ruling 194; AW-07; AD-60, PROPOSED)"
+    "note": "the model is present but outside its pattern (a space): held outside the chart, never refused, never releasable, and the value is kept as a value openChart could not read, never used as the AI's identification and out of every alert, log line and message (ruling 194; AW-07; AD-60, AD-74, PROPOSED)"
   },
   "consult-write-ai-model-version-outside-form.valid.json": {
     "receipt": "quarantined",
     "code": "ai_not_identified",
-    "note": "the model version is present but outside its pattern (a slash): held outside the chart, never refused, never releasable, and the value is never shown, logged or returned as given (ruling 194; AW-07; AD-60, PROPOSED)"
+    "note": "the model version is present but outside its pattern (a slash): held outside the chart, never refused, never releasable, and the value is kept as a value openChart could not read, never used as the AI's identification and out of every alert, log line and message (ruling 194; AW-07; AD-60, AD-74, PROPOSED)"
   },
   "consult-write-ai-party-unknown-property.valid.json": {
     "receipt": "quarantined",
@@ -272,7 +272,7 @@
     "set_aside": [
       "models"
     ],
-    "note": "models set aside, as absent: the record shows the AI's model and model version from on_behalf_of only; the value given is kept with openChart's record of the write and never shown, logged or returned as given (AW-07; AD-63, AD-74, PROPOSED)"
+    "note": "models set aside, as absent: the record shows the AI's model and model version from on_behalf_of only; the value given is kept with openChart's record of the write as a value openChart could not read, readable on request and never in place of the models (AW-07; AD-63, AD-74, PROPOSED)"
   },
   "consult-write-evidence-kind-outside-list.valid.json": {
     "receipt": "accepted",
@@ -317,14 +317,14 @@
       "ended_at",
       "started_at"
     ],
-    "note": "an ended_at before its started_at is a time that cannot be read: openChart takes received_at as the end, marked as defaulted, shows the start as not stated, keeps both values given with its record of the write, and checks the grant at receipt (AW-15; AD-70, AD-74, PROPOSED)"
+    "note": "an ended_at before its started_at is a time that cannot be read: openChart takes received_at as the end, marked as defaulted, shows the start as not stated, keeps both values given only with its record of the write, never as occurred_at_as_declared, and checks the grant at receipt (AW-15; AD-70, AD-74, PROPOSED)"
   },
   "consult-write-escalation-unknown-route.valid.json": {
     "receipt": "accepted",
     "set_aside": [
       "escalation"
     ],
-    "note": "escalation set aside, as absent: the routing is shown as not stated, and the consult is selected for review whatever the sample, failing closed (AC-03, AC-07; AD-74, PROPOSED)"
+    "note": "escalation set aside, as absent: the routing is shown as not stated, and the consult is selected for review whatever the sample and listed urgently, failing closed (AC-03, AC-07, AC-10; AD-74, PROPOSED)"
   },
   "consult-write-emergency-indicated-string.valid.json": {
     "receipt": "accepted",
@@ -346,7 +346,7 @@
     "set_aside": [
       "summary"
     ],
-    "note": "summary set aside, as absent: no AI summary is shown; the value given is kept with openChart's record of the write and never shown (AC-01; AD-74, PROPOSED)"
+    "note": "summary set aside, as absent: no AI summary is shown; the value given is kept with openChart's record of the write as a value openChart could not read, readable on request and never in place of the summary (AC-01; AW-07; AD-74, PROPOSED)"
   },
   "consult-write-conversation-ref-wrong-type.valid.json": {
     "receipt": "accepted",
@@ -360,7 +360,7 @@
     "set_aside": [
       "exchange.turns.attachments"
     ],
-    "note": "an attachment of a media type that is not only displayed sits inside a content object that can be read: the consult is kept, the attachment kept by reference and digest only and never displayed, and the consult always selected for review for content outside its shape (AC-04, AC-07; AD-75, PROPOSED)"
+    "note": "an attachment of a media type that is not only displayed sits inside a content object that can be read: the consult is kept, the attachment kept by reference and digest only and never displayed as an attachment, its reference and media type readable on request as a value openChart could not read, and the consult always selected for review for content outside its shape (AC-04, AC-07; AD-75, PROPOSED)"
   },
   "consult-write-unknown-property.valid.json": {
     "receipt": "accepted",
@@ -388,7 +388,7 @@
     "set_aside": [
       "exchange.turns.evidence"
     ],
-    "note": "a knowledge basis on a patient turn: the consult is kept, the basis kept as given and never shown, and the consult always selected for review for content outside its shape (AC-03, AC-07; AD-75, PROPOSED)"
+    "note": "a knowledge basis on a patient turn: the consult is kept, the basis kept as given, never shown as the turn's and readable on request as a value openChart could not read, and the consult always selected for review for content outside its shape (AC-03, AC-07; AD-75, PROPOSED)"
   },
   "consult-write-source-kind-not-ai-consult.valid.json": {
     "receipt": "accepted",
@@ -421,7 +421,7 @@
   "consult-write-source-healthlinc.valid.json": {
     "receipt": "quarantined",
     "code": "ai_not_identified",
-    "note": "a source system that is never a write-path system is not refused for that: its patient is matched in the namespace it names (AW-03), and the AI check holds the write with ai_not_identified, the first cause it reaches, because a relay's on_behalf_of cannot name such a system as the source system; it is never released, and no registration covers it either. A source patient reference in another namespace would match no link and be refused with patient_link_unknown. The namespace bar refuses only the writer (AD-30; ruling 194; AD-60, AD-74, PROPOSED)"
+    "note": "a source system that is never a write-path system is not refused for that: its patient is matched in the namespace it names (AW-03), and the AI check holds the write with ai_not_identified, the first cause it reaches, because a relay's on_behalf_of cannot name such a system as the source system; it is never released, and no registration covers it either. No registration covers such a source system, so openChart checks coverage before the patient and answers quarantined whatever the link: a source patient reference that matches no link is kept outside every chart, in front of the medical director, and ends only by dismissal, so that no receipt shows whether a link exists in a namespace the writer is not registered for (AW-06; the foundation's CD-72). The namespace bar refuses only the writer (AD-30; ruling 194; AD-60, AD-74, PROPOSED)"
   },
   "consult-write-source-openpractice-agent.valid.json": {
     "receipt": "quarantined",
@@ -481,7 +481,7 @@
     "set_aside": [
       "action"
     ],
-    "note": "an action outside the foundation's codes is set aside: the proposed act takes the default action, sign, because the write names no target, and the value given is kept with openChart's record of the write (AD-58, AD-68, AD-74, PROPOSED)"
+    "note": "an action outside the foundation's codes is set aside: the proposed act takes the default action, sign, because the write names no target, and the value given is kept with openChart's record of the write; under Tier 2 it is never accepted as an act, because its action was set aside (AW-16; AD-58, AD-68, AD-74, PROPOSED)"
   },
   "act-write-discontinue-without-target.valid.json": {
     "receipt": "recorded_as_recommendation",
@@ -489,7 +489,7 @@
     "set_aside": [
       "action"
     ],
-    "note": "an action on an existing record that names none cannot be applied: set aside, and the proposed act takes the default action, sign (AD-58, AD-68, AD-74, PROPOSED)"
+    "note": "an action on an existing record that names none cannot be applied: set aside, and the proposed act takes the default action, sign; under Tier 2 it is never accepted as an act, because its action was set aside (AW-16; AD-58, AD-68, AD-74, PROPOSED)"
   },
   "act-write-sign-with-target.valid.json": {
     "receipt": "recorded_as_recommendation",
@@ -497,7 +497,7 @@
     "set_aside": [
       "action"
     ],
-    "note": "sign names no existing record, so with a target the action is set aside and the proposed act takes the default for a write that names a target, new_version (AN-09; AD-58, AD-68, AD-74, PROPOSED)"
+    "note": "sign names no existing record, so with a target the action is set aside and the proposed act takes the default for a write that names a target, new_version; under Tier 2 it is never accepted as an act, because its action was set aside (AN-09; AW-16; AD-58, AD-68, AD-74, PROPOSED)"
   },
   "act-write-source-clinician-observation.valid.json": {
     "receipt": "recorded_as_recommendation",
@@ -513,5 +513,29 @@
       "occurred_at"
     ],
     "note": "an occurred_at naming 30 February cannot be read: received_at is taken, marked occurred_at_defaulted; the value given is kept only with openChart's record of the write, never as the foundation's occurred_at_as_declared, which takes only a timestamp (AW-15; AD-69, AD-70, AD-74, PROPOSED)"
+  },
+  "consult-write-summary-beyond-bound.valid.json": {
+    "receipt": "accepted",
+    "set_aside": [
+      "summary"
+    ],
+    "note": "a summary beyond its size bound (a string of more than 20000 characters) is a value outside its form: set aside, as absent, with only its SHA-256 and its length kept; not refused, because only a whole message beyond the message limit is (AW-01; AD-63, AD-74, PROPOSED)"
+  },
+  "consult-write-openwallet-id-beyond-bound.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "an openwallet_id beyond its size bound (more than 1024 characters) puts on_behalf_of beyond its bound, so it cannot be read: held outside the chart with ai_not_identified, never refused and never released, with only its SHA-256 and its length kept (ruling 194; AD-60, AD-74, PROPOSED)"
+  },
+  "consult-write-on-behalf-of-seventeen-parties.valid.json": {
+    "receipt": "quarantined",
+    "code": "ai_not_identified",
+    "note": "seventeen parties are beyond the size bound of on_behalf_of, so it cannot be read: held outside the chart with ai_not_identified, never refused, with only its SHA-256 and its length kept (ruling 194; AD-60, AD-74, PROPOSED)"
+  },
+  "consult-write-turn-text-beyond-bound.valid.json": {
+    "receipt": "accepted",
+    "set_aside": [
+      "exchange.turns"
+    ],
+    "note": "a turn whose text is beyond its size bound is content outside the consult's shape: the consult is kept and the turn kept as given, inside the content digest, because the content object is what the patient was told; the text is never displayed in place of the turn's but is readable on request, and the consult is always selected for review (AC-02, AC-07; AD-74, AD-75, PROPOSED)"
   }
 }

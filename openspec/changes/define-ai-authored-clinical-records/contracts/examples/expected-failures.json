@@ -59,14 +59,6 @@
     "expect_in_error": "'exchange' is a required property",
     "reason": "a consult with no exchange has no content object (ruling 188; AN-12)"
   },
-  "consult-write-on-behalf-of-seventeen-parties.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'on_behalf_of', 'maxItems']",
-    "reason": "on_behalf_of names at most 16 parties, eight times the two this path reads; a longer list is beyond the bounds, one of the closed list of what is still refused (AW-02; AD-60, AD-63)"
-  },
-  "consult-write-openwallet-id-beyond-bound.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'on_behalf_of', 'items', 'additionalProperties', 'maxLength']",
-    "reason": "a value beyond 1024 characters is not an identifier written wrong but something else in its place: beyond the bounds, one of the closed list of what is still refused (AW-02; AD-60, AD-63)"
-  },
   "consult-write-patient-not-openchart-namespace.invalid.json": {
     "expect_in_error": "patient/namespace 'openchart' was expected",
     "reason": "the patient is named by the openChart triple (AW-03)"
@@ -74,10 +66,6 @@
   "consult-write-source-ref-openchart-namespace.invalid.json": {
     "expect_in_error": "[0, 'properties', 'source_patient_ref', 'properties', 'namespace', 'allOf', 1, 'not']",
     "reason": "the source system's patient reference is never in the openchart namespace (AW-03)"
-  },
-  "consult-write-summary-beyond-bound.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'summary', 'additionalProperties', 'maxLength']",
-    "reason": "a declaration beyond the bounds the schema sets (a string of more than 20000 characters) is not a value written wrong but something else in its place: refused, one of the closed list (AD-63, AD-74)"
   },
   "consult-write-writer-healthlinc.invalid.json": {
     "expect_in_error": "[0, 'properties', 'added_by', 'properties', 'system', 'properties', 'namespace', 'allOf', 1, 'not']",

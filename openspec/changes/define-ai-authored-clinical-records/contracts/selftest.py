@@ -32,12 +32,15 @@ Checks:
      (AD-60): every valid write that it holds, because its on_behalf_of
      cannot be read as the AI alone (from the source system's own
      identity) or the AI and then the source system (from a relay), or
-     because its AI is not in the form of $defs/aiParty, has the expected
-     outcome quarantined with that cause (ai_not_identified or
+     because its AI is not in the form of $defs/aiParty, or because its
+     on_behalf_of is beyond its size bound ($defs/onBehalfOfBound), has
+     the expected outcome quarantined with that cause (ai_not_identified or
      openwallet_id_missing), and no other write has. Coverage by a
      registration is openChart's to judge, not the message's;
   8. the rule of AW-01 and AD-63 for every valid write: each declaration
-     is judged against its form in $defs/declarationForms (each authority
+     is judged against its form in $defs/declarationForms and against its
+     size bound ($defs/declarationBound, $defs/valueBound), which sets it
+     aside however it fits its form (each authority
      field against $defs/authorityClaim, each consult turn against
      $defs/consultTurn, the times as AD-70 reads them, the action against
      the target), and the fields set aside, by the names of
@@ -46,6 +49,9 @@ Checks:
      the time of receipt (AD-74, AD-75);
   9. every examples/*.calendar-invalid.json validates and fails only the
      calendar check.
+No fixture is beyond the message limit, 134217728 bytes (128 MiB) as
+received or more than 32 levels deep, which openChart checks beside the
+schema before it and refuses with schema_invalid (AW-01, AD-63).
 The digests use canonical JSON with sorted keys and no whitespace, which
 equals RFC 8785 for the strings, integers and booleans the fixtures use.
 Exit status 0 only when every check passes.
@@ -129,8 +135,15 @@ def set_aside(schema, doc):
     out = set()
     if set(doc) - known:
         out.add("unknown_property")
+    # A single value beyond its size bound is a value outside its form, however it fits its form (AD-74).
+    props = defs["consultWrite" if kind == "consult.write" else "actWrite"]["properties"]
+    bounds = {"declarationAsGiven": "declarationBound", "valueAsGiven": "valueBound"}
     for field, value in doc.items():
-        if field not in known:
+        bound = bounds.get(props.get(field, {}).get("$ref", "").split("/")[-1])
+        if bound and not fits(defs[bound], value):
+            out.add(field)
+    for field, value in doc.items():
+        if field not in known or field in out:
             continue
         if field == "authority" and isinstance(value, dict):
             claim = defs["authorityClaim"]["properties"]
@@ -204,11 +217,14 @@ def beside_schema(doc):
 
 def ai_check(schema, doc):
     """The part of AW-06's AI check that a write's own content decides (AW-02, AD-60), in its order:
-    ai_not_identified for an on_behalf_of this path cannot read, then openwallet_id_missing, then
+    ai_not_identified for an on_behalf_of this path cannot read, one beyond its size bound included, then
+    openwallet_id_missing, then
     ai_not_identified for an AI not in the form of $defs/aiParty; None when the content passes."""
     def form(name, value):
         return Draft202012Validator({"$defs": schema["$defs"], "$ref": "#/$defs/" + name}).is_valid(value)
     chain, src = doc.get("on_behalf_of"), doc["source_system"]
+    if "on_behalf_of" in doc and not form("onBehalfOfBound", chain):
+        return "ai_not_identified"
     relay = doc["added_by"].get("system") != src
     if not isinstance(chain, list) or not chain or not all(isinstance(p, dict) for p in chain) or chain[0].get("kind") != "ai":
         return "ai_not_identified"
