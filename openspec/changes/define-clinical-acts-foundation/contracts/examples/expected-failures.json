@@ -63,6 +63,10 @@
     "expect_in_error": "signatures/1/sign_off/action",
     "reason": "a co-signer's signature is a co-signature (CA-07)"
   },
+  "declared-time-earlier-than-receipt-kept.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_as_declared",
+    "reason": "only a declared time later than the time the path received the item is kept as declared, so an inverted interval's earlier end is not (CD-73)"
+  },
   "declared-time-kept-without-default.invalid.json": {
     "expect_in_error": "'occurred_at_defaulted' is a required property",
     "reason": "the time as declared is kept only beside a defaulted time (AN-04, CD-73)"
@@ -346,6 +350,10 @@
   "record-kind-missing.invalid.json": {
     "expect_in_error": "'record_kind' is a required property",
     "reason": "every record says which record kind it is"
+  },
+  "released-defaulted-time-not-first-arrival.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_defaulted",
+    "reason": "a released item's defaulted time is its first arrival, not its release (CD-73)"
   },
   "released-item-back-dated.integrity-invalid.json": {
     "expect_in_error": "release",

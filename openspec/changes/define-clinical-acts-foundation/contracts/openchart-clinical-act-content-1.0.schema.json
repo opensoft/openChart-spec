@@ -703,11 +703,11 @@
           "$ref": "#/$defs/timestamp"
         },
         "occurred_at_defaulted": {
-          "description": "Set when the write gave no time the information arose, gave one that cannot be read, or declared one later than its receipt beyond a small clock skew, and its writing path set occurred_at to the time the path received the item: retrieved_at where that is present, and received_at otherwise (AN-04; design call CD-73, PROPOSED). A missing or unreadable time is never a reason to refuse.",
+          "description": "Set when the write gave no time the information arose, gave one that cannot be read, or declared one later than its receipt beyond a small clock skew, and its writing path set occurred_at to the time the path received the item: retrieved_at where that is recorded; otherwise, for an item released from quarantine, its first arrival (released_from_quarantine.first_received_at); otherwise received_at (AN-04; design call CD-73, PROPOSED). A missing or unreadable time is never a reason to refuse.",
           "const": true
         },
         "occurred_at_as_declared": {
-          "description": "Where the declared time was later than receipt beyond the clock skew: the time as the write declared it, kept with the record. Only a well-formed timestamp is kept here; a declared time that cannot be read is kept as AN-12 keeps a value openChart could not read, never here (AN-04; design call CD-73, PROPOSED).",
+          "description": "Where the declared time was later than the time the path received the item beyond the clock skew: the time as the write declared it, kept with the record. A declared time that is not later than that time is never kept here, so an inverted interval's given end, which is earlier, is not. Only a well-formed timestamp is kept here; a declared time that cannot be read is kept as AN-12 keeps a value openChart could not read, never here (AN-04; design call CD-73, PROPOSED).",
           "$ref": "#/$defs/timestamp"
         },
         "source": {

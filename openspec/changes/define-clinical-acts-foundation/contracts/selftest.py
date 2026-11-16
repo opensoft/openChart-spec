@@ -41,8 +41,9 @@ Checks:
        held_item_ref;
      - a retrieved_at is never later than received_at, and a defaulted
        time is the time the path received the item: retrieved_at where it is
-       present and received_at otherwise; a time as declared that was kept
-       beside it is later than that time (design call CD-73);
+       recorded, otherwise a released item's first_received_at, otherwise
+       received_at; a time as declared that was kept beside it is later than
+       that time (design call CD-73);
      - a signed act records a signed lifecycle event (reported, not a
        crash, when it is missing);
      - each sign-off's evidence agrees with itself (design calls CD-75 to
@@ -211,9 +212,11 @@ def verify(record, records=()):
         problems.append("provenance/retrieved_at: an item is retrieved no later than the chart receives it")
     if prov_.get("occurred_at_defaulted"):
         occurred = prov_.get("occurred_at")
-        expected = retrieved or received
+        release_ = prov_.get("released_from_quarantine")
+        first = release_.get("first_received_at") if isinstance(release_, dict) else None
+        expected = retrieved or first or received
         if not (occurred and real_time(occurred) and expected and real_time(expected) and parse(occurred) == parse(expected)):
-            problems.append("provenance/occurred_at_defaulted: a defaulted time is the time the path received the item, retrieved_at where the path retrieved it and received_at otherwise")
+            problems.append("provenance/occurred_at_defaulted: a defaulted time is the time the path received the item: retrieved_at where recorded, otherwise a released item's first arrival, otherwise received_at")
         declared = prov_.get("occurred_at_as_declared")
         if declared and occurred and real_time(declared) and real_time(occurred) and parse(declared) <= parse(occurred):
             problems.append("provenance/occurred_at_as_declared: kept as declared, but it is not later than the time the path received the item")
