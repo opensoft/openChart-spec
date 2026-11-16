@@ -163,6 +163,10 @@
     "expect_in_error": "'reason_code' is a required property",
     "reason": "a hold is released only by adoption or by decline, and says which (AN-14)"
   },
+  "information-document-plain-text-attachment.invalid.json": {
+    "expect_in_error": "not valid under any of the given schemas",
+    "reason": "a document's attachments are PDFs or pictures that are only displayed; its text goes in its text (owner ruling 204; AN-06, CD-65)"
+  },
   "information-document-structured-attachment.invalid.json": {
     "expect_in_error": "not valid under any of the given schemas",
     "reason": "a document's attachment is only displayed; a structured clinical format needs a shape from its own path (AN-06, CD-65)"
@@ -398,6 +402,14 @@
   "sign-off-licence-not-the-one-the-grant-names.integrity-invalid.json": {
     "expect_in_error": "covers",
     "reason": "a licence the grant does not name covers nothing (CD-78)"
+  },
+  "sign-off-more-than-twelve-months-after-the-check.integrity-invalid.json": {
+    "expect_in_error": "12 months",
+    "reason": "a verification is relied on at most 12 months (owner ruling 213); openChart counts them from the check (CD-81)"
+  },
+  "sign-off-old-revocation-list-not-flagged.integrity-invalid.json": {
+    "expect_in_error": "stale",
+    "reason": "a reliance on a list over 72 hours old is flagged (owner ruling 212; CD-81)"
   },
   "sign-off-revocation-list-age-misstated.integrity-invalid.json": {
     "expect_in_error": "age_seconds",

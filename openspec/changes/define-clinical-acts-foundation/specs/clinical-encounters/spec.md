@@ -42,7 +42,7 @@ openChart SHALL let an encounter move from `in_progress` to `final` only when ev
 
 The encounter signature SHALL attest the records in its manifest: every act and information record that references the encounter and that the signing view showed, which CA-04 defines. The signing view SHALL show exactly the manifest's members, and its sign-off binds the manifest's SHA-256. The signature SHALL be the documentation-final signature that publication uses (PB-02). It attests no record outside the manifest, and never adopts a recommendation (AN-11) (CA-04; design call CD-53, PROPOSED). The manifest records what was shown at signing. An order or prescription in a signed manifest MAY later change by its own signed act, such as a release, a cancellation or a discontinuation, without an encounter amendment (EN-05); the signature still attests what was shown at signing.
 
-A draft that blocks the signature and is not held, including one returned to its author after its recommendation was declined, does not block it indefinitely: AN-14 lists it for its author and the primary performer with a due time, escalates it to the medical director, who may close it, and tells them both when it is closed. A held draft ends instead by adoption or decline, whose review escalates (design call CD-68, PROPOSED).
+A draft that blocks the signature and is not held, including one returned to its author after its recommendation was declined, does not block it indefinitely. Owner ruling 203 lets the medical director close another clinician's unfinished draft that blocks signing the visit, "but only after it has been listed and escalated. Its content stays readable, and its author is told." AN-14 lists it for its author and the primary performer with a due time, escalates it to the medical director, who may then close it, and tells them both when it is closed (design call CD-68, PROPOSED for the times and the notices). A held draft ends instead by adoption or decline, whose review escalates.
 
 #### Scenario: An encounter is finalized
 - **WHEN** the primary performer signs an encounter with a final note, a final diagnosis and no drafts
@@ -55,6 +55,10 @@ A draft that blocks the signature and is not held, including one returned to its
 #### Scenario: Failure: a draft diagnosis remains
 - **WHEN** a clinician tries to sign an encounter that has a diagnosis still in `draft`
 - **THEN** openChart refuses, names the open draft by identifier, and the encounter stays `in_progress`
+
+#### Scenario: Failure: another clinician's draft blocks the visit
+- **WHEN** another clinician's draft diagnosis blocks the primary performer from signing an encounter, and the medical director tries to close it before it has been listed and escalated
+- **THEN** openChart refuses the close; once the draft has been listed for its author and the primary performer, its due time has passed and it has escalated, the medical director may close it, its content stays readable, and its author is told
 
 #### Scenario: Failure: no signed note
 - **WHEN** a clinician tries to sign an encounter with no final clinical note
@@ -74,14 +78,14 @@ Once an encounter is `final` or `amended`, adding, amending or marking entered i
 ### Requirement: EN-06 Every requirement holds the same on mobile and on workstation
 Every requirement in this change SHALL hold independently of the device or form factor the clinician uses (owner ruling 35). No act, signature, attestation, co-signature or check SHALL be weaker, optional or skipped on any client.
 
-**Signing on a phone depends on a proof profile not yet drafted (design call CD-80, PROPOSED).** A sign-off needs a key that can make openWallet's ratified `wallet-challenge-proof`. No phone or browser platform authenticator can make it, and openWallet's draft (`add-practitioner-profile-and-licence-verification`, draft pull request #10, unratified) names a successor proof profile for such authenticators as required, and does not draft it. Until one is ratified, the scenario "Signing on a phone" is not met, and under owner ruling 152 nothing signed there is a decision. How a practitioner signs meanwhile is put to the owner, with the recommendation that the successor profile be drafted. This requirement stands; nothing in this change makes version 1 workstation-only.
+**How a practitioner signs, on a phone as on a workstation (owner ruling 208; design call CD-80, PROPOSED beyond its words).** Owner ruling 208: a practitioner signs with "A passkey or security key. Draft that change now. A smart card cannot be used from a phone." The proof profile for passkeys and security keys is being drafted in openWallet-spec. openChart verifies whatever proof a sign-off seals by openWallet's verification for the profile the proof names (CA-04), so this requirement asks nothing of a phone that it does not ask of a workstation. Until that profile is ratified, no practitioner can sign, on a phone or on a workstation, and owner ruling 152 keeps every decision off. This requirement stands; nothing in this change makes version 1 workstation-only.
 
 #### Scenario: Signing on a phone
 - **WHEN** a clinician signs an encounter from a mobile client
 - **THEN** the same re-authentication, attestation, scope check and completeness rules apply as on a workstation
 
-#### Scenario: Failure: a phone cannot make the ratified proof
-- **WHEN** a clinician signs off from a phone whose only authenticator cannot make openWallet's `wallet-challenge-proof`
+#### Scenario: Failure: no proof profile for passkeys and security keys is ratified yet
+- **WHEN** a clinician signs off from a phone, or from a workstation, before openWallet has ratified the proof profile for passkeys and security keys
 - **THEN** no sign-off is accepted and nothing takes effect; the draft stays a draft and the attempt is recorded
 
 #### Scenario: Failure: a client offers a shortcut

@@ -50,9 +50,11 @@ Checks:
        licence facts the grant names (covers) equal the verification's, and
        for a signature its grant_ref is the signature's authority basis; the
        verification was checked before the sign-off and is relied on before
-       its reliance bound; the revocation list used was issued before the
-       sign-off, by the verification's verifier, and its recorded age is its
-       age at the sign-off. The self-test does not verify Ed25519
+       its reliance bound and less than 12 months after its check (owner
+       ruling 213; design call CD-81); the revocation list used was issued
+       before the sign-off, by the verification's verifier, its recorded age
+       is its age at the sign-off, and it is flagged stale exactly when that
+       age is over 72 hours (owner ruling 212). The self-test does not verify Ed25519
        signatures: the synthetic fixtures carry placeholders, and the
        production audit verifier re-verifies openSig's signature, the sealed
        proof and the licence verification (CA-08);
@@ -237,10 +239,18 @@ def verify(record, records=()):
                 problems.append(f"{where}: the licence was verified after the sign-off")
             if not at < rely:
                 problems.append(f"{where}: the sign-off is past the verification's rely_until")
+            try:
+                cap = verified.replace(year=verified.year + 1)
+            except ValueError:  # 29 February
+                cap = verified.replace(year=verified.year + 1, day=28)
+            if not at < cap:
+                problems.append(f"{where}: the sign-off relies on a verification more than 12 months after its check")
             if listed > at:
                 problems.append(f"{where}: the revocation list used was issued after the sign-off")
             elif int((at - listed).total_seconds()) != lv["revocation_list"]["age_seconds"]:
                 problems.append(f"{where}: the revocation list's age_seconds is not its age at the sign-off")
+        if lv["revocation_list"]["stale"] != (lv["revocation_list"]["age_seconds"] > 72 * 3600):
+            problems.append(f"{where}: the revocation list's stale flag is not whether it was over 72 hours old at the sign-off")
         if lv["revocation_list"]["verifier_ref"] != lv["verifier_ref"]:
             problems.append(f"{where}: the revocation list is not the verification's verifier's")
 

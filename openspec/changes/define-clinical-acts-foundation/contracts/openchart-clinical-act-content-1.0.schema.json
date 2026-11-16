@@ -851,7 +851,7 @@
       ]
     },
     "signOff": {
-      "description": "The practitioner's sign-off evidence (CA-04; owner ruling 151; design calls CD-48, CD-53, CD-75, CD-76, CD-81 and CD-82, PROPOSED, against openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 4cfef0a) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at b7d37a5), both unratified drafts; the field names are re-checked when they settle). It records: the action signed off; the openwallet_id that signed; the key that made the proof, by its DID URL and fingerprint; the licence verification relied on, named by reference and SHA-256 and kept once beside the records, with the licence facts it states, the licence the grant relied on names (covers), the revocation list used and the provenance of the verifier key; the single-use challenge; the SHA-256 of the sign-off statement, which is the digest the practitioner's wallet-challenge-proof is made over; the openSig attestation itself, exactly as openSig issued it; the SHA-256 of the provenance; the custody model the key declares, with custody_basis declared; and the check's result. The statement is the RFC 8785 canonical JSON of: act_id, act_version, patient, act_class, act_type, action, signature_role (author, cosigner or actor), signer_ref, attestation, content_sha256, provenance_sha256, signed_at, challenge_ref and, for an encounter, manifest_sha256. openSig never receives it; it receives only its digest. The signer is the session account that re-authenticated; the audit verifier recomputes every digest, re-verifies the attestation, the sealed proof and the licence verification, and treats a mismatch as an integrity failure (CA-08).",
+      "description": "The practitioner's sign-off evidence (CA-04; owner ruling 151; owner rulings 208 to 213; design calls CD-48, CD-53, CD-75, CD-76 and CD-81 to CD-84, PROPOSED, against openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 4cfef0a) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at b7d37a5), both unratified drafts; the field names are re-checked when they settle). It records: the action signed off; the openwallet_id that signed; the key that made the proof, by its DID URL and fingerprint; the licence verification relied on, named by reference and SHA-256 and kept once beside the records, with the licence facts it states, the licence the grant relied on names (covers), the revocation list used and the provenance of the verifier key; the single-use challenge; the SHA-256 of the sign-off statement, which is the digest the practitioner's proof is made over, under the proof profile it names; the openSig attestation itself, exactly as openSig issued it; the SHA-256 of the provenance; the custody model the key declares, with custody_basis declared; and the check's result. The statement is the RFC 8785 canonical JSON of: act_id, act_version, patient, act_class, act_type, action, signature_role (author, cosigner or actor), signer_ref, attestation, content_sha256, provenance_sha256, signed_at, challenge_ref and, for an encounter, manifest_sha256. openSig never receives it; it receives only its digest. The signer is the session account that re-authenticated; the audit verifier recomputes every digest, re-verifies the attestation, the sealed proof and the licence verification, and treats a mismatch as an integrity failure (CA-08).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -910,7 +910,10 @@
               "description": "When the verifier checked the licence against its source (the verification's source.checked_at).",
               "$ref": "#/$defs/timestamp"
             },
-            "rely_until": { "description": "The verification's reliance bound.", "$ref": "#/$defs/timestamp" },
+            "rely_until": {
+              "description": "The verification's reliance bound: until the licence itself expires, and at most 12 months (owner ruling 213). openChart never relies on a verification later than 12 months after verified_at, whatever bound it states (design call CD-81, PROPOSED).",
+              "$ref": "#/$defs/timestamp"
+            },
             "authority": {
               "description": "The licensing authority, by the identifier the held verifier key is scoped to.",
               "$ref": "#/$defs/opaqueRef"
@@ -936,7 +939,7 @@
               }
             },
             "revocation_list": {
-              "description": "The verifier's newest revocation list the deployment held at reliance, and how old it was. A list older than the deployment's freshness bound flags the reliance (stale) and raises it; it never blocks it (design call CD-81, PROPOSED).",
+              "description": "The verifier's newest revocation list the deployment held at reliance, and how old it was. A list that cannot be fetched never stops a sign-off; the newest list held is used, its age is recorded, and the medical director is alerted once it is over 72 hours old (owner ruling 212). stale is true exactly when age_seconds is over 259200, 72 hours, and flags the reliance (design call CD-81, PROPOSED).",
               "type": "object",
               "additionalProperties": false,
               "required": ["verifier_ref", "sequence", "issued_at", "age_seconds", "stale"],
@@ -949,7 +952,7 @@
               }
             },
             "verifier_key": {
-              "description": "The held verifier key the verification was checked under, and its provenance. In version 1 every held verifier key ships with a release of openChart (design call CD-82, PROPOSED).",
+              "description": "The held verifier key the verification was checked under, and its provenance. The verifier is independent of the practice (owner ruling 210), and the first practice's verifier key is shipped in openChart (owner ruling 211); that version 1 admits a verifier key by no other path is design call CD-82, PROPOSED.",
               "type": "object",
               "additionalProperties": false,
               "required": ["fingerprint", "provenance", "release_ref"],
@@ -1001,7 +1004,10 @@
             "relying_party_ref": { "$ref": "#/$defs/opaqueRef" },
             "challenge_ref": { "$ref": "#/$defs/challengeRef" },
             "challenge_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
-            "proof": { "description": "openWallet's wallet-challenge-proof, exactly as received.", "type": "object" },
+            "proof": {
+              "description": "The practitioner's proof, exactly as received, made with a passkey or a security key under the proof profile it names (owner ruling 208). openChart verifies it by openWallet's verification for that profile, under the sealed public key, over its own recomputed statement_sha256 (design call CD-75, PROPOSED). Its inner fields are that profile's to define.",
+              "type": "object"
+            },
             "binding": {
               "description": "The key binding the proof was checked against, as the registry returned it, with its public key.",
               "type": "object"
@@ -1030,7 +1036,7 @@
           "$ref": "#/$defs/sha256"
         },
         "custody_model": {
-          "description": "The declared custody model of the wallet key that signed. It is isolated_per_use_authorized, the one model in openWallet's closed custody registry (opensoft/openWallet-code bb0e9da, contracts/openxwallet/openxwallet-custody.registry.yaml, registry_version 1) whose signature evidences that the holder acted; holder_readable and isolated_invocable evidence only the environment (CA-04).",
+          "description": "The declared custody model of the wallet key that signed. Against openWallet's ratified closed custody registry (opensoft/openWallet-code bb0e9da, contracts/openxwallet/openxwallet-custody.registry.yaml, registry_version 1) it is isolated_per_use_authorized, the one model whose signature evidences that the holder acted; holder_readable and isolated_invocable evidence only the environment. Which keys sign is owner rulings 208 and 209: a passkey or a security key, a security key always, and a passkey that syncs only on a device the practitioner has enrolled. If the proof profile openWallet ratifies for passkeys and security keys has a key those rulings admit declare another model, this contract follows it (CA-04; design calls CD-48 and CD-83, PROPOSED).",
           "const": "isolated_per_use_authorized"
         },
         "custody_basis": {
@@ -1291,7 +1297,7 @@
       }
     },
     "documentContent": {
-      "description": "The minimal closed shape for a document kept as a record of information, such as a summary, a letter or an imported record (AN-06; design call CD-65, PROPOSED): a title, a date, text, and attachments by reference and digest. It has no structured clinical field. Anything structured fails it and becomes a recommendation; a structured clinical format needs a shape published by its own path.",
+      "description": "The closed shape for a document kept as a record of information, such as a summary, a letter or an imported record. Owner ruling 204 sets its format until richer formats are defined: a title, a date, text, and attached PDFs or pictures that are only displayed; anything structured still becomes a recommendation (AN-06). Its field names, media types and limits are design call CD-65, PROPOSED. It has no structured clinical field. Anything structured fails it and becomes a recommendation; a structured clinical format needs a shape published by its own path.",
       "type": "object",
       "additionalProperties": false,
       "required": ["title", "date"],
@@ -1312,14 +1318,14 @@
       ]
     },
     "documentAttachment": {
-      "description": "A file attached to a document, by reference and SHA-256. It is opaque: openChart never parses it for clinical structure and never executes it, and accepts only media types that are only displayed.",
+      "description": "A file attached to a document, by reference and SHA-256: a PDF or a picture that is only displayed (owner ruling 204). It is opaque: openChart never parses it for clinical structure and never executes it.",
       "type": "object",
       "additionalProperties": false,
       "required": ["ref", "sha256", "media_type"],
       "properties": {
         "ref": { "$ref": "#/$defs/opaqueRef" },
         "sha256": { "$ref": "#/$defs/sha256" },
-        "media_type": { "enum": ["text/plain", "application/pdf", "image/png", "image/jpeg"] },
+        "media_type": { "enum": ["application/pdf", "image/png", "image/jpeg"] },
         "title": { "type": "string", "minLength": 1, "maxLength": 500 }
       }
     },
@@ -1821,7 +1827,7 @@
       ]
     },
     "adoptionFailure": {
-      "description": "Why an adoption did not complete (AN-11): a missing-authority code, a failed act-validity rule, a sign-off failure of one of the four kinds of design call CD-79 (PROPOSED), or a gate refusal (RX-02, RX-03). licence_verification_not_checkable is openWallet's not_checkable, which only the deployment can cure; attestation_request_refused is openSig's refusal of openChart's own request or credential, which only the deployment can cure; attestation_replay_refused is openSig's refusal of a repeated challenge reference or digest, cured by a new challenge and raised as a possible replay.",
+      "description": "Why an adoption did not complete (AN-11): a missing-authority code, a failed act-validity rule, a sign-off failure of one of the four kinds of design call CD-79 (PROPOSED), or a gate refusal (RX-02, RX-03). licence_verification_not_checkable is openWallet's not_checkable, which only the deployment can cure; attestation_request_refused is openSig's refusal of openChart's own request or credential, which only the deployment can cure; attestation_replay_refused is openSig's refusal of a repeated challenge reference or digest, cured by a new challenge and raised as a possible replay; signing_device_not_enrolled is a sign-off with a passkey that syncs from a device the practitioner has not enrolled, cured only by the practitioner's own enrolment or a security key (owner ruling 209; design call CD-83, PROPOSED).",
       "enum": [
         "no_grant_in_force",
         "no_decision_authority",
@@ -1842,7 +1848,8 @@
         "controlled_classification_not_permitted",
         "licence_verification_not_checkable",
         "attestation_request_refused",
-        "attestation_replay_refused"
+        "attestation_replay_refused",
+        "signing_device_not_enrolled"
       ]
     }
   }

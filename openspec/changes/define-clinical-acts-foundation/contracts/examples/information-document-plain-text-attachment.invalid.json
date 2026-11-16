@@ -1,0 +1,47 @@
+{
+  "contract": "openchart-clinical-act-content",
+  "contract_version": "1.0",
+  "record_kind": "information",
+  "information_id": "SYN-INFO-0003",
+  "patient": {
+    "issuer": "SYN-OPENCHART-ISSUER-01",
+    "namespace": "openchart",
+    "value": "OC-PAT-90001"
+  },
+  "entry_class": "information",
+  "not_signed_off": true,
+  "act_class": "document",
+  "act_type": "discharge_summary",
+  "content": {
+    "title": "SYN synthetic discharge summary from another organization",
+    "date": "2026-11-12",
+    "text": "SYN synthetic summary text. No real patient.",
+    "attachments": [
+      {
+        "ref": "SYN-ATT-0001",
+        "sha256": "6e0e5fe85e79c85dd59b023082035a067572474def086442e020ce981972fe06",
+        "media_type": "text/plain",
+        "title": "SYN scanned letter"
+      }
+    ]
+  },
+  "provenance": {
+    "received_at": "2026-11-15T16:50:00Z",
+    "source": {
+      "kind": "external_record",
+      "ref": "SYN-EXT-DOC-0101"
+    },
+    "added_by": {
+      "kind": "system",
+      "identity_basis": {
+        "basis": "verified_by_chart"
+      },
+      "system_id": "SYN-SYS-INTEG-02",
+      "operator_ref": "SYN-OPERATOR-01"
+    }
+  },
+  "receipt": {
+    "code": "kept_as_information",
+    "sent_at": "2026-11-15T16:50:00Z"
+  }
+}

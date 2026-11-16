@@ -92,6 +92,13 @@
         "reasons": [
           "attestation_replay_refused"
         ]
+      },
+      {
+        "by_ref": "SYN-USER-CLIN-0001",
+        "at": "2026-11-15T09:40:00Z",
+        "reasons": [
+          "signing_device_not_enrolled"
+        ]
       }
     ]
   }

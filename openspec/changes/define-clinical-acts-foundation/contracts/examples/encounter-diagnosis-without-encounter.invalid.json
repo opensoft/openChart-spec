@@ -123,7 +123,7 @@
           "challenge_ref": "WVwgx2sFUzboc_X3Jp_hj3XzNowJ5J5qGsq9uc2nCI4",
           "challenge_digest": "sha256:841909061d65c812f4be9525fe00ead047160595c21ff2686aa4ff364d39bc0c",
           "proof": {
-            "profile": "openwallet.challenge-proof.v0",
+            "profile": "syn-proof-profile",
             "wallet_ref": "wal-practitioner-SYN-0001",
             "key_ref": "did:key:zSYN0001#signoff-1",
             "challenge_digest": "sha256:841909061d65c812f4be9525fe00ead047160595c21ff2686aa4ff364d39bc0c",
@@ -151,7 +151,7 @@
           "unresolved": [],
           "result": "verified",
           "verification": {
-            "profile": "openwallet.challenge-proof.v0",
+            "profile": "syn-proof-profile",
             "openwallet_release": "SYN-OPENWALLET-RELEASE"
           },
           "attested_at": "2026-11-15T10:30:00Z",
