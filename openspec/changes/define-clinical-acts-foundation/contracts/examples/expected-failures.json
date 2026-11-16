@@ -67,9 +67,9 @@
     "expect_in_error": "'occurred_at_defaulted' is a required property",
     "reason": "the time as declared is kept only beside a defaulted time (AN-04, CD-73)"
   },
-  "defaulted-time-not-receipt.integrity-invalid.json": {
+  "defaulted-time-later-than-receipt.integrity-invalid.json": {
     "expect_in_error": "occurred_at_defaulted",
-    "reason": "a defaulted time is the time of receipt (CD-73)"
+    "reason": "a defaulted time is the time the path received the item, never later than the chart's receipt (CD-73)"
   },
   "derived-from-unknown-kind.invalid.json": {
     "expect_in_error": "source_kind",
@@ -355,6 +355,10 @@
     "expect_in_error": "rely_until",
     "reason": "a verification past its reliance bound supports no sign-off (CD-75)"
   },
+  "sign-off-after-the-licence-expired.integrity-invalid.json": {
+    "expect_in_error": "expir",
+    "reason": "a verification is relied on only until the licence itself expires (owner ruling 213; CD-81)"
+  },
   "sign-off-attestation-by-reference-only.invalid.json": {
     "expect_in_error": "Additional properties are not allowed ('opensig_attestation_ref'",
     "reason": "the attestation is kept itself, not by reference (CD-76)"
@@ -379,6 +383,14 @@
     "expect_in_error": "[] was expected",
     "reason": "a sign-off carries only a verified attestation, which resolved every value (CD-76)"
   },
+  "sign-off-backup-flags-not-the-ones-sealed.integrity-invalid.json": {
+    "expect_in_error": "backup",
+    "reason": "the backup flags the sign-off records are those the authenticator signed and the attestation sealed (CD-83)"
+  },
+  "sign-off-backup-state-without-eligibility.invalid.json": {
+    "expect_in_error": "True was expected",
+    "reason": "a credential is backed up only where it is eligible for backup (the passkey profile; CD-83)"
+  },
   "sign-off-challenge-not-opaque.invalid.json": {
     "expect_in_error": "does not match '^[A-Za-z0-9_-]{42}",
     "reason": "a challenge reference is 32 random bytes in unpadded base64url and carries no meaning (CD-53)"
@@ -387,9 +399,13 @@
     "expect_in_error": "'declared' was expected",
     "reason": "no record yet shows a key's custody beyond what its wallet declares (CD-76)"
   },
-  "sign-off-holder-readable-custody.invalid.json": {
-    "expect_in_error": "isolated_per_use_authorized",
-    "reason": "only a key whose custody evidences that the holder acted can sign off (CA-04; openWallet's custody registry)"
+  "sign-off-custody-not-the-one-sealed.integrity-invalid.json": {
+    "expect_in_error": "custody",
+    "reason": "the custody the sign-off records is the custody the attestation sealed (CD-48)"
+  },
+  "sign-off-custody-outside-the-registry.invalid.json": {
+    "expect_in_error": "is not one of",
+    "reason": "a key's custody is a model of openWallet's ratified custody registry; a model drafted but not ratified is not one (CA-04, CD-48)"
   },
   "sign-off-jurisdiction-not-iso.invalid.json": {
     "expect_in_error": "does not match '^[A-Z]{2}",
@@ -415,9 +431,17 @@
     "expect_in_error": "age_seconds",
     "reason": "the recorded age of the revocation list is not its age at reliance (CD-81)"
   },
+  "sign-off-synced-passkey-without-enrolled-device.invalid.json": {
+    "expect_in_error": "'enrolled_device_ref' is a required property",
+    "reason": "a passkey that syncs counts only on a device the practitioner has enrolled (owner ruling 209; AU-07, CD-83)"
+  },
   "sign-off-two-person-verifier-key.invalid.json": {
     "expect_in_error": "'release' was expected",
     "reason": "in version 1 every held verifier key ships with a release of openChart (CD-82)"
+  },
+  "sign-off-verifier-key-not-held-for-the-authority.integrity-invalid.json": {
+    "expect_in_error": "held for",
+    "reason": "a verifier key held for one licensing authority is never relied on for another (CD-75)"
   },
   "sign-off-without-key-ref.invalid.json": {
     "expect_in_error": "'key_ref' is a required property",

@@ -100,6 +100,7 @@
           "jurisdiction": "ZZ",
           "licence_id": "SYN-LIC-0001",
           "licence_class": "SYN physician (synthetic)",
+          "licence_expires_on": "2028-03-31",
           "covers": {
             "grant_ref": "SYN-GRANT-0001:v3",
             "authority": "SYN-LICENSING-AUTHORITY-01",
@@ -116,7 +117,10 @@
           "verifier_key": {
             "fingerprint": "sha256:d3bf4ada1c7111188e8165b80c29a69d108bf1b47ec9b20e73c4863801f7963b",
             "provenance": "release",
-            "release_ref": "SYN-OPENCHART-RELEASE-1.0.0"
+            "release_ref": "SYN-OPENCHART-RELEASE-1.0.0",
+            "held_for": [
+              "SYN-LICENSING-AUTHORITY-01"
+            ]
           }
         },
         "challenge_ref": "rr5IYTKsEkpcTWnbeSPdUh3nbnjR6Rm5cdJWPuz6Vts",
@@ -146,6 +150,12 @@
             "public_key": "SYN-PUBLIC-KEY-SYN-USER-CLIN-0001"
           },
           "key_fingerprint": "sha256:691001c2a3f968389bda3566184811ac7caac94c9374fc874a1bb4b0aa3fe48d",
+          "authenticator_flags": {
+            "user_present": true,
+            "user_verified": true,
+            "backup_eligible": false,
+            "backup_state": false
+          },
           "custody": {
             "model": "isolated_per_use_authorized",
             "registry_version": 1,
@@ -172,6 +182,8 @@
         "provenance_sha256": "b3efc9cf83c6d00a5ce799e701cd4b4ba12d0ef1d1c8114dd4f87610a4d4feb7",
         "custody_model": "isolated_per_use_authorized",
         "custody_basis": "declared",
+        "backup_eligible": false,
+        "backup_state": false,
         "check": {
           "result": "passed",
           "checked_at": "2026-11-15T10:30:00Z"

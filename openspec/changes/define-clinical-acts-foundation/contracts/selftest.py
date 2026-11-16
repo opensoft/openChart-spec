@@ -39,8 +39,9 @@ Checks:
        first_received_at <= released_at <= received_at, and a held item
        ends once: no two records of the store carry the same
        held_item_ref;
-     - a defaulted time is the time of receipt, and a time as declared that
-       was kept beside it is later than receipt (design call CD-73);
+     - a defaulted time is the time the path received the item, never later
+       than the chart's receipt, and a time as declared that
+       was kept beside it is later than that time (design call CD-73);
      - a signed act records a signed lifecycle event (reported, not a
        crash, when it is missing);
      - each sign-off's evidence agrees with itself (design calls CD-75 to
@@ -54,7 +55,12 @@ Checks:
        ruling 213; design call CD-81); the revocation list used was issued
        before the sign-off, by the verification's verifier, its recorded age
        is its age at the sign-off, and it is flagged stale exactly when that
-       age is over 72 hours (owner ruling 212). The self-test does not verify Ed25519
+       age is over 72 hours (owner ruling 212); the verifier key is held for
+       the licensing authority the verification names, and the sign-off is
+       not on a later day than the licence's own expiry where one is stated
+       (design calls CD-75 and CD-81); the custody and the backup flags the
+       sign-off records are those the attestation sealed (design calls CD-48
+       and CD-83). The self-test does not verify Ed25519
        signatures: the synthetic fixtures carry placeholders, and the
        production audit verifier re-verifies openSig's signature, the sealed
        proof and the licence verification (CA-08);
@@ -196,11 +202,12 @@ def verify(record, records=()):
             problems.append("provenance/released_from_quarantine: released before it first arrived")
     prov_ = record.get("provenance") or {}
     if prov_.get("occurred_at_defaulted"):
-        if prov_.get("occurred_at") != prov_.get("received_at"):
-            problems.append("provenance/occurred_at_defaulted: a defaulted time is not the time of receipt")
+        occurred, received = prov_.get("occurred_at"), prov_.get("received_at")
+        if not (occurred and real_time(occurred) and real_time(received) and parse(occurred) <= parse(received)):
+            problems.append("provenance/occurred_at_defaulted: a defaulted time is the time the path received the item, never later than the chart's receipt")
         declared = prov_.get("occurred_at_as_declared")
-        if declared and real_time(declared) and real_time(prov_["received_at"]) and parse(declared) <= parse(prov_["received_at"]):
-            problems.append("provenance/occurred_at_as_declared: kept as declared, but it is not later than receipt")
+        if declared and occurred and real_time(declared) and real_time(occurred) and parse(declared) <= parse(occurred):
+            problems.append("provenance/occurred_at_as_declared: kept as declared, but it is not later than the time the path received the item")
     if record.get("record_kind") != "act_version":
         return problems
     content, provenance = record["content"], record["provenance"]
@@ -249,6 +256,20 @@ def verify(record, records=()):
                 problems.append(f"{where}: the revocation list used was issued after the sign-off")
             elif int((at - listed).total_seconds()) != lv["revocation_list"]["age_seconds"]:
                 problems.append(f"{where}: the revocation list's age_seconds is not its age at the sign-off")
+        if isinstance(att.get("custody"), dict) and "model" in att["custody"] and att["custody"]["model"] != so["custody_model"]:
+            problems.append(f"{where}: the custody the sign-off records is not the custody the attestation sealed")
+        flags = att.get("authenticator_flags")
+        if isinstance(flags, dict) and any(k in flags and flags[k] != so[k] for k in ("backup_eligible", "backup_state")):
+            problems.append(f"{where}: the backup flags the sign-off records are not those the attestation sealed")
+        if lv["authority"] not in lv["verifier_key"]["held_for"]:
+            problems.append(f"{where}: the verifier key is not held for the licensing authority the verification names")
+        exp = lv.get("licence_expires_on")
+        if exp and real_time(so["check"]["checked_at"]) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", exp):
+            try:
+                if parse(so["check"]["checked_at"]).date() > datetime.date.fromisoformat(exp):
+                    problems.append(f"{where}: the sign-off relies on the verification after the licence's own expiry")
+            except ValueError:
+                problems.append(f"{where}: licence_expires_on is not a real calendar date")
         if lv["revocation_list"]["stale"] != (lv["revocation_list"]["age_seconds"] > 72 * 3600):
             problems.append(f"{where}: the revocation list's stale flag is not whether it was over 72 hours old at the sign-off")
         if lv["revocation_list"]["verifier_ref"] != lv["verifier_ref"]:
