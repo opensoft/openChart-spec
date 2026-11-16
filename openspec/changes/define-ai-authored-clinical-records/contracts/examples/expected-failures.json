@@ -3,10 +3,6 @@
     "expect_in_error": "Additional properties are not allowed ('note' was unexpected)",
     "reason": "a status message carries codes only, never free text (AW-07)"
   },
-  "act-write-discontinue-without-target.invalid.json": {
-    "expect_in_error": "'target_record_ref' is a required property",
-    "reason": "an action on an existing record names it (AW-16, AD-68)"
-  },
   "act-write-missing-act-class.invalid.json": {
     "expect_in_error": "'act_class' is a required property",
     "reason": "an act's class is part of its content object: an act with none cannot be read as an act (ruling 188; AN-12)"
@@ -14,18 +10,6 @@
   "act-write-missing-act-content.invalid.json": {
     "expect_in_error": "'act_content' is a required property",
     "reason": "a write with no content object is malformed (ruling 188; AN-12)"
-  },
-  "act-write-sign-with-target.invalid.json": {
-    "expect_in_error": "[1, 'allOf', 2, 'then', 'not']",
-    "reason": "a sign-off of new content names no existing record (AN-09; AD-68)"
-  },
-  "act-write-source-clinician-observation.invalid.json": {
-    "expect_in_error": "source/kind 'ai_consult' was expected",
-    "reason": "an AI's act is the AI's own output, never a clinician's observation (AW-15)"
-  },
-  "act-write-unknown-action.invalid.json": {
-    "expect_in_error": "action 'approve' is not one of ['sign', 'new_version', 'cosign', 'discontinue', 'enter_in_error', 'cancel']",
-    "reason": "the AI's intended action is one of the foundation's action codes (AD-68)"
   },
   "authority-notice-cap-suspended.invalid.json": {
     "expect_in_error": "[2, 'properties', 'change', 'enum']",
@@ -53,15 +37,7 @@
   },
   "consult-write-bad-message-id.invalid.json": {
     "expect_in_error": "message_id 'SYN-not-a-uuid' does not match '^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'",
-    "reason": "message_id is a UUID, checked by pattern (AW-01)"
-  },
-  "consult-write-bad-timestamp.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'sent_at', 'pattern']",
-    "reason": "a timestamp has the foundation's RFC 3339 pattern (AW-01)"
-  },
-  "consult-write-clinician-turn.invalid.json": {
-    "expect_in_error": "exchange/turns/1/author_type 'clinician' is not one of ['patient', 'representative', 'ai']",
-    "reason": "a consult turn is never clinician-authored (AC-02)"
+    "reason": "message_id is a UUID, checked by pattern; a record identifier that cannot be read refuses the write (AW-01; AD-63)"
   },
   "consult-write-major-2.invalid.json": {
     "expect_in_error": "contract_version '2.0' does not match '^1\\\\.(0|[1-9][0-9]*)$'",
@@ -71,65 +47,41 @@
     "expect_in_error": "'added_by' is a required property",
     "reason": "every write names its writer (ruling 80, clause 6; AW-02)"
   },
+  "consult-write-missing-consult-id.invalid.json": {
+    "expect_in_error": "'consult_id' is a required property",
+    "reason": "a consult with no record identifiers cannot be stored, versioned or answered as a repeat: refused, one of the closed list (ruling 188; AD-63)"
+  },
+  "consult-write-missing-context.invalid.json": {
+    "expect_in_error": "'context' is a required property",
+    "reason": "a write that declares no context cannot be told from test data: refused, one of the closed list of what is still refused (ruling 188; AW-04; AD-63)"
+  },
   "consult-write-missing-exchange.invalid.json": {
     "expect_in_error": "'exchange' is a required property",
     "reason": "a consult with no exchange has no content object (ruling 188; AN-12)"
   },
-  "consult-write-no-ai-turn.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'exchange', 'properties', 'turns', 'contains']",
-    "reason": "a consult contains at least one AI turn (AC-02)"
-  },
-  "consult-write-on-behalf-of-party-not-object.invalid.json": {
-    "expect_in_error": "on_behalf_of/0 'did:example:syn-ai-wallet-0001' is not of type 'object'",
-    "reason": "every party of on_behalf_of is an object, bounded as partyAsGiven states; a party that is not one is an envelope that cannot be read (AW-02; AD-60)"
-  },
   "consult-write-on-behalf-of-seventeen-parties.invalid.json": {
     "expect_in_error": "[0, 'properties', 'on_behalf_of', 'maxItems']",
-    "reason": "on_behalf_of names at most 16 parties, eight times the two this path reads; a longer list is an envelope that cannot be read (AW-02; AD-60)"
+    "reason": "on_behalf_of names at most 16 parties, eight times the two this path reads; a longer list is beyond the bounds, one of the closed list of what is still refused (AW-02; AD-60, AD-63)"
   },
   "consult-write-openwallet-id-beyond-bound.invalid.json": {
     "expect_in_error": "[0, 'properties', 'on_behalf_of', 'items', 'additionalProperties', 'maxLength']",
-    "reason": "a value beyond 1024 characters is not an identifier written wrong but something else in its place, and only such a value is an envelope that cannot be read (AW-02; AD-60)"
+    "reason": "a value beyond 1024 characters is not an identifier written wrong but something else in its place: beyond the bounds, one of the closed list of what is still refused (AW-02; AD-60, AD-63)"
   },
   "consult-write-patient-not-openchart-namespace.invalid.json": {
     "expect_in_error": "patient/namespace 'openchart' was expected",
     "reason": "the patient is named by the openChart triple (AW-03)"
   },
-  "consult-write-patient-turn-knowledge-basis.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'exchange', 'properties', 'turns', 'items', 'else', 'not']",
-    "reason": "only an AI turn carries a knowledge basis (AC-03)"
-  },
-  "consult-write-source-healthlinc.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'source_system', 'properties', 'namespace', 'allOf', 1, 'not']",
-    "reason": "healthlinc is never a write-path system (AD-30)"
-  },
-  "consult-write-source-kind-not-ai-consult.invalid.json": {
-    "expect_in_error": "source/kind 'ai_consult' was expected",
-    "reason": "a consult's source is always ai_consult (AW-15)"
-  },
-  "consult-write-source-openpractice-agent.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'source_system', 'properties', 'namespace', 'allOf', 1, 'not']",
-    "reason": "openpractice_agent is never a write-path system (AD-30)"
-  },
   "consult-write-source-ref-openchart-namespace.invalid.json": {
     "expect_in_error": "[0, 'properties', 'source_patient_ref', 'properties', 'namespace', 'allOf', 1, 'not']",
     "reason": "the source system's patient reference is never in the openchart namespace (AW-03)"
   },
-  "consult-write-structured-attachment.invalid.json": {
-    "expect_in_error": "exchange/turns/0/attachments/0/media_type 'application/fhir+json' is not one of ['text/plain', 'application/pdf', 'image/png', 'image/jpeg']",
-    "reason": "an attachment is display-only; a structured clinical format cannot travel in a consult (AC-04; m1)"
-  },
-  "consult-write-timestamp-ten-fraction-digits.invalid.json": {
-    "expect_in_error": "[0, 'properties', 'sent_at', 'pattern']",
-    "reason": "the foundation's timestamp pattern allows at most nine fractional-second digits (AW-01)"
-  },
-  "consult-write-unknown-property.invalid.json": {
-    "expect_in_error": "Additional properties are not allowed ('diagnosis' was unexpected)",
-    "reason": "every object of a write is closed (AW-01)"
+  "consult-write-summary-beyond-bound.invalid.json": {
+    "expect_in_error": "[0, 'properties', 'summary', 'additionalProperties', 'maxLength']",
+    "reason": "a declaration beyond the bounds the schema sets (a string of more than 20000 characters) is not a value written wrong but something else in its place: refused, one of the closed list (AD-63, AD-74)"
   },
   "consult-write-writer-healthlinc.invalid.json": {
     "expect_in_error": "[0, 'properties', 'added_by', 'properties', 'system', 'properties', 'namespace', 'allOf', 1, 'not']",
-    "reason": "healthlinc is never a writer (AD-30)"
+    "reason": "healthlinc is never a writer, so no such writer is registered (AD-30; AD-63)"
   },
   "consult-write-writer-without-operator.invalid.json": {
     "expect_in_error": "added_by 'operator_ref' is a required property",
@@ -256,11 +208,11 @@
     "reason": "in 1.0 no receipt says an act was accepted (ruling 157; m5)"
   },
   "write-receipt-accepted-with-missing-authority.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 4, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 5, 'then', 'not']",
     "reason": "an accepted write carries no missing-authority code (AW-06)"
   },
   "write-receipt-accepted-with-reason.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 4, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 5, 'then', 'not']",
     "reason": "an accepted write carries no refusal reason (AW-06)"
   },
   "write-receipt-co-review-due-at.invalid.json": {
@@ -268,7 +220,7 @@
     "reason": "a co-review due time is an accepted act's, which the Tier 2 MINOR version adds (ruling 157; m5)"
   },
   "write-receipt-consent-flag-on-quarantined.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 0, 'then', 'anyOf']",
+    "expect_in_error": "[3, 'allOf', 1, 'then', 'anyOf']",
     "reason": "consent_ref_missing is a recommendation's flag; a quarantined write carries the code as its cause (AD-62)"
   },
   "write-receipt-consent-path-without-flag.invalid.json": {
@@ -276,7 +228,7 @@
     "reason": "a recommendation whose path code is consent_ref_missing carries the flag too (AD-62)"
   },
   "write-receipt-duplicate-accepted-with-codes.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 8, 'then', 'allOf', 0, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 9, 'then', 'allOf', 0, 'then', 'not']",
     "reason": "a duplicate of an accepted write carries no authority codes (AW-05)"
   },
   "write-receipt-duplicate-of-accepted-act.invalid.json": {
@@ -292,7 +244,7 @@
     "reason": "only an act.write declared clinical_note or document whose content validates as that kind's shape is kept as information; a consult record is MI-12's record (AC-04, AD-68)"
   },
   "write-receipt-notice-with-submission-conflict.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 2, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 3, 'then', 'not']",
     "reason": "a notice has no record identifiers to conflict (AW-05)"
   },
   "write-receipt-quarantined-source-cap-suspended.invalid.json": {
@@ -304,11 +256,11 @@
     "reason": "a quarantined write was kept, and its receipt names the record (AD-52)"
   },
   "write-receipt-recommendation-both-codes.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 5, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'not']",
+    "expect_in_error": "[3, 'allOf', 6, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'not']",
     "reason": "each path code maps to exactly one foundation code (AD-57)"
   },
   "write-receipt-recommendation-code-not-mapped.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 5, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'contains']",
+    "expect_in_error": "[3, 'allOf', 6, 'then', 'allOf', 0, 'allOf', 0, 'then', 'properties', 'missing_authority', 'contains']",
     "reason": "tier2_not_in_force maps to no_decision_authority (AD-57); the code set both lacks the mapped code and holds the other",
     "error_count": 2
   },
@@ -348,8 +300,12 @@
     "expect_in_error": "[3, 'properties', 'reason', 'enum']",
     "reason": "missing authority never refuses a write (ruling 80, clause 18)"
   },
+  "write-receipt-refused-with-set-aside.invalid.json": {
+    "expect_in_error": "[3, 'allOf', 0, 'then', 'not']",
+    "reason": "a refused write stored nothing, so it set nothing aside (AD-74)"
+  },
   "write-receipt-refused-with-submission-conflict.invalid.json": {
-    "expect_in_error": "[3, 'allOf', 3, 'then', 'not']",
+    "expect_in_error": "[3, 'allOf', 4, 'then', 'not']",
     "reason": "a refused write stored nothing, so nothing conflicts (AW-05)"
   },
   "write-receipt-refused-without-reason.invalid.json": {

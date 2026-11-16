@@ -23,11 +23,11 @@ Checks:
      examples/expected-outcomes.json stating what openChart does with it,
      whose codes are codes of this schema, and every entry has a fixture;
   6. beside the schema, for every valid fixture: exchange.content_sha256
-     recomputes from exchange.turns (RFC 8785); and every timestamp names a
-     real calendar day, which openChart refuses as malformed otherwise
-     (AW-01), except a time a write declares for its information
-     (started_at, ended_at, occurred_at), which openChart replaces with the
-     time of receipt instead (AW-15, AD-70);
+     recomputes from exchange.turns (RFC 8785); and every timestamp of a
+     message other than a write names a real calendar day, which openChart
+     refuses as malformed otherwise (AW-01). No time a write gives is
+     refused: openChart replaces it with the time of receipt, or shows a
+     turn's time as not stated (AW-15, AD-70);
   7. the part of AW-06's AI check that a write's own content decides
      (AD-60): every valid write that it holds, because its on_behalf_of
      cannot be read as the AI alone (from the source system's own
@@ -36,7 +36,15 @@ Checks:
      outcome quarantined with that cause (ai_not_identified or
      openwallet_id_missing), and no other write has. Coverage by a
      registration is openChart's to judge, not the message's;
-  8. every examples/*.calendar-invalid.json validates and fails only the
+  8. the rule of AW-01 and AD-63 for every valid write: each declaration
+     is judged against its form in $defs/declarationForms (each authority
+     field against $defs/authorityClaim, each consult turn against
+     $defs/consultTurn, the times as AD-70 reads them, the action against
+     the target), and the fields set aside, by the names of
+     $defs/setAsideField, equal the expected outcome's set_aside, together
+     with any field its set_aside_at_receipt names because it depends on
+     the time of receipt (AD-74, AD-75);
+  9. every examples/*.calendar-invalid.json validates and fails only the
      calendar check.
 The digests use canonical JSON with sorted keys and no whitespace, which
 equals RFC 8785 for the strings, integers and booleans the fixtures use.
@@ -56,7 +64,6 @@ SCHEMA = HERE / "openchart-ai-clinical-record-write-1.0.schema.json"
 EXAMPLES = HERE / "examples"
 MANIFESTS = {"expected-failures.json", "expected-outcomes.json"}
 WRITES = ("consult.write", "act.write")
-DECLARED_TIMES = ("started_at", "ended_at", "occurred_at")
 HELD_BY_CONTENT = ("ai_not_identified", "openwallet_id_missing")
 TIME = re.compile(r"^([0-9]{4})-([0-9]{2})-([0-9]{2})T[0-9]{2}:[0-9]{2}:[0-9]{2}(\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$")
 
@@ -94,11 +101,96 @@ def calendar_errors(obj, path="$"):
 
 
 def refused_times(doc):
-    """Timestamps naming no real calendar day that openChart refuses as malformed: every one but a time
-    a write declares for its information, which openChart replaces with the time of receipt (AW-15, AD-70)."""
-    if doc.get("message_type") in WRITES:
-        doc = {k: v for k, v in doc.items() if k not in DECLARED_TIMES}
-    return calendar_errors(doc)
+    """Timestamps naming no real calendar day that openChart refuses as malformed. No time a write gives is
+    refused: it is replaced with the time of receipt, or shown as not stated (AW-15, AD-70)."""
+    return [] if doc.get("message_type") in WRITES else calendar_errors(doc)
+
+
+def readable_time(schema, value):
+    """A time in the form of $defs/timestamp naming a real calendar day, as a comparable instant; None for
+    a time openChart cannot read (AD-70). A leap second reads as the second before it."""
+    if not isinstance(value, str) or not re.match(schema["$defs"]["timestamp"]["pattern"], value) or calendar_errors(value):
+        return None
+    head, zone = (value[:-1], "+00:00") if value.endswith("Z") else (value[:-6], value[-6:])
+    whole, _, frac = head.partition(".")
+    whole = whole[:-2] + "59" if whole.endswith(":60") else whole
+    return datetime.datetime.fromisoformat(whole + ("." + (frac + "000000")[:6] if frac else "") + zone)
+
+
+def set_aside(schema, doc):
+    """The fields of a write that openChart sets aside because their values are outside their forms
+    (AW-01, AW-06, AD-63, AD-74, AD-75), by the names of $defs/setAsideField."""
+    defs = schema["$defs"]
+    forms = defs["declarationForms"]["properties"]
+    def fits(sub, value):
+        return Draft202012Validator({"$defs": defs, **sub}).is_valid(value)
+    kind = doc["message_type"]
+    known = set(defs["consultWrite" if kind == "consult.write" else "actWrite"]["properties"])
+    out = set()
+    if set(doc) - known:
+        out.add("unknown_property")
+    for field, value in doc.items():
+        if field not in known:
+            continue
+        if field == "authority" and isinstance(value, dict):
+            claim = defs["authorityClaim"]["properties"]
+            for k, v in value.items():
+                if k not in claim:
+                    out.add("authority")
+                elif not fits(claim[k], v):
+                    out.add("authority." + k)
+        elif field in forms and field in known and field not in ("sent_at", "started_at", "ended_at", "occurred_at", "action", "target_record_ref"):
+            if not fits(forms[field], value):
+                out.add(field)
+    for field in ("sent_at", "started_at", "ended_at", "occurred_at"):
+        if field in doc and field in known and readable_time(schema, doc[field]) is None:
+            out.add(field)
+    start, end = readable_time(schema, doc.get("started_at")), readable_time(schema, doc.get("ended_at"))
+    if start and end and end < start:
+        out |= {"started_at", "ended_at"}
+    if kind == "act.write":
+        target = "target_record_ref" in doc and fits(forms["target_record_ref"], doc["target_record_ref"])
+        if "target_record_ref" in doc and not target:
+            out.add("target_record_ref")
+        if "action" in doc:
+            action = doc["action"]
+            if not fits(forms["action"], action) or (action == "sign") == target:
+                out.add("action")
+        content = doc["act_content"]
+        if set(content) - {"content", "content_schema"}:
+            out.add("unknown_property")
+        if "content_schema" in content and not fits(forms["content_schema"], content["content_schema"]):
+            out.add("act_content.content_schema")
+    else:
+        exchange = doc["exchange"]
+        if set(exchange) - {"turns", "content_sha256"}:
+            out.add("unknown_property")
+        turn_form = defs["consultTurn"]
+        authors = turn_form["properties"]["author_type"]["enum"]
+        if not any(isinstance(turn, dict) and turn.get("author_type") == "ai" for turn in exchange["turns"]):
+            out.add("exchange.turns")
+        for turn in exchange["turns"]:
+            if fits(turn_form, turn):
+                continue
+            if not isinstance(turn, dict):
+                out.add("exchange.turns")
+                continue
+            found = set()
+            if turn.get("author_type") not in authors:
+                found.add("exchange.turns.author_type")
+            if "at" not in turn or readable_time(schema, turn["at"]) is None:
+                found.add("exchange.turns.at")
+            if "attachments" in turn and not fits(turn_form["properties"]["attachments"], turn["attachments"]):
+                found.add("exchange.turns.attachments")
+            evidence = {k: turn[k] for k in ("evidence_refs", "knowledge_basis") if k in turn}
+            if evidence and (turn.get("author_type") != "ai" or not all(fits(turn_form["properties"][k], v) for k, v in evidence.items())):
+                found.add("exchange.turns.evidence")
+            rest = {k: v for k, v in turn.items() if k not in ("author_type", "at", "attachments", "evidence_refs", "knowledge_basis")}
+            if set(rest) - set(turn_form["properties"]) or not all(fits(turn_form["properties"][k], v) for k, v in rest.items()) \
+                    or not {"turn_id", "seq", "text"} <= set(rest):
+                found.add("exchange.turns")
+            out |= found or {"exchange.turns"}
+    return sorted(out)
 
 
 def beside_schema(doc):
@@ -118,7 +210,7 @@ def ai_check(schema, doc):
         return Draft202012Validator({"$defs": schema["$defs"], "$ref": "#/$defs/" + name}).is_valid(value)
     chain, src = doc.get("on_behalf_of"), doc["source_system"]
     relay = doc["added_by"].get("system") != src
-    if not chain or chain[0].get("kind") != "ai":
+    if not isinstance(chain, list) or not chain or not all(isinstance(p, dict) for p in chain) or chain[0].get("kind") != "ai":
         return "ai_not_identified"
     if relay and (len(chain) != 2 or not form("systemParty", chain[1]) or chain[1].get("system") != src):
         return "ai_not_identified"
@@ -189,6 +281,13 @@ def main():
                         if key in entry and entry[key] not in codes:
                             failures.append(f"{path.name}: expected outcome {key} {entry[key]!r} is not a code of this schema")
                     held = None if errs else ai_check(schema, doc)
+                    if not errs:
+                        fields = set(set_aside(schema, doc)) | set(entry.get("set_aside_at_receipt", []))
+                        allowed = set(defs["setAsideField"]["enum"])
+                        if fields - allowed:
+                            failures.append(f"{path.name}: set aside under names $defs/setAsideField lacks: {sorted(fields - allowed)}")
+                        if sorted(fields) != sorted(entry.get("set_aside", [])):
+                            failures.append(f"{path.name}: sets aside {sorted(fields)}, but its expected outcome says {entry.get('set_aside', [])} (AD-74)")
                     if entry.get("receipt") != "refused":
                         if held and (entry.get("receipt") != "quarantined" or entry.get("code") != held):
                             failures.append(f"{path.name}: the AI check holds it with {held}, but its expected outcome says otherwise (AW-06)")

@@ -7,7 +7,7 @@
   "practice_ref": "SYN-PRACTICE-0001",
   "source_system": {
     "issuer": "syn-ai-system.example",
-    "namespace": "openpractice_agent"
+    "namespace": "syn_ai_system"
   },
   "added_by": {
     "kind": "system",
@@ -51,11 +51,7 @@
   "consent_ref": "SYN-CONSENT-0001",
   "consult_id": "SYN-CONSULT-0001",
   "consult_version": 1,
-  "conversation_ref": {
-    "issuer": "syn-ai-system.example",
-    "namespace": "syn_ai_system",
-    "value": "SYN-CONV-0001"
-  },
+  "conversation_ref": "conv 1",
   "authority": {
     "grant_id": "SYN-GRANT-0001",
     "grant_version": 3,

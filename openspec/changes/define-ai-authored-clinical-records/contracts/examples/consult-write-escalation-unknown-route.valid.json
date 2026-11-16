@@ -7,7 +7,7 @@
   "practice_ref": "SYN-PRACTICE-0001",
   "source_system": {
     "issuer": "syn-ai-system.example",
-    "namespace": "healthlinc"
+    "namespace": "syn_ai_system"
   },
   "added_by": {
     "kind": "system",
@@ -141,6 +141,6 @@
   "review_flags": [],
   "emergency_indicated": false,
   "escalation": {
-    "routed_to": "none"
+    "routed_to": "nurse_line"
   }
 }

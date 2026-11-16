@@ -48,7 +48,7 @@
     "namespace": "syn_ai_system",
     "value": "SYN-AIPAT-0001"
   },
-  "consent_ref": "SYN-CONSENT-0001",
+  "consent_ref": "SYN CONSENT 1",
   "consult_id": "SYN-CONSULT-0001",
   "consult_version": 1,
   "conversation_ref": {
@@ -88,7 +88,7 @@
       {
         "turn_id": "SYN-TURN-0002",
         "seq": 2,
-        "author_type": "clinician",
+        "author_type": "ai",
         "at": "2026-11-14T09:00:20Z",
         "text": "SYN: Do you have fever, a stiff neck, weakness, vision changes or the worst headache of your life?"
       },
