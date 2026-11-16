@@ -343,7 +343,7 @@
       "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}$"
     },
     "challengeRef": {
-      "description": "A single-use challenge reference: 32 random bytes in unpadded base64url, carrying no meaning, the form openSig's draft accepts and seals in every attestation (design call CD-53, PROPOSED; openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 484dd16) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at 9100b3c), both unratified drafts; the field names are re-checked when they settle).",
+      "description": "A single-use challenge reference: 32 random bytes in unpadded base64url, carrying no meaning, the form openSig's draft accepts and seals in every attestation (design call CD-53, PROPOSED; openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 834db41) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at 92b097e), both unratified drafts; the field names are re-checked when they settle).",
       "type": "string",
       "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$"
     },
@@ -353,7 +353,7 @@
       "pattern": "^sha256:[0-9a-f]{64}$"
     },
     "didUrl": {
-      "description": "A key reference written as the DID URL <did>#<key_id> under which the wallet declares the key (design call CD-76, PROPOSED; openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 484dd16) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at 9100b3c), both unratified drafts; the field names are re-checked when they settle).",
+      "description": "A key reference written as the DID URL <did>#<key_id> under which the wallet declares the key (design call CD-76, PROPOSED; openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 834db41) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at 92b097e), both unratified drafts; the field names are re-checked when they settle).",
       "type": "string",
       "maxLength": 300,
       "pattern": "^did:[a-z0-9]+:[A-Za-z0-9._%:-]+#[A-Za-z0-9._~%:-]+$"
@@ -698,12 +698,16 @@
           "$ref": "#/$defs/timestamp"
         },
         "occurred_at": { "$ref": "#/$defs/timestamp" },
+        "retrieved_at": {
+          "description": "The time a path that retrieves items retrieved this one, such as the inbox. A retrieving path sets it on every addition it makes from a retrieval; it is never later than received_at (AN-04; design call CD-73, PROPOSED).",
+          "$ref": "#/$defs/timestamp"
+        },
         "occurred_at_defaulted": {
-          "description": "Set when the write gave no time the information arose, gave one that cannot be read, or declared one later than its receipt beyond a small clock skew, and its writing path set occurred_at to the time the path received the item: received_at for a write, or the retrieval time where the path retrieves items, as the inbox does, never later than received_at (AN-04; design call CD-73, PROPOSED). A missing or unreadable time is never a reason to refuse.",
+          "description": "Set when the write gave no time the information arose, gave one that cannot be read, or declared one later than its receipt beyond a small clock skew, and its writing path set occurred_at to the time the path received the item: retrieved_at where that is present, and received_at otherwise (AN-04; design call CD-73, PROPOSED). A missing or unreadable time is never a reason to refuse.",
           "const": true
         },
         "occurred_at_as_declared": {
-          "description": "Where the declared time was later than receipt beyond the clock skew: the time as the write declared it, kept with the record. Only a well-formed timestamp is kept here; a declared time that cannot be read stays on the writing path's own record of the write (AN-04; design call CD-73, PROPOSED).",
+          "description": "Where the declared time was later than receipt beyond the clock skew: the time as the write declared it, kept with the record. Only a well-formed timestamp is kept here; a declared time that cannot be read is kept as AN-12 keeps a value openChart could not read, never here (AN-04; design call CD-73, PROPOSED).",
           "$ref": "#/$defs/timestamp"
         },
         "source": {
@@ -851,7 +855,7 @@
       ]
     },
     "signOff": {
-      "description": "The practitioner's sign-off evidence (CA-04; owner ruling 151; owner rulings 208 to 213; design calls CD-48, CD-53, CD-75, CD-76 and CD-81 to CD-85, PROPOSED, against openWallet-spec change add-webauthn-proof-profile (draft pull request #11, read at 4d32fa1), whose profile the proof is made under, openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 484dd16) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at 9100b3c), both unratified drafts; the field names are re-checked when they settle). It records: the action signed off; the openwallet_id that signed; the key that made the proof, by its DID URL and fingerprint; the licence verification relied on, named by reference and SHA-256 and kept once beside the records, with the licence facts it states, the licence the grant relied on names (covers), the revocation list used and the provenance of the verifier key; the single-use challenge; the SHA-256 of the sign-off statement, which is the digest the practitioner's proof is made over, under the proof profile it names; the openSig attestation itself, exactly as openSig issued it; the SHA-256 of the provenance; the custody model the key declares, with its custody_basis, only declared in use; the backup eligibility and backup state the authenticator reported, and the enrolled device where the backup eligibility is set; and the check's result. The statement is the RFC 8785 canonical JSON of: act_id, act_version, patient, act_class, act_type, action, signature_role (author, cosigner or actor), signer_ref, attestation, content_sha256, provenance_sha256, signed_at, challenge_ref and, for an encounter, manifest_sha256. openSig never receives it; it receives only its digest. The signer is the session account that re-authenticated; the audit verifier recomputes every digest, re-verifies the attestation, the sealed proof and the licence verification, and treats a mismatch as an integrity failure (CA-08).",
+      "description": "The practitioner's sign-off evidence (CA-04; owner ruling 151; owner rulings 208 to 213; design calls CD-48, CD-53, CD-75, CD-76 and CD-81 to CD-85, PROPOSED, against openWallet-spec change add-webauthn-proof-profile (draft pull request #11, read at fbb74f0), whose profile the proof is made under, openWallet-spec change add-practitioner-profile-and-licence-verification (draft pull request #10, read at 834db41) and openSig-spec change add-wallet-bound-attestation (draft pull request #4, read at 92b097e), both unratified drafts; the field names are re-checked when they settle). It records: the action signed off; the openwallet_id that signed; the key that made the proof, by its DID URL and fingerprint; the licence verification relied on, named by reference and SHA-256 and kept once beside the records, with the licence facts it states, the licence the grant relied on names (covers), the revocation list used and the provenance of the verifier key; the single-use challenge; the SHA-256 of the sign-off statement, which is the digest the practitioner's proof is made over, under the proof profile it names; the openSig attestation itself, exactly as openSig issued it; the SHA-256 of the provenance; the custody model the key declares, with its custody_basis, each equal to what the attestation sealed; the authenticator flags the attestation sealed; the backup eligibility and backup state the authenticator reported, and the enrolled device where the backup eligibility is set; and the check's result. The statement is the RFC 8785 canonical JSON of: act_id, act_version, patient, act_class, act_type, action, signature_role (author, cosigner or actor), signer_ref, attestation, content_sha256, provenance_sha256, signed_at, challenge_ref and, for an encounter, manifest_sha256. openSig never receives it; it receives only its digest. The signer is the session account that re-authenticated; the audit verifier recomputes every digest, re-verifies the attestation, the sealed proof and the licence verification, and treats a mismatch as an integrity failure (CA-08).",
       "type": "object",
       "additionalProperties": false,
       "required": [
@@ -929,7 +933,7 @@
             },
             "licence_class": { "$ref": "#/$defs/licenceClass" },
             "licence_expires_on": {
-              "description": "The licence's own expiry, where the verification states one (its licence.expires_on). openChart relies on no verification on a later day than it (owner ruling 213; design call CD-81, PROPOSED).",
+              "description": "The licence's own expiry, where the verification states one: this field carries the verification's licence.expires_on. openChart relies on no verification on a later day than it, the day counted in the practice's own time zone, which check.practice_date records (owner ruling 213; design call CD-81, PROPOSED).",
               "$ref": "#/$defs/date"
             },
             "covers": {
@@ -1005,6 +1009,7 @@
             "custody",
             "wallet_state",
             "key_state",
+            "unresolved",
             "result",
             "verification",
             "attested_at",
@@ -1027,18 +1032,29 @@
             },
             "key_fingerprint": { "$ref": "#/$defs/keyFingerprint" },
             "authenticator_flags": {
-              "description": "For a proof under the passkey profile: the user present, user verified, backup eligibility and backup state flags as the authenticator signed them, recorded by openSig. The sign-off's backup_eligible and backup_state equal them (design call CD-83, PROPOSED).",
-              "type": "object"
+              "description": "For a proof under the passkey profile sealed whole: the user present, user verified, backup eligibility and backup state flags as the authenticator signed them, recorded by openSig under these names. A sign-off needs them sealed, with user_present and user_verified true, and its backup_eligible and backup_state equal to them (CA-04, CA-08; design calls CD-83 and CD-85, PROPOSED).",
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["user_present", "user_verified", "backup_eligible", "backup_state"],
+              "properties": {
+                "user_present": { "type": "boolean" },
+                "user_verified": { "type": "boolean" },
+                "backup_eligible": { "type": "boolean" },
+                "backup_state": { "type": "boolean" }
+              }
             },
             "sign_count_not_increasing": {
               "description": "Set where openWallet's verification found that the signature counter did not increase. It never refuses a sign-off; openChart raises it to a human (design call CD-85, PROPOSED).",
               "type": "boolean"
             },
-            "custody": { "type": "object" },
+            "custody": {
+              "description": "The custody the key declares, as openSig resolved it: the model, the registry version and custody_basis. The sign-off's custody_model and custody_basis equal its model and custody_basis (CA-04; design call CD-48, PROPOSED).",
+              "type": "object"
+            },
             "wallet_state": { "$ref": "#/$defs/codeToken" },
             "key_state": { "$ref": "#/$defs/codeToken" },
             "unresolved": {
-              "description": "What openSig did not resolve. It is empty for a verified attestation, the only kind a sign-off carries; a not_verified attestation lists what it did not obtain, and is kept as it is on the trail of failed attempts (CA-08).",
+              "description": "What openSig did not resolve. openSig's draft has it present in every attestation, empty for a verified one, the only kind a sign-off carries; a not_verified attestation lists what it did not obtain, and is kept as it is on the trail of failed attempts (CA-08). proof_sha256, references_differing and reason appear only in a not_verified attestation, so a sign-off's attestation carries none of them.",
               "type": "array",
               "const": []
             },
@@ -1061,7 +1077,7 @@
           "enum": ["holder_readable", "isolated_invocable", "isolated_per_use_authorized"]
         },
         "custody_basis": {
-          "description": "What the custody model rests on: declared, the holder's word, the model the key declares in the practitioner's wallet record; or attested, attestation evidence that the key's custody is that model. Only declared is in use: openChart records attested only once openWallet's ratified text defines that evidence (CA-04; design call CD-76, PROPOSED).",
+          "description": "What the custody model rests on, as openWallet's passkey profile defines it: attested, where the deployment's attestation policy accepted attestation evidence that the authenticator keeps the key isolated and verifies its user, or declared, where it rests on the practitioner's word. It equals the custody_basis the attestation sealed (CA-04; design call CD-76, PROPOSED).",
           "enum": ["declared", "attested"]
         },
         "backup_eligible": {
@@ -1079,8 +1095,15 @@
         "check": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["result", "checked_at"],
-          "properties": { "result": {"const": "passed"}, "checked_at": {"$ref": "#/$defs/timestamp"} }
+          "required": ["result", "checked_at", "practice_date"],
+          "properties": {
+            "result": {"const": "passed"},
+            "checked_at": {"$ref": "#/$defs/timestamp"},
+            "practice_date": {
+              "description": "The calendar date of checked_at in the practice's own time zone, as the deployment records it: the day a licence's own expiry is compared with. It is within one day of checked_at's date in UTC (design call CD-81, PROPOSED).",
+              "$ref": "#/$defs/date"
+            }
+          }
         }
       },
       "allOf": [

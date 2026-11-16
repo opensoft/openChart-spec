@@ -39,9 +39,10 @@ Checks:
        first_received_at <= released_at <= received_at, and a held item
        ends once: no two records of the store carry the same
        held_item_ref;
-     - a defaulted time is the time the path received the item, never later
-       than the chart's receipt, and a time as declared that
-       was kept beside it is later than that time (design call CD-73);
+     - a retrieved_at is never later than received_at, and a defaulted
+       time is the time the path received the item: retrieved_at where it is
+       present and received_at otherwise; a time as declared that was kept
+       beside it is later than that time (design call CD-73);
      - a signed act records a signed lifecycle event (reported, not a
        crash, when it is missing);
      - each sign-off's evidence agrees with itself (design calls CD-75 to
@@ -58,9 +59,13 @@ Checks:
        age is over 72 hours (owner ruling 212); the verifier key is held for
        the licensing authority the verification names, and the sign-off is
        not on a later day than the licence's own expiry where one is stated
-       (design calls CD-75 and CD-81); the custody and the backup flags the
-       sign-off records are those the attestation sealed (design calls CD-48
-       and CD-83). The self-test does not verify Ed25519
+       (design calls CD-75 and CD-81), the day counted by the check's
+       practice_date, which is within one day of checked_at's date in UTC;
+       the attestation seals the authenticator flags, user_present and
+       user_verified true and backup_eligible and backup_state equal to the
+       sign-off's, a missing flag counting as a mismatch; and the sealed
+       custody carries a model and a custody_basis equal to the sign-off's
+       (design calls CD-48, CD-76, CD-83 and CD-85). The self-test does not verify Ed25519
        signatures: the synthetic fixtures carry placeholders, and the
        production audit verifier re-verifies openSig's signature, the sealed
        proof and the licence verification (CA-08);
@@ -201,10 +206,14 @@ def verify(record, records=()):
         if released < first:
             problems.append("provenance/released_from_quarantine: released before it first arrived")
     prov_ = record.get("provenance") or {}
+    retrieved, received = prov_.get("retrieved_at"), prov_.get("received_at")
+    if retrieved and real_time(retrieved) and received and real_time(received) and parse(retrieved) > parse(received):
+        problems.append("provenance/retrieved_at: an item is retrieved no later than the chart receives it")
     if prov_.get("occurred_at_defaulted"):
-        occurred, received = prov_.get("occurred_at"), prov_.get("received_at")
-        if not (occurred and real_time(occurred) and real_time(received) and parse(occurred) <= parse(received)):
-            problems.append("provenance/occurred_at_defaulted: a defaulted time is the time the path received the item, never later than the chart's receipt")
+        occurred = prov_.get("occurred_at")
+        expected = retrieved or received
+        if not (occurred and real_time(occurred) and expected and real_time(expected) and parse(occurred) == parse(expected)):
+            problems.append("provenance/occurred_at_defaulted: a defaulted time is the time the path received the item, retrieved_at where the path retrieved it and received_at otherwise")
         declared = prov_.get("occurred_at_as_declared")
         if declared and occurred and real_time(declared) and real_time(occurred) and parse(declared) <= parse(occurred):
             problems.append("provenance/occurred_at_as_declared: kept as declared, but it is not later than the time the path received the item")
@@ -256,17 +265,34 @@ def verify(record, records=()):
                 problems.append(f"{where}: the revocation list used was issued after the sign-off")
             elif int((at - listed).total_seconds()) != lv["revocation_list"]["age_seconds"]:
                 problems.append(f"{where}: the revocation list's age_seconds is not its age at the sign-off")
-        if isinstance(att.get("custody"), dict) and "model" in att["custody"] and att["custody"]["model"] != so["custody_model"]:
+        custody = att.get("custody") if isinstance(att.get("custody"), dict) else {}
+        if "model" not in custody or custody["model"] != so.get("custody_model"):
             problems.append(f"{where}: the custody the sign-off records is not the custody the attestation sealed")
+        if "custody_basis" not in custody or custody["custody_basis"] != so.get("custody_basis"):
+            problems.append(f"{where}: the custody basis the sign-off records is not the basis the attestation sealed")
         flags = att.get("authenticator_flags")
-        if isinstance(flags, dict) and any(k in flags and flags[k] != so[k] for k in ("backup_eligible", "backup_state")):
-            problems.append(f"{where}: the backup flags the sign-off records are not those the attestation sealed")
+        if not isinstance(flags, dict):
+            problems.append(f"{where}: the attestation seals no authenticator flags, so neither user verification nor the backup flags are shown")
+        else:
+            if flags.get("user_present") is not True or flags.get("user_verified") is not True:
+                problems.append(f"{where}: the sealed authenticator flags do not show the user present and verified, which every sign-off needs")
+            if any(k not in flags or flags[k] != so.get(k) for k in ("backup_eligible", "backup_state")):
+                problems.append(f"{where}: the backup flags the sign-off records are not those the attestation sealed")
         if lv["authority"] not in lv["verifier_key"]["held_for"]:
             problems.append(f"{where}: the verifier key is not held for the licensing authority the verification names")
+        day = None
+        if real_time(so["check"]["checked_at"]):
+            day = parse(so["check"]["checked_at"]).date()
+            pdate = so["check"].get("practice_date")
+            if pdate and DATE.match(pdate) and real_date(pdate):
+                local = datetime.date.fromisoformat(pdate)
+                if abs((local - day).days) > 1:
+                    problems.append(f"{where}: check/practice_date is more than a day from the date of checked_at, so it is not that time's date in any time zone")
+                day = local
         exp = lv.get("licence_expires_on")
-        if exp and real_time(so["check"]["checked_at"]) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", exp):
+        if exp and day and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", exp):
             try:
-                if parse(so["check"]["checked_at"]).date() > datetime.date.fromisoformat(exp):
+                if day > datetime.date.fromisoformat(exp):
                     problems.append(f"{where}: the sign-off relies on the verification after the licence's own expiry")
             except ValueError:
                 problems.append(f"{where}: licence_expires_on is not a real calendar date")

@@ -141,7 +141,7 @@
           "custody": {
             "model": "isolated_per_use_authorized",
             "registry_version": 1,
-            "basis": "declared"
+            "custody_basis": "declared"
           },
           "wallet_state": "active",
           "key_state": "active",
@@ -168,7 +168,8 @@
         "backup_state": false,
         "check": {
           "result": "passed",
-          "checked_at": "2026-11-15T10:30:00Z"
+          "checked_at": "2026-11-15T10:30:00Z",
+          "practice_date": "2026-11-15"
         }
       }
     }

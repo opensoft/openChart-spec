@@ -67,9 +67,17 @@
     "expect_in_error": "'occurred_at_defaulted' is a required property",
     "reason": "the time as declared is kept only beside a defaulted time (AN-04, CD-73)"
   },
+  "defaulted-time-before-receipt-without-retrieval.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_defaulted",
+    "reason": "where the path did not retrieve the item, a defaulted time is received_at, not any earlier time (CD-73)"
+  },
   "defaulted-time-later-than-receipt.integrity-invalid.json": {
     "expect_in_error": "occurred_at_defaulted",
-    "reason": "a defaulted time is the time the path received the item, never later than the chart's receipt (CD-73)"
+    "reason": "where the path did not retrieve the item, a defaulted time is received_at (CD-73)"
+  },
+  "defaulted-time-not-the-retrieval-time.integrity-invalid.json": {
+    "expect_in_error": "occurred_at_defaulted",
+    "reason": "where the path retrieved the item, a defaulted time is retrieved_at (CD-73)"
   },
   "derived-from-unknown-kind.invalid.json": {
     "expect_in_error": "source_kind",
@@ -351,6 +359,10 @@
     "expect_in_error": "'first_received_at' is a required property",
     "reason": "a released item keeps when it first arrived beside the time of its release (AN-01, CD-61)"
   },
+  "retrieved-later-than-received.integrity-invalid.json": {
+    "expect_in_error": "retrieved_at",
+    "reason": "an item is retrieved no later than the chart receives it (CD-73)"
+  },
   "sign-off-after-reliance-bound.integrity-invalid.json": {
     "expect_in_error": "rely_until",
     "reason": "a verification past its reliance bound supports no sign-off (CD-75)"
@@ -383,6 +395,10 @@
     "expect_in_error": "[] was expected",
     "reason": "a sign-off carries only a verified attestation, which resolved every value (CD-76)"
   },
+  "sign-off-attestation-without-unresolved.invalid.json": {
+    "expect_in_error": "'unresolved' is a required property",
+    "reason": "openSig's draft has unresolved in every attestation, empty for a verified one (CD-76)"
+  },
   "sign-off-backup-flags-not-the-ones-sealed.integrity-invalid.json": {
     "expect_in_error": "backup",
     "reason": "the backup flags the sign-off records are those the authenticator signed and the attestation sealed (CD-83)"
@@ -394,6 +410,14 @@
   "sign-off-challenge-not-opaque.invalid.json": {
     "expect_in_error": "does not match '^[A-Za-z0-9_-]{42}",
     "reason": "a challenge reference is 32 random bytes in unpadded base64url and carries no meaning (CD-53)"
+  },
+  "sign-off-check-without-practice-date.invalid.json": {
+    "expect_in_error": "'practice_date' is a required property",
+    "reason": "the check records its date in the practice's own time zone, the day a licence's expiry is compared with (CD-81)"
+  },
+  "sign-off-custody-basis-not-the-one-sealed.integrity-invalid.json": {
+    "expect_in_error": "custody basis",
+    "reason": "the custody basis the sign-off records is the one the attestation sealed (CD-76)"
   },
   "sign-off-custody-basis-unknown.invalid.json": {
     "expect_in_error": "is not one of",
@@ -427,9 +451,25 @@
     "expect_in_error": "stale",
     "reason": "a reliance on a list over 72 hours old is flagged (owner ruling 212; CD-81)"
   },
+  "sign-off-practice-date-not-the-day-checked.integrity-invalid.json": {
+    "expect_in_error": "practice_date",
+    "reason": "the practice date is the date of checked_at in some time zone, within a day of its UTC date (CD-81)"
+  },
+  "sign-off-proof-without-user-verification.integrity-invalid.json": {
+    "expect_in_error": "user present and verified",
+    "reason": "every sign-off needs user verification (CD-85)"
+  },
   "sign-off-revocation-list-age-misstated.integrity-invalid.json": {
     "expect_in_error": "age_seconds",
     "reason": "the recorded age of the revocation list is not its age at reliance (CD-81)"
+  },
+  "sign-off-sealed-flags-missing.integrity-invalid.json": {
+    "expect_in_error": "authenticator flags",
+    "reason": "a sign-off needs the authenticator flags sealed, to show user verification and the backup flags (CD-83, CD-85)"
+  },
+  "sign-off-sealed-flags-without-user-verified.invalid.json": {
+    "expect_in_error": "'user_verified' is a required property",
+    "reason": "openSig's draft fixes the four flag names, and a sealed flag set carries all four (CD-83, CD-85)"
   },
   "sign-off-synced-passkey-without-enrolled-device.invalid.json": {
     "expect_in_error": "'enrolled_device_ref' is a required property",
