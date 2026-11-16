@@ -28,12 +28,18 @@ Checks:
   6. openChart's reading of each turn of a valid conversation.result gives
      the outcome its entry records (MI-03, MI-12, design calls MD-22 and
      MD-37), against the retrieval time the entry records:
-     - authored_at: a missing time, or one later than the retrieval time
-       plus five minutes, is defaulted (defaulted_times); a value that is
-       not a timestamp naming a real calendar day cannot be read;
+     - authored_at (defaulted_times): a time that is missing, later than
+       the retrieval time plus five minutes, or not a timestamp naming a real
+       calendar day is defaulted to the retrieval time, recorded as missing,
+       later or unreadable; only a later time, which openChart can read, is
+       kept as declared. No turn is held for its time;
      - source: a value that is not one of the schema's source tokens, or
-       none, cannot be read;
-     - an ai turn's identification (ai_turns): `identified`, or the first
+       none, is a speaker openChart cannot read. A turn that is not an ai
+       turn is then kept, its speaker recorded as not identified
+       (speakers_not_identified);
+     - an ai turn's identification (ai_turns): `identified`, or the cause
+       that makes it an unidentified AI turn: ai_not_identified when its
+       speaker cannot be read, whatever its ai_identity; otherwise the first
        cause that applies, in this order: openwallet_id_missing (no
        openwallet_id), ai_not_identified (a property other than the three,
        a value that is not a string, or a value outside its form:
@@ -42,12 +48,10 @@ Checks:
        versionLabel, or no model or no model_version), and
        openwallet_id_not_covered (judged against the stand-in registration
        in examples/holder-registrations.json);
-     - held_turns: each turn of a conversation HealthLinc holds whose text
-       openChart holds outside the chart, with the first cause that applies:
-       authored_at_unreadable, source_unreadable, then the identification
-       cause of an ai turn that is not identified. A conversation
-       medXfactory holds is recorded by reference only (MI-24), so none of
-       its turns is held;
+     - held_turns: each ai turn of a conversation HealthLinc holds that is
+       not identified, whose text openChart holds outside the chart, with its
+       identification cause. A conversation medXfactory holds is recorded by
+       reference only (MI-24), so none of its turns is held;
   7. openChart's match of a result with its retrieve (MI-03, MD-29) passes
      for every valid result whose entry names the retrieve it answers, and
      every examples/*.mismatch-invalid.json validates and fails only that
@@ -94,7 +98,7 @@ MODEL = re.compile(r"[A-Za-z0-9._:/@+-]{1,128}")
 VERSION_LABEL = re.compile(r"[A-Za-z0-9._:+-]{1,64}")
 AI_IDENTITY_KEYS = {"openwallet_id", "model", "model_version"}
 OUTCOMES = {"identified", "openwallet_id_missing", "ai_not_identified", "openwallet_id_not_covered"}
-HELD_CAUSES = {"authored_at_unreadable", "source_unreadable"} | (OUTCOMES - {"identified"})
+HELD_CAUSES = OUTCOMES - {"identified"}
 CHANGE_FIELDS = ("content", "author_type", "source", "authored_at", "ai_identity")
 MISSING = object()
 
@@ -164,17 +168,23 @@ def read_time(value, pattern):
 
 
 def judge_time(value, retrieved_at, pattern):
-    """openChart's reading of a turn's authored_at: declared, defaulted or unreadable."""
+    """openChart's reading of a turn's authored_at: declared, or defaulted because it is missing, later or unreadable."""
     if value is MISSING:
-        return "defaulted"
+        return "missing"
     when = read_time(value, pattern)
     if when is None:
         return "unreadable"
-    return "defaulted" if when > retrieved_at + CLOCK_SKEW else "declared"
+    return "later" if when > retrieved_at + CLOCK_SKEW else "declared"
 
 
-def identify(turn, covered):
+def speaker_readable(turn, source_tokens):
+    return any(turn.get("source", MISSING) == token for token in source_tokens)
+
+
+def identify(turn, covered, source_tokens):
     """openChart's identification step for an ai turn (MD-37). Returns identified or the cause."""
+    if not speaker_readable(turn, source_tokens):
+        return "ai_not_identified"
     ident = turn.get("ai_identity", {})
     if not isinstance(ident, dict) or "openwallet_id" not in ident:
         return "openwallet_id_missing"
@@ -189,26 +199,22 @@ def identify(turn, covered):
 
 
 def judge_turns(doc, covered, retrieved_at, pattern, source_tokens):
-    """openChart's per-turn reading of a schema-valid result: identification, held turns and defaulted times."""
-    ai_turns, held, defaulted = {}, {}, []
+    """openChart's per-turn reading of a schema-valid result: identification, held turns, defaulted times
+    and speakers recorded as not identified."""
+    ai_turns, held, defaulted, speakers = {}, {}, {}, []
     by_reference = doc["payload"]["conversation_ref"]["namespace"] == "medxfactory"
     for turn in doc["payload"]["turns"]:
         turn_id = turn["turn_id"]
         time = judge_time(turn.get("authored_at", MISSING), retrieved_at, pattern)
-        if time == "defaulted":
-            defaulted.append(turn_id)
-        cause = None
-        if time == "unreadable":
-            cause = "authored_at_unreadable"
-        elif not any(turn.get("source", MISSING) == token for token in source_tokens):
-            cause = "source_unreadable"
+        if time != "declared":
+            defaulted[turn_id] = time
         if turn["author_type"] == "ai":
-            ai_turns[turn_id] = identify(turn, covered)
-            if cause is None and ai_turns[turn_id] != "identified":
-                cause = ai_turns[turn_id]
-        if cause is not None and not by_reference:
-            held[turn_id] = cause
-    return ai_turns, held, defaulted
+            ai_turns[turn_id] = identify(turn, covered, source_tokens)
+            if ai_turns[turn_id] != "identified" and not by_reference:
+                held[turn_id] = ai_turns[turn_id]
+        elif not speaker_readable(turn, source_tokens):
+            speakers.append(turn_id)
+    return ai_turns, held, defaulted, speakers
 
 
 def canonical(value):
@@ -286,7 +292,7 @@ def main():
     registrations = load(EXAMPLES / "holder-registrations.json")
     failures, names = [], set()
     counts = {"valid": 0, "invalid": 0, "mismatch-invalid": 0, "calendar-invalid": 0, "ai turns": 0,
-              "held turns": 0, "defaulted times": 0, "re-retrievals": 0}
+              "held turns": 0, "defaulted times": 0, "speakers not identified": 0, "re-retrievals": 0}
 
     if uses_format(schema):
         failures.append("the schema uses a format keyword; every rule is checked by pattern")
@@ -345,7 +351,7 @@ def main():
                 failures.append(f"{path.name}: its entry records no readable retrieved_at")
                 continue
             covered = set(registrations.get(doc["issuer"], {}).get("openwallet_ids", []))
-            ai_turns, held, defaulted = judge_turns(doc, covered, retrieved_at, timestamp, source_tokens)
+            ai_turns, held, defaulted, speakers = judge_turns(doc, covered, retrieved_at, timestamp, source_tokens)
             want_ai = out.get("ai_turns", {})
             if set(ai_turns) != set(want_ai):
                 failures.append(f"{path.name}: expected-outcomes.json does not list exactly its ai turns")
@@ -367,6 +373,10 @@ def main():
                 failures.append(f"{path.name}: defaulted times {defaulted}, not {out.get('defaulted_times')}")
             else:
                 counts["defaulted times"] += len(defaulted)
+            if speakers != out.get("speakers_not_identified"):
+                failures.append(f"{path.name}: speakers not identified {speakers}, not {out.get('speakers_not_identified')}")
+            else:
+                counts["speakers not identified"] += len(speakers)
             if "answers" in out:
                 got = match(load(EXAMPLES / out["answers"]), doc)
                 if got is not None:
@@ -424,6 +434,7 @@ def main():
           f"{counts['valid']} valid, {counts['invalid']} invalid, {counts['mismatch-invalid']} mismatch-invalid and "
           f"{counts['calendar-invalid']} calendar-invalid fixtures checked, {counts['ai turns']} ai turns identified, "
           f"{counts['held turns']} turns held, {counts['defaulted times']} times defaulted, "
+          f"{counts['speakers not identified']} speakers not identified, "
           f"{counts['re-retrievals']} re-retrievals compared, {len(failures)} failure(s)")
     return 1 if failures else 0
 

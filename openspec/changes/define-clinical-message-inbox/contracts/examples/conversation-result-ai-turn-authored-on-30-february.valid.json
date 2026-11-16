@@ -46,7 +46,12 @@
           "media_type": "text/plain",
           "text": "Synthetic turn 2."
         },
-        "in_reply_to": "SYN-TURN-0001"
+        "in_reply_to": "SYN-TURN-0001",
+        "ai_identity": {
+          "openwallet_id": "SYN-WALLET-AI-COACH-0001",
+          "model": "synthetic-vendor/coach-model",
+          "model_version": "2026.10.1"
+        }
       },
       {
         "turn_id": "SYN-TURN-0003",

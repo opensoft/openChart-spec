@@ -11,7 +11,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-medxfactory-patient-confirmed-only.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -19,13 +20,15 @@
       "SYN-TURN-0002": "openwallet_id_missing"
     },
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-urgent-escalation-patient-told.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-urgent-with-withheld-turns.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -33,19 +36,22 @@
       "SYN-TURN-0002": "openwallet_id_missing"
     },
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-priority-representative-request.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-routine-only-the-request-turn.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": [],
+    "defaulted_times": {},
+    "speakers_not_identified": [],
     "answers": "conversation-retrieve-routine.valid.json"
   },
   "conversation-result-ai-turn-with-all-four-provenance-fields.valid.json": {
@@ -55,7 +61,8 @@
       "SYN-TURN-0003": "openwallet_id_missing"
     },
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-origin-ref-and-emergency-guidance.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -64,25 +71,29 @@
       "SYN-TURN-0003": "openwallet_id_missing"
     },
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-origin-ref-at-the-same-holder.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-request-text-padded-with-whitespace.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-request-over-two-turns-with-one-request-ref.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-coach-turn-with-its-ai-identity.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -95,7 +106,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-openpractice-agent-turn-with-its-ai-identity.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -108,7 +120,8 @@
       "SYN-TURN-0002": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-medxfactory-ai-turn-with-ai-identity-and-the-four-fields.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -117,7 +130,8 @@
       "SYN-TURN-0003": "openwallet_id_missing"
     },
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-without-model-version.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -131,7 +145,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-without-model.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -145,7 +160,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-without-openwallet-id.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -159,7 +175,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-empty-object.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -173,7 +190,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-openwallet-id-with-spaces.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -187,7 +205,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-openwallet-id-starting-with-a-separator.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -201,7 +220,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-empty-openwallet-id.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -215,7 +235,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-model-version-with-a-space.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -229,7 +250,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-model-version-with-a-slash.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -243,7 +265,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-empty-model.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -257,7 +280,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-not-covered-by-the-registration.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -271,7 +295,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-model-with-spaces.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -285,7 +310,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-one-identified-and-one-badly-formed-ai-turn.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -298,20 +324,23 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "ai_not_identified"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-residual-placeholder-with-the-matching-request-ref.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": [],
+    "defaulted_times": {},
+    "speakers_not_identified": [],
     "answers": "conversation-retrieve-routine.valid.json"
   },
   "conversation-result-residual-greeting-with-the-matching-request-ref.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": [],
+    "defaulted_times": {},
+    "speakers_not_identified": [],
     "answers": "conversation-retrieve-routine.valid.json"
   },
   "conversation-result-request-turn-without-source.valid.json": {
@@ -322,12 +351,14 @@
       "SYN-TURN-0004": "openwallet_id_missing"
     },
     "held_turns": {
-      "SYN-TURN-0001": "source_unreadable",
       "SYN-TURN-0002": "openwallet_id_missing",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": [
+      "SYN-TURN-0001"
+    ]
   },
   "conversation-result-request-turn-with-an-unknown-source-token.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -337,12 +368,14 @@
       "SYN-TURN-0004": "openwallet_id_missing"
     },
     "held_turns": {
-      "SYN-TURN-0001": "source_unreadable",
       "SYN-TURN-0002": "openwallet_id_missing",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": [
+      "SYN-TURN-0001"
+    ]
   },
   "conversation-result-request-turn-authored-at-without-a-time-zone.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -352,12 +385,14 @@
       "SYN-TURN-0004": "openwallet_id_missing"
     },
     "held_turns": {
-      "SYN-TURN-0001": "authored_at_unreadable",
       "SYN-TURN-0002": "openwallet_id_missing",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {
+      "SYN-TURN-0001": "unreadable"
+    },
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-with-an-extra-property.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -371,7 +406,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-openwallet-id-of-201-characters.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -385,7 +421,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-model-of-129-characters.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -399,7 +436,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-model-version-of-65-characters.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -413,7 +451,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-with-an-integer-model-version.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -427,7 +466,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-turn-without-authored-at.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -441,9 +481,10 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": [
-      "SYN-TURN-0002"
-    ]
+    "defaulted_times": {
+      "SYN-TURN-0002": "missing"
+    },
+    "speakers_not_identified": []
   },
   "conversation-result-ai-turn-authored-far-in-the-future.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -457,9 +498,10 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": [
-      "SYN-TURN-0002"
-    ]
+    "defaulted_times": {
+      "SYN-TURN-0002": "later"
+    },
+    "speakers_not_identified": []
   },
   "conversation-result-ai-turn-authored-at-the-edge-of-the-clock-skew.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -473,7 +515,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-turn-authored-just-past-the-clock-skew.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -487,51 +530,72 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": [
-      "SYN-TURN-0002"
-    ]
+    "defaulted_times": {
+      "SYN-TURN-0002": "later"
+    },
+    "speakers_not_identified": []
   },
   "conversation-result-ai-turn-authored-on-30-february.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {
-      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0002": "identified",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
     "held_turns": {
-      "SYN-TURN-0002": "authored_at_unreadable",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {
+      "SYN-TURN-0002": "unreadable"
+    },
+    "speakers_not_identified": []
   },
   "conversation-result-ai-turn-with-a-numeric-authored-at.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {
-      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0002": "identified",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
     "held_turns": {
-      "SYN-TURN-0002": "authored_at_unreadable",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {
+      "SYN-TURN-0002": "unreadable"
+    },
+    "speakers_not_identified": []
   },
   "conversation-result-ai-turn-with-an-unknown-source.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {
-      "SYN-TURN-0002": "openwallet_id_missing",
+      "SYN-TURN-0002": "ai_not_identified",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
     "held_turns": {
-      "SYN-TURN-0002": "source_unreadable",
+      "SYN-TURN-0002": "ai_not_identified",
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
+  },
+  "conversation-result-ai-turn-with-an-unknown-source-and-a-complete-identity.valid.json": {
+    "retrieved_at": "2026-11-15T10:00:00Z",
+    "ai_turns": {
+      "SYN-TURN-0002": "ai_not_identified",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    },
+    "held_turns": {
+      "SYN-TURN-0002": "ai_not_identified",
+      "SYN-TURN-0003": "openwallet_id_missing",
+      "SYN-TURN-0004": "openwallet_id_missing"
+    },
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-with-a-nested-object.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -545,7 +609,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-ai-identity-with-a-list-value.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
@@ -559,7 +624,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   },
   "conversation-result-re-retrieval-with-a-corrected-ai-identity.valid.json": {
     "retrieved_at": "2026-11-15T10:30:00Z",
@@ -572,7 +638,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": [],
+    "defaulted_times": {},
+    "speakers_not_identified": [],
     "re_retrieval_of": {
       "result": "conversation-result-healthlinc-mixed-turns.valid.json",
       "turns": {
@@ -603,7 +670,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": [],
+    "defaulted_times": {},
+    "speakers_not_identified": [],
     "re_retrieval_of": {
       "result": "conversation-result-healthlinc-mixed-turns.valid.json",
       "turns": {
@@ -632,7 +700,8 @@
       "SYN-TURN-0003": "openwallet_id_missing",
       "SYN-TURN-0004": "openwallet_id_missing"
     },
-    "defaulted_times": [],
+    "defaulted_times": {},
+    "speakers_not_identified": [],
     "re_retrieval_of": {
       "result": "conversation-result-healthlinc-mixed-turns.valid.json",
       "turns": {
@@ -655,12 +724,16 @@
       "SYN-TURN-0002": "openwallet_id_missing"
     },
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {
+      "SYN-TURN-0002": "unreadable"
+    },
+    "speakers_not_identified": []
   },
   "conversation-result-priority-two-request-turns-both-shared-for-escalation.valid.json": {
     "retrieved_at": "2026-11-15T10:00:00Z",
     "ai_turns": {},
     "held_turns": {},
-    "defaulted_times": []
+    "defaulted_times": {},
+    "speakers_not_identified": []
   }
 }
