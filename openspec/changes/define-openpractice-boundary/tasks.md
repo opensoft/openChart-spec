@@ -17,6 +17,7 @@
 - [ ] 2.1 Open Question 1: adopt openChart's constitution through separate governance (it is the unfilled template today). Then perform a meaningful Constitution Check before the plan phase. This gate blocks the plan phase.
 - [ ] 2.2 Open Question 2: record which separately governed change introduces clinician-authored encounters, diagnoses and procedures. Until it lands, CF-06 applies: the capability result is false and reads return `no_billable_facts`. This gate blocks billable publication only.
 - [ ] 2.3 Open Question 3: closed by ruling 31 (openPractice owns the administrative appointment; openChart owns the encounter). Verify that this change still carries no appointment operations, which wait for a later MINOR version.
+- [ ] 2.4 Open Question 4: decide how PL-09 projects when a patient has established links from two openPractice issuers. This blocks the plan phase for PL-09.
 
 ## 3. Spec Kit Handoff
 

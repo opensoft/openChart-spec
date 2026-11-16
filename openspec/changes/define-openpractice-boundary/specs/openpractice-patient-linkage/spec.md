@@ -76,10 +76,10 @@ The side that raised a review SHALL be its only resolver. For reviews it raises,
 **Confirming a link that has never been established (⚑ design call 3 in `design.md`).** This covers a review openChart raised under PL-05 or under this requirement's first case. When its reviewer confirms such a link, the link SHALL become `active` and established (PL-02) at that moment, and openChart SHALL apply demographic snapshots on it under PL-07 and PL-09 from that moment.
 - **No unread snapshot.** openChart SHALL NOT apply a snapshot received before the confirmation unless the reviewer re-read it, side by side with the `OC Patient` they confirmed, as part of the confirmation.
 - **The snapshot read at confirmation.** The reviewer confirms against the latest snapshot received on the link, the one with the highest `demographic_version`: the `link.request` snapshot, or a later `demographics.updated` answered `identity_review` (PL-07). openChart applies exactly that snapshot, and projects it under PL-09, in the same transaction as the confirmation.
-- **A later snapshot.** A snapshot that arrived after the one the reviewer read is not applied by the confirmation. openChart applies the next snapshot openPractice publishes on the link under PL-07: the republication described below.
+- **A later snapshot.** A snapshot that arrived after the one the reviewer read is not applied by the confirmation. openChart handles the next snapshot openPractice publishes on the link, the republication described below, under PL-07 and PL-08: it applies it, or holds it for review where its date of birth differs from the one applied.
 - **`applied_version`.** `link.review_resolved` with outcome `confirmed` SHALL carry `applied_version` set to the `demographic_version` of the snapshot applied at confirmation. A version lower than openPractice's current version tells openPractice that its later changes have not been applied.
 
-The contract leaves `applied_version` optional and gives it no meaning beyond the version applied. After a confirmation whose `applied_version` is lower than openPractice's current demographic version, openPractice publishes its current snapshot on the link with reason `republish_after_review` (`define-mvp-practice-foundation` EB-08, design call F-24, PROPOSED there). openChart applies that snapshot under PL-07, so a version that arrived after the one the reviewer read is not left waiting.
+The contract leaves `applied_version` optional and gives it no meaning beyond the version applied. After a confirmation whose `applied_version` is lower than openPractice's current demographic version, openPractice publishes its current snapshot on the link with reason `republish_after_review` (`define-mvp-practice-foundation` EB-08, design call F-24, PROPOSED there). openChart handles that snapshot under PL-07 and PL-08: it applies it, or holds it for review where its date of birth differs from the one applied. So a version that arrived after the one the reviewer read is not left waiting.
 
 #### Scenario: Two openPractice records claim one patient
 - **WHEN** a link request targets an `OC Patient` that already holds an active `openpractice` identifier from the same issuer with a different value
@@ -95,7 +95,7 @@ The contract leaves `applied_version` optional and gives it no meaning beyond th
 
 #### Scenario: A snapshot arrives after the reviewer read the last one
 - **WHEN** the reviewer read version 3, version 4 arrives on the link before the reviewer confirms, and the reviewer then confirms
-- **THEN** openChart applies version 3 only, `link.review_resolved` carries `applied_version` 3, version 4 is not applied, and openChart applies the next snapshot openPractice publishes on the link under PL-07
+- **THEN** openChart applies version 3 only, `link.review_resolved` carries `applied_version` 3, version 4 is not applied, and openChart handles the next snapshot openPractice publishes on the link under PL-07 and PL-08
 
 ### Requirement: PL-07 Administrative demographic updates apply only on an active link through the contract
 openChart SHALL accept administrative demographic changes for linked patients only as `demographics.updated` messages on an `active` link. It SHALL compare each message's version with the last version applied on that `link_id`, and answer with exactly one result:
@@ -103,9 +103,9 @@ openChart SHALL accept administrative demographic changes for linked patients on
 | Result | When |
 |---|---|
 | `applied` | The version is greater than the last applied version. |
-| `duplicate` | The `message_id` was already applied, or the same version arrives with identical content under a new `message_id`. |
+| `duplicate` | The `message_id` was already applied, or the same version arrives with an identical `snapshot` under a new `message_id`, whatever its provenance, because a republication carries a different `provenance.reason` (`define-mvp-practice-foundation` EB-07, design call F-24, PROPOSED there). |
 | `stale` | The version is lower than the last applied version. Nothing changes. |
-| `rejected` | The same version arrives with different content, the MAJOR version is unsupported, or the link is revoked, superseded or unknown. |
+| `rejected` | The same version arrives with a different `snapshot`, the MAJOR version is unsupported, or the link is revoked, superseded or unknown. |
 | `identity_review` | The link is in review, or the update is held. On a link that has never been established (PL-02), the update is neither applied nor held. |
 
 Each applied version SHALL be stored as an immutable record with the `message_id`, issuer, actor reference, source and coded reason. Prior values SHALL remain retrievable.
@@ -117,7 +117,7 @@ An update on a link that has never been established (PL-02) SHALL be answered `i
 - **THEN** openChart answers `stale` and keeps version 5
 
 #### Scenario: Republish
-- **WHEN** an already-applied version arrives again with identical content under a new `message_id`
+- **WHEN** an already-applied version arrives again with an identical `snapshot` under a new `message_id`, carrying reason `republish_after_review`
 - **THEN** openChart answers `duplicate`
 
 #### Scenario: An update on a link that was never confirmed
@@ -153,7 +153,7 @@ A hold arises only on an established link (PL-02), which has a date of birth app
 - **THEN** the hold was cancelled at the revocation, with that reason recorded. The link stays `revoked`, nothing is applied, neither `demographics.hold_rejected` nor `link.review_resolved` is sent, later updates on that `link_id` are answered `rejected`, and no clinical-fact read is served under it (CF-01)
 
 ### Requirement: PL-09 Applied name and date of birth are projected onto OC Patient; nothing clinical is overwritten
-openChart SHALL project the applied legal name onto `OC Patient.patient_name`, using the canonical schema's projection, and the applied date of birth onto `OC Patient.date_of_birth`. Every prior value SHALL be kept in the applied-version history. Administrative sex, gender identity, pronouns, preferred language, telecom, addresses and confidential-communication instructions SHALL live in the applied-version record. An administrative update MUST NOT alter intake submissions, patient-reported statements or clinical records, and MUST NOT overwrite `OC Patient.sex_recorded`. Nothing SHALL be projected from a link that has never been established (PL-02). Until the link is confirmed, the patient's `patient_name` and `date_of_birth` stay openChart's own.
+openChart SHALL project the applied legal name onto `OC Patient.patient_name`, using the canonical schema's projection, and the applied date of birth onto `OC Patient.date_of_birth`. Where a patient has established links from more than one openPractice issuer, this change does not decide which link's applied legal name and date of birth are projected (`design.md` Open Question 4). Every prior value SHALL be kept in the applied-version history. Administrative sex, gender identity, pronouns, preferred language, telecom, addresses and confidential-communication instructions SHALL live in the applied-version record. An administrative update MUST NOT alter intake submissions, patient-reported statements or clinical records, and MUST NOT overwrite `OC Patient.sex_recorded`. Nothing SHALL be projected from a link that has never been established (PL-02). Until the link is confirmed, the patient's `patient_name` and `date_of_birth` stay openChart's own.
 
 #### Scenario: Administrative sex changes
 - **WHEN** an applied update changes administrative sex
@@ -166,7 +166,7 @@ For a patient whose `openpractice` link is established (PL-02) and has status `a
 
 **What openChart expects back (⚑ design call 5 in `design.md`).** This follows `opensoft/openPractice-spec` `define-mvp-practice-foundation` EB-09, PROPOSED there.
 - **`received` means only received.** openPractice answers each correction request with `correction.ack`, whose result is `received`, or `rejected` with a `reject_reason`. It answers `received` even where it holds the link in identity review, including a review it raised on a link that openChart holds `active`. openChart SHALL record a `received` request as open, never as accepted.
-- **A `rejected` acknowledgement closes the request, not the correction.** A request answered `rejected` SHALL be closed unapplied, with the `reject_reason` recorded, and its correction SHALL be kept for re-sending as below. An example is `link_revoked`, for a request in flight when its link ended. A `reject_reason` other than `link_revoked`, `link_superseded` or `link_unknown` concerns the message, not the link, so it SHALL also raise an integration exception that holds only the `message_id`, the `link_id` and the code (PL-13).
+- **A `rejected` acknowledgement closes the request, not the correction.** A request answered `rejected` SHALL be closed unapplied, with the `reject_reason` recorded, and its correction SHALL be kept for re-sending as below. An example is `link_revoked`, for a request in flight when its link ended. A `reject_reason` other than `link_revoked`, `link_superseded` or `link_unknown` concerns the message, not the link, so it SHALL also raise an integration exception that holds only the `message_id`, the `link_id` and the code (PL-13). Where the reason concerns the message and the link is still established, the correction is re-sent through that link, as a new request, once the integration exception is resolved (⚑ design call 5 in `design.md`, PROPOSED).
 - **Nothing is decided during openPractice's review.** While that review is open, the request is neither accepted nor declined, and no `correction.resolved` arrives. openChart SHALL keep the request open, and SHALL raise no error for the wait.
 - **A link that ends closes the request, not the correction.** A request still unresolved when its link ends `revoked` or `superseded` SHALL be treated as closed unapplied. openChart SHALL record that, with the end of the link as the reason. It SHALL raise no error, and SHALL expect no `correction.resolved` for the request: openPractice closes a request unapplied, without telling openChart, whenever its link ends before the request is decided, whether or not a review is open (its EB-09 and design call F-22). A `correction.resolved` that arrives for a request openChart has already closed SHALL be acknowledged with `message.ack` `received`, recorded, and SHALL change nothing.
 - **The patient's correction is not lost.** The correction it carried stays open in openChart. openChart SHALL keep it visible on the patient's record, to the staff who handle the patient's demographic corrections, until it is re-sent.
