@@ -43,6 +43,10 @@
     "expect_in_error": "'SYN-WALLET-AI-COACH-0001' is not of type 'object'",
     "reason": "ai_identity is an object (MD-37)"
   },
+  "ai-identity-as-a-list-of-17-values.invalid.json": {
+    "expect_in_error": "['v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v', 'v'] is not of type 'object'",
+    "reason": "ai_identity is an object; a value of another kind fails the result, whatever its size (MI-03, MD-22)"
+  },
   "ai-identity-on-a-clinician-turn.invalid.json": {
     "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
     "reason": "ai_identity only on an ai turn (MD-37)"
@@ -55,18 +59,6 @@
     "expect_in_error": "[3, 'properties', 'payload', 'properties', 'turns', 'items', 'allOf', 1, 'then', 'not']",
     "reason": "ai_identity only on an ai turn (MD-37)"
   },
-  "ai-identity-openwallet-id-of-1025-characters.invalid.json": {
-    "expect_in_error": "is too long [0, 'maxLength']",
-    "reason": "a value in ai_identity has an outer bound of 1024 characters, the one bound the AI write path gives every value it judges beside its schema (MD-22, MD-37)"
-  },
-  "ai-identity-with-17-properties.invalid.json": {
-    "expect_in_error": "{'openwallet_id': 'SYN-WALLET-AI-COACH-0001', 'model': 'synthetic-vendor/coach-model', 'model_version': '2026.10.1', 'x00': 'v', 'x01': 'v', 'x02': 'v', 'x03': 'v', 'x04': 'v', 'x05': 'v', 'x06': 'v', 'x07': 'v', 'x08': 'v', 'x09': 'v', 'x10': 'v', 'x11': 'v', 'x12': 'v', 'x13': 'v'} has too many properties",
-    "reason": "ai_identity holds at most 16 properties (MD-37)"
-  },
-  "ai-identity-with-a-doubly-nested-value.invalid.json": {
-    "expect_in_error": "ai_identity/model/name {'vendor': 'v'} is not valid under any of the given schemas [2, 'additionalProperties', 'anyOf']",
-    "reason": "a value in ai_identity nests one level at most (MD-37)"
-  },
   "answer-type-version-zero.invalid.json": {
     "expect_in_error": "0 is less than the minimum of 1",
     "reason": "an answer type's version starts at 1 (MD-24)"
@@ -74,10 +66,6 @@
   "as-of-with-hour-24.invalid.json": {
     "expect_in_error": "'2026-11-15T24:00:00Z' does not match '^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)(\\\\.[0-9]{1,9})?(Z|[+-]([01][0-9]|2[0-3]):[0-5][0-9])$'",
     "reason": "a time's hour is 00 to 23, checked by pattern (MD-22)"
-  },
-  "authored-at-of-1025-characters.invalid.json": {
-    "expect_in_error": "is too long [0, 'maxLength']",
-    "reason": "a turn's authored_at has an outer bound of 1024 characters (MD-22)"
   },
   "capabilities-from-openpractice-agent.invalid.json": {
     "expect_in_error": "'openpractice_agent' is not one of ['healthlinc', 'medxfactory']",
@@ -383,10 +371,6 @@
   "retrieve-without-urgency.invalid.json": {
     "expect_in_error": "'urgency' is a required property",
     "reason": "a retrieve carries the item's urgency (MI-03)"
-  },
-  "source-as-a-list-of-17-values.invalid.json": {
-    "expect_in_error": "is too long [1, 'maxItems']",
-    "reason": "a turn's source holds at most 16 values (MD-22)"
   },
   "split-request-ref-in-openchart-namespace.invalid.json": {
     "expect_in_error": "'openchart' is not one of ['healthlinc', 'medxfactory']",

@@ -37,9 +37,16 @@ Checks:
        none, is a speaker openChart cannot read. A turn that is not an ai
        turn is then kept, its speaker recorded as not identified
        (speakers_not_identified);
+     - over_bound_values: an authored_at, source or ai_identity beyond its
+       outer bound ($defs boundedValue, or aiIdentity for ai_identity) is
+       one openChart could not read, of which only the SHA-256 and the
+       length of its canonical JSON are kept; an ai_identity beyond it
+       makes the turn ai_not_identified. The bound read here agrees with
+       the schema's $defs for every such value in the examples;
      - an ai turn's identification (ai_turns): `identified`, or the cause
        that makes it an unidentified AI turn: ai_not_identified when its
-       speaker cannot be read, whatever its ai_identity; otherwise the first
+       speaker cannot be read, whatever its ai_identity, or when its
+       ai_identity is beyond its outer bound; otherwise the first
        cause that applies, in this order: openwallet_id_missing (no
        openwallet_id), ai_not_identified (a property other than the three,
        a value that is not a string, or a value outside its form:
@@ -68,10 +75,25 @@ Checks:
      or ai_identity differs, and unchanged otherwise; a turn held in the
      earlier result whose new version is not held is listed in
      corrected_held_turns, which flags the held turn as having a corrected
-     turn.
+     turn;
+ 11. every fixture is within the contract's limit of 16 MiB for a message a
+     holder sends, and, built in memory from a valid result by lengthening
+     one turn's authored_at, a message of exactly the limit validates and
+     is read per turn, while one byte more is refused beside the schema;
+ 12. for every valid result of a conversation HealthLinc holds, the times
+     of the additions openChart makes from it meet the clinical-acts
+     foundation's rules for them (its AN-04 and verifier at f1cfe74):
+     each turn it keeps, filed when retrieved and filed later, carries
+     retrieved_at, and a defaulted occurred_at equal to it; the handoff
+     record filed after its conversation is retrieved carries retrieved_at
+     too, and one filed before carries none and defaults to its own
+     received_at, which it never changes. retrieved_at is never later
+     than received_at, and a declared time kept beside a default is later
+     than the default.
 Every fixture is synthetic. Exit status 0 only when every check passes.
 """
 import datetime
+import hashlib
 import json
 import pathlib
 import re
@@ -91,7 +113,7 @@ TIME = re.compile(r"([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9
 CLOCK_SKEW = datetime.timedelta(minutes=5)
 PER_TURN = ("authored_at", "source", "ai_identity")
 # The clinical-acts foundation's forms for an AI party (openchart-clinical-act-content 1.0,
-# SHA-256 9ae73b150e00ae581012286e3016a5fac6fa044ce5cbf0ce7ba9c36d9204a64d: $defs walletId and
+# SHA-256 3c2e1afdb2d365bd84ef9f5f159e9addb6c93d7c2048af33da3cb9396b9548ec: $defs walletId and
 # versionLabel, and party.model for an AI party), which the AI write path's contract also uses.
 WALLET_ID = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,199}")
 MODEL = re.compile(r"[A-Za-z0-9._:/@+-]{1,128}")
@@ -101,6 +123,13 @@ OUTCOMES = {"identified", "openwallet_id_missing", "ai_not_identified", "openwal
 HELD_CAUSES = OUTCOMES - {"identified"}
 CHANGE_FIELDS = ("content", "author_type", "source", "authored_at", "ai_identity")
 MISSING = object()
+# openChart's outer bound for a judged value ($defs boundedScalar, boundedValue and aiIdentity).
+BOUND_CHARS = 1024
+BOUND_ITEMS = 16
+# The contract's limit for a message a holder sends, in bytes of UTF-8 JSON as received.
+MESSAGE_LIMIT = 16 * 1024 * 1024
+FILED_LATER = datetime.timedelta(hours=7, minutes=30)
+FILED_FIRST = datetime.timedelta(minutes=1)
 
 
 def flatten(errors):
@@ -177,6 +206,58 @@ def judge_time(value, retrieved_at, pattern):
     return "later" if when > retrieved_at + CLOCK_SKEW else "declared"
 
 
+def bounded_scalar(value):
+    return (isinstance(value, str) and len(value) <= BOUND_CHARS) or value is None or \
+        isinstance(value, (bool, int, float))
+
+
+def bounded_value(value):
+    """Within openChart's outer bound for a turn's authored_at or source ($defs boundedValue)."""
+    if bounded_scalar(value):
+        return True
+    if isinstance(value, list):
+        return len(value) <= BOUND_ITEMS and all(bounded_scalar(v) for v in value)
+    if isinstance(value, dict):
+        return len(value) <= BOUND_ITEMS and all(len(k) <= BOUND_CHARS and bounded_scalar(v) for k, v in value.items())
+    return False
+
+
+def identity_in_bound(value):
+    """Within openChart's outer bound for an ai_identity ($defs aiIdentity)."""
+    return isinstance(value, dict) and len(value) <= BOUND_ITEMS and all(
+        len(k) <= BOUND_CHARS and bounded_value(v) for k, v in value.items())
+
+
+def in_bound(field, value):
+    return identity_in_bound(value) if field == "ai_identity" else bounded_value(value)
+
+
+def jcs(value):
+    """Canonical JSON: equal to RFC 8785 for the values in these examples, which hold no
+    floating-point number and no member name outside the Basic Multilingual Plane."""
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def kept_of_over_bound(value):
+    """What openChart keeps of a value beyond its outer bound: its SHA-256 and its length, never the value."""
+    text = jcs(value)
+    return {"sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(), "length": len(text)}
+
+
+def over_bound_values(doc):
+    """The per-turn values of a result beyond their outer bound, by turn and field."""
+    out = {}
+    for turn in doc["payload"]["turns"]:
+        for field in PER_TURN:
+            if field in turn and not in_bound(field, turn[field]):
+                out.setdefault(turn["turn_id"], {})[field] = kept_of_over_bound(turn[field])
+    return out
+
+
+def within_message_limit(raw):
+    return len(raw) <= MESSAGE_LIMIT
+
+
 def speaker_readable(turn, source_tokens):
     return any(turn.get("source", MISSING) == token for token in source_tokens)
 
@@ -184,6 +265,8 @@ def speaker_readable(turn, source_tokens):
 def identify(turn, covered, source_tokens):
     """openChart's identification step for an ai turn (MD-37). Returns identified or the cause."""
     if not speaker_readable(turn, source_tokens):
+        return "ai_not_identified"
+    if "ai_identity" in turn and not identity_in_bound(turn["ai_identity"]):
         return "ai_not_identified"
     ident = turn.get("ai_identity", {})
     if not isinstance(ident, dict) or "openwallet_id" not in ident:
@@ -215,6 +298,59 @@ def judge_turns(doc, covered, retrieved_at, pattern, source_tokens):
         elif not speaker_readable(turn, source_tokens):
             speakers.append(turn_id)
     return ai_turns, held, defaulted, speakers
+
+
+def provenance_times(authored_at, retrieved_at, received_at, pattern, carries_retrieval=True):
+    """The time fields of an addition openChart makes from a retrieval (MI-12, MD-22, MD-35)."""
+    prov = {"received_at": received_at}
+    if carries_retrieval:
+        prov["retrieved_at"] = retrieved_at
+        time = judge_time(authored_at, retrieved_at, pattern)
+        if time == "declared":
+            prov["occurred_at"] = read_time(authored_at, pattern)
+        else:
+            prov["occurred_at"], prov["occurred_at_defaulted"] = retrieved_at, True
+            if time == "later":
+                prov["occurred_at_as_declared"] = read_time(authored_at, pattern)
+    else:
+        # a handoff record filed before its conversation is retrieved: fixed at filing, never changed
+        prov["occurred_at"], prov["occurred_at_defaulted"] = received_at, True
+    return prov
+
+
+def time_problems(prov):
+    """The clinical-acts foundation's checks of an addition's times (its AN-04 and verifier at f1cfe74),
+    for an item that was not released from quarantine."""
+    problems = []
+    retrieved, received = prov.get("retrieved_at"), prov["received_at"]
+    if retrieved is not None and retrieved > received:
+        problems.append("retrieved_at is later than received_at")
+    if prov.get("occurred_at_defaulted"):
+        if prov["occurred_at"] != (retrieved if retrieved is not None else received):
+            problems.append("a defaulted occurred_at is not retrieved_at where recorded, otherwise received_at")
+        declared = prov.get("occurred_at_as_declared")
+        if declared is not None and declared <= prov["occurred_at"]:
+            problems.append("occurred_at_as_declared is not later than the defaulted time")
+    return problems
+
+
+def addition_times(doc, held, retrieved_at, pattern):
+    """The times of every addition openChart makes from a result of a conversation HealthLinc holds:
+    each kept turn, filed when retrieved and filed later, and the handoff record filed after its
+    conversation is retrieved and filed before it."""
+    out = []
+    turns = doc["payload"]["turns"]
+    for turn in turns:
+        if turn["turn_id"] in held:
+            continue
+        for received in (retrieved_at, retrieved_at + FILED_LATER):
+            out.append((turn["turn_id"], provenance_times(turn.get("authored_at", MISSING), retrieved_at, received, pattern)))
+    request = next(t for t in turns if t.get("request_turn") is True)
+    out.append(("handoff filed after retrieval", provenance_times(
+        request.get("authored_at", MISSING), retrieved_at, retrieved_at + FILED_LATER, pattern)))
+    out.append(("handoff filed before retrieval", provenance_times(
+        request.get("authored_at", MISSING), retrieved_at, retrieved_at - FILED_FIRST, pattern, carries_retrieval=False)))
+    return out
 
 
 def canonical(value):
@@ -292,7 +428,11 @@ def main():
     registrations = load(EXAMPLES / "holder-registrations.json")
     failures, names = [], set()
     counts = {"valid": 0, "invalid": 0, "mismatch-invalid": 0, "calendar-invalid": 0, "ai turns": 0,
-              "held turns": 0, "defaulted times": 0, "speakers not identified": 0, "re-retrievals": 0}
+              "held turns": 0, "defaulted times": 0, "speakers not identified": 0, "re-retrievals": 0,
+              "over-bound values": 0, "addition times": 0}
+    bound_checks = {"ai_identity": Draft202012Validator({"$ref": "#/$defs/aiIdentity", "$defs": schema["$defs"]}),
+                    "source": Draft202012Validator({"$ref": "#/$defs/boundedValue", "$defs": schema["$defs"]})}
+    bound_checks["authored_at"] = bound_checks["source"]
 
     if uses_format(schema):
         failures.append("the schema uses a format keyword; every rule is checked by pattern")
@@ -307,6 +447,14 @@ def main():
             continue
         names.add(path.name)
         doc = load(path)
+        if not within_message_limit(path.read_bytes()):
+            failures.append(f"{path.name}: beyond the contract's message limit of {MESSAGE_LIMIT} bytes")
+        if doc.get("message_type") == "conversation.result" and isinstance(doc.get("payload"), dict):
+            for turn in doc["payload"].get("turns", []):
+                for field in PER_TURN:
+                    if isinstance(turn, dict) and field in turn and \
+                            in_bound(field, turn[field]) != bound_checks[field].is_valid(turn[field]):
+                        failures.append(f"{path.name}: the outer bound read here disagrees with the schema's for {field}")
         errs = list(with_format.iter_errors(doc))
         if bool(errs) != bool(list(without_format.iter_errors(doc))):
             failures.append(f"{path.name}: behaves differently with and without format assertion")
@@ -373,6 +521,16 @@ def main():
                 failures.append(f"{path.name}: defaulted times {defaulted}, not {out.get('defaulted_times')}")
             else:
                 counts["defaulted times"] += len(defaulted)
+            over = over_bound_values(doc)
+            if over != out.get("over_bound_values"):
+                failures.append(f"{path.name}: over-bound values {over}, not {out.get('over_bound_values')}")
+            else:
+                counts["over-bound values"] += sum(len(v) for v in over.values())
+            if doc["payload"]["conversation_ref"]["namespace"] == "healthlinc":
+                for name, prov in addition_times(doc, held, retrieved_at, timestamp):
+                    counts["addition times"] += 1
+                    for problem in time_problems(prov):
+                        failures.append(f"{path.name}: {name}: {problem}")
             if speakers != out.get("speakers_not_identified"):
                 failures.append(f"{path.name}: speakers not identified {speakers}, not {out.get('speakers_not_identified')}")
             else:
@@ -421,6 +579,21 @@ def main():
         else:
             failures.append(f"{path.name}: a fixture name ends in .valid.json, .invalid.json, "
                             ".mismatch-invalid.json or .calendar-invalid.json")
+    base_path = EXAMPLES / "conversation-result-healthlinc-mixed-turns.valid.json"
+    base = load(base_path)
+    base["payload"]["turns"][1]["authored_at"] = ""
+    empty = len(json.dumps(base, ensure_ascii=False).encode("utf-8"))
+    for extra, want_within in ((0, True), (1, False)):
+        base["payload"]["turns"][1]["authored_at"] = "x" * (MESSAGE_LIMIT - empty + extra)
+        raw = json.dumps(base, ensure_ascii=False).encode("utf-8")
+        if within_message_limit(raw) != want_within or len(raw) != MESSAGE_LIMIT + extra:
+            failures.append(f"a message of {len(raw)} bytes is {'within' if within_message_limit(raw) else 'beyond'} the limit")
+        elif want_within:
+            if list(without_format.iter_errors(base)):
+                failures.append("a message of exactly the limit fails the schema")
+            over = over_bound_values(base)
+            if list(over) != [base["payload"]["turns"][1]["turn_id"]] or list(over[base["payload"]["turns"][1]["turn_id"]]) != ["authored_at"]:
+                failures.append(f"a message of exactly the limit: over-bound values {list(over)}")
     for name in list(expected) + list(outcomes):
         if name not in names:
             failures.append(f"a manifest names a missing fixture: {name}")
@@ -435,7 +608,9 @@ def main():
           f"{counts['calendar-invalid']} calendar-invalid fixtures checked, {counts['ai turns']} ai turns identified, "
           f"{counts['held turns']} turns held, {counts['defaulted times']} times defaulted, "
           f"{counts['speakers not identified']} speakers not identified, "
-          f"{counts['re-retrievals']} re-retrievals compared, {len(failures)} failure(s)")
+          f"{counts['re-retrievals']} re-retrievals compared, {counts['over-bound values']} over-bound values kept "
+          f"by digest and length, {counts['addition times']} additions' times checked, the message limit checked, "
+          f"{len(failures)} failure(s)")
     return 1 if failures else 0
 
 
